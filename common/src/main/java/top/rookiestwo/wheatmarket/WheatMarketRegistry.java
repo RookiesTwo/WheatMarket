@@ -14,5 +14,6 @@ public class WheatMarketRegistry {
         RegistrySupplier<Item> LAPTOP = ITEMS.register("laptop", () -> new Item(new Item.Properties()));
         RegistrySupplier<Block> LAPTOP_BLOCK = BLOCKS.register("laptop_block", () -> new Block(Block.Properties.of()));
         ITEMS.register();
+        BLOCKS.register();
     }
 }

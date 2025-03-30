@@ -1,5 +1,8 @@
 {
   "variants": {
-    "": { "model": "wheatmarket:block/laptop" }
+    "facing=north": { "model": "tutorial:block/polished_andesite_vertical_slab", "uvlock": true },
+    "facing=east":  { "model": "tutorial:block/polished_andesite_vertical_slab", "y":  90, "uvlock": true },
+    "facing=south": { "model": "tutorial:block/polished_andesite_vertical_slab", "y": 180, "uvlock": true },
+    "facing=west":  { "model": "tutorial:block/polished_andesite_vertical_slab", "y": 270, "uvlock": true }
   }
 }

@@ -11,6 +11,8 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 
 public class WheatMarketRegistry {
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(Wheatmarket.MOD_ID, Registries.BLOCK);
+    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(Wheatmarket.MOD_ID, Registries.ITEM);
+
     public WheatMarketRegistry(){
         System.out.println("WheatMarket Registering...");
         RegistrySupplier<Block> LAPTOP_BLOCK = BLOCKS.register("laptop", () -> new Block(BlockBehaviour.Properties.of()

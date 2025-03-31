@@ -1,8 +1,15 @@
 {
   "variants": {
-    "facing=north": { "model": "tutorial:block/polished_andesite_vertical_slab", "uvlock": true },
-    "facing=east":  { "model": "tutorial:block/polished_andesite_vertical_slab", "y":  90, "uvlock": true },
-    "facing=south": { "model": "tutorial:block/polished_andesite_vertical_slab", "y": 180, "uvlock": true },
-    "facing=west":  { "model": "tutorial:block/polished_andesite_vertical_slab", "y": 270, "uvlock": true }
+    "facing=north,open=true": { "model": "wheatmarket:block/laptop", "uvlock": false },
+    "facing=north,open=false": { "model": "wheatmarket:item/laptop", "uvlock": false },
+
+    "facing=east,open=true":  { "model": "wheatmarket:block/laptop", "y":  90, "uvlock": false },
+    "facing=east,open=false":  { "model": "wheatmarket:item/laptop", "y":  90, "uvlock": false },
+
+    "facing=south,open=true": { "model": "wheatmarket:block/laptop", "y": 180, "uvlock": false },
+    "facing=south,open=false": { "model": "wheatmarket:item/laptop", "y": 180, "uvlock": false },
+
+    "facing=west,open=true":  { "model": "wheatmarket:block/laptop", "y": 270, "uvlock": false },
+    "facing=west,open=false":  { "model": "wheatmarket:item/laptop", "y": 270, "uvlock": false }
   }
 }

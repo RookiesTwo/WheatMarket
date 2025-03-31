@@ -1,3 +1,5 @@
 {
-    "block.wheatmarket.laptop": "笔记本电脑"
+    "block.wheatmarket.laptop": "笔记本电脑",
+    "sound.wheatmarket.laptop_open": "笔记本电脑:打开",
+    "sound.wheatmarket.laptop_close": "笔记本电脑:关闭"
 }

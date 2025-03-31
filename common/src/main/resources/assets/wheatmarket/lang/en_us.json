@@ -1,3 +1,5 @@
 {
-    "block.wheatmarket.laptop": "Laptop"
+    "block.wheatmarket.laptop": "Laptop",
+    "sound.wheatmarket.laptop_open": "Laptop: Open",
+    "sound.wheatmarket.laptop_close": "Laptop: Close"
 }

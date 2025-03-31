@@ -1,0 +1,14 @@
+{
+  "laptop_open": {
+    "subtitle": "sound.wheatmarket.laptop_open",
+    "sounds": [
+      "wheatmarket:laptop_open"
+    ]
+  },
+  "laptop_close": {
+    "subtitle": "sound.wheatmarket.laptop_close",
+    "sounds": [
+      "wheatmarket:laptop_close"
+    ]
+  }
+}

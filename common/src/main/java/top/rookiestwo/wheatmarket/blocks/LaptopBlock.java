@@ -50,22 +50,6 @@ public class LaptopBlock extends HorizontalDirectionalBlock implements SimpleWat
         return super.getStateForPlacement(ctx).setValue(BlockStateProperties.HORIZONTAL_FACING, ctx.getHorizontalDirection().getOpposite());
     }
 
-    private VoxelShape rotationVoxel(Direction dir){
-        VoxelShape Cover;
-        VoxelShape Bottom;
-        switch (dir){
-            case EAST -> {
-                Cover = Block.box(4.3f,1.2f,0.8f,5.5f,10.8f,15.2f);
-                Bottom = Block.box(4.9f,0.0f,0.8f,14.5f,1.2f,15.2f);
-            }
-            default -> {
-                Cover=Block.box(0.8f, 1.2f, 10.5f, 15.2f, 10.8f, 11.7f);
-                Bottom=Block.box(0.8f, 0.0f, 1.5f, 15.2f, 1.2f, 11.1f);
-            }
-        }
-        return Shapes.or(Cover,Bottom);
-    }
-
     private VoxelShape rotatedVoxel(double x1,double y1,double z1,double x2,double y2,double z2,Direction direction) {
         double newX1=0,newZ1=0,newX2=0,newZ2=0;
         switch (direction) {
@@ -94,11 +78,6 @@ public class LaptopBlock extends HorizontalDirectionalBlock implements SimpleWat
                 newZ2 = z2;
             }
         }
-        /*if(newX1 > newX2 || newZ1 > newZ2 ){
-            swap(newX1,newX2);
-            swap(y1,y2);
-            swap(newZ1,newZ2);
-        }*/
         if(newX1 > newX2){
             double temp=newX1;
             newX1=newX2;

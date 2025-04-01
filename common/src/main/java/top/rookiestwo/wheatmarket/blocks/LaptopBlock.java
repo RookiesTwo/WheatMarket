@@ -100,8 +100,8 @@ public class LaptopBlock extends HorizontalDirectionalBlock implements SimpleWat
     private void toggleOpen(BlockState state, Level level, BlockPos pos, Player player) {
         if (!level.isClientSide) {
             BlockState newState = state.cycle(OPEN);
-            if(!newState.getValue(OPEN)){
-                newState.setValue(POWERED,false);
+            if(!newState.getValue(OPEN)&&newState.getValue(POWERED)){
+                newState=newState.cycle(POWERED);
             }
             level.setBlock(pos, newState, 3);
         }

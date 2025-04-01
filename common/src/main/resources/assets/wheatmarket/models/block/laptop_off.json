@@ -1,0 +1,7 @@
+{
+  "parent": "wheatmarket:block/laptop_on",
+  "textures": {
+    "0": "wheatmarket:block/laptop_off",
+    "particle": "wheatmarket:block/laptop_off"
+  }
+}

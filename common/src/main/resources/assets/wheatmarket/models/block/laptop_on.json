@@ -1,8 +1,8 @@
 {
   "credit": "Made with Blockbench",
   "textures": {
-    "0": "wheatmarket:block/laptop",
-    "particle": "wheatmarket:block/laptop"
+    "0": "wheatmarket:block/laptop_on",
+    "particle": "wheatmarket:block/laptop_on"
   },
   "elements": [
     {

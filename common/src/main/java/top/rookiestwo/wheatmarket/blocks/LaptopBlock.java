@@ -34,6 +34,7 @@ public class LaptopBlock extends HorizontalDirectionalBlock implements SimpleWat
     public static final DirectionProperty FACING= BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty OPEN = BlockStateProperties.OPEN;
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
+    public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
     public static final MapCodec<LaptopBlock> CODEC = BlockBehaviour.simpleCodec(LaptopBlock::new);
     public static final SoundEvent LAPTOP_OPEN = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(Wheatmarket.MOD_ID,"laptop_open"));
     public static final SoundEvent LAPTOP_CLOSE = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(Wheatmarket.MOD_ID,"laptop_close"));
@@ -43,6 +44,7 @@ public class LaptopBlock extends HorizontalDirectionalBlock implements SimpleWat
         registerDefaultState(defaultBlockState()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(OPEN, false)
+                .setValue(POWERED, false)
                 .setValue(WATERLOGGED, false));
     }
 
@@ -50,10 +52,11 @@ public class LaptopBlock extends HorizontalDirectionalBlock implements SimpleWat
     protected @NotNull InteractionResult useWithoutItem(BlockState blockState, Level level, BlockPos blockPos, Player player, BlockHitResult blockHitResult) {
         if(blockState.getValue(OPEN)){
             if(!player.isShiftKeyDown()){
+                togglePower(blockState, level, blockPos, player);
                 return InteractionResult.PASS;
             }
         }
-        this.toggle(blockState, level, blockPos, player);
+        this.toggleOpen(blockState, level, blockPos, player);
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
@@ -64,7 +67,7 @@ public class LaptopBlock extends HorizontalDirectionalBlock implements SimpleWat
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) {
-        pBuilder.add(FACING,OPEN,WATERLOGGED);
+        pBuilder.add(FACING,OPEN,POWERED,WATERLOGGED);
     }
 
     @Override
@@ -94,9 +97,12 @@ public class LaptopBlock extends HorizontalDirectionalBlock implements SimpleWat
         return state.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
     }
 
-    private void toggle(BlockState state, Level level, BlockPos pos, Player player) {
+    private void toggleOpen(BlockState state, Level level, BlockPos pos, Player player) {
         if (!level.isClientSide) {
             BlockState newState = state.cycle(OPEN);
+            if(!newState.getValue(OPEN)){
+                newState.setValue(POWERED,false);
+            }
             level.setBlock(pos, newState, 3);
         }
         if(state.getValue(OPEN)){
@@ -104,6 +110,13 @@ public class LaptopBlock extends HorizontalDirectionalBlock implements SimpleWat
         }
         else{
             level.playSound(player, pos, LAPTOP_CLOSE, SoundSource.BLOCKS, 1.0F, level.getRandom().nextFloat() * 0.1F + 0.9F);
+        }
+    }
+
+    private void togglePower(BlockState state, Level level, BlockPos pos, Player player) {
+        if (!level.isClientSide) {
+            BlockState newState = state.cycle(POWERED);
+            level.setBlock(pos, newState, 3);
         }
     }
 

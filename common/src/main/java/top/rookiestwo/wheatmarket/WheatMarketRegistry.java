@@ -1,5 +1,6 @@
 package top.rookiestwo.wheatmarket;
 
+import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;
@@ -11,6 +12,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import top.rookiestwo.wheatmarket.blocks.LaptopBlock;
+import top.rookiestwo.wheatmarket.database.WheatMarketDatabase;
 
 public class WheatMarketRegistry {
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(Wheatmarket.MOD_ID, Registries.BLOCK);
@@ -28,5 +30,16 @@ public class WheatMarketRegistry {
         SOUND_EVENTS.register();
         BLOCKS.register();
         ITEMS.register();
+    }
+
+    public static void registerEvents(){
+        //专用服务器启动时启动数据库等服务端组件
+        LifecycleEvent.SERVER_STARTING.register((server) -> {
+            if(!server.isDedicatedServer()){
+                return;
+            }
+            Wheatmarket.LOGGER.info("WheatMarket Server Starting...");
+            Wheatmarket.DATABASE=new WheatMarketDatabase();
+        });
     }
 }

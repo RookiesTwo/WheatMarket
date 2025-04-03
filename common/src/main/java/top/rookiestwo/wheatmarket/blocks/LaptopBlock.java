@@ -75,12 +75,12 @@ public class LaptopBlock extends HorizontalDirectionalBlock implements SimpleWat
         Direction dir = state.getValue(FACING);
         VoxelShape Cover=null;
         if(state.getValue(OPEN)){
-            Cover=rotatedVoxel(0.8f, 1.2f, 10.5f, 15.2f, 10.8f, 11.7f, dir);
+            Cover= horizontalRotatedVoxel(0.8f, 1.2f, 10.5f, 15.2f, 10.8f, 11.7f, dir);
         }
         else{
-            Cover=rotatedVoxel(0.8, 1.2, 1.5, 15.2, 2.4, 11.1, dir);
+            Cover= horizontalRotatedVoxel(0.8, 1.2, 1.5, 15.2, 2.4, 11.1, dir);
         }
-        VoxelShape Bottom=rotatedVoxel(0.8f, 0.0f, 1.5f, 15.2f, 1.2f, 11.1f, dir);
+        VoxelShape Bottom= horizontalRotatedVoxel(0.8f, 0.0f, 1.5f, 15.2f, 1.2f, 11.1f, dir);
         return Shapes.or(Cover, Bottom);
     }
 
@@ -121,7 +121,7 @@ public class LaptopBlock extends HorizontalDirectionalBlock implements SimpleWat
     }
 
     //方块碰撞体积，在水平方向的旋转
-    private VoxelShape rotatedVoxel(double x1,double y1,double z1,double x2,double y2,double z2,Direction direction) {
+    private VoxelShape horizontalRotatedVoxel(double x1, double y1, double z1, double x2, double y2, double z2, Direction direction) {
         double newX1=0,newZ1=0,newX2=0,newZ2=0;
         switch (direction) {
             case EAST -> {

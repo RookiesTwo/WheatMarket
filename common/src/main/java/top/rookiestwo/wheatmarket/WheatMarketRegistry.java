@@ -18,7 +18,7 @@ public class WheatMarketRegistry {
     public static final DeferredRegister<SoundEvent> SOUND_EVENTS = DeferredRegister.create(Wheatmarket.MOD_ID, Registries.SOUND_EVENT);
 
     public WheatMarketRegistry(){
-        System.out.println("WheatMarket Registering...");
+        Wheatmarket.LOGGER.info("WheatMarket Registering...");
         RegistrySupplier<Block> LAPTOP_BLOCK = BLOCKS.register("laptop", () -> new LaptopBlock(BlockBehaviour.Properties.of()
                 .sound(SoundType.METAL)
         ));

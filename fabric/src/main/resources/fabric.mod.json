@@ -15,10 +15,10 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "top.rookiestwo.wheatmarket.fabric.WheatmarketFabric"
+      "top.rookiestwo.wheatmarket.fabric.WheatMarketFabric"
     ],
     "client": [
-      "top.rookiestwo.wheatmarket.fabric.client.WheatmarketFabricClient"
+      "top.rookiestwo.wheatmarket.fabric.client.WheatMarketFabricClient"
     ]
   },
   "mixins": [

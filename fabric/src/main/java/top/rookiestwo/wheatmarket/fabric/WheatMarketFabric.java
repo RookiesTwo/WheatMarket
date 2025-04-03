@@ -1,9 +1,9 @@
 package top.rookiestwo.wheatmarket.fabric;
 
-import top.rookiestwo.wheatmarket.Wheatmarket;
+import top.rookiestwo.wheatmarket.WheatMarket;
 import net.fabricmc.api.ModInitializer;
 
-public final class WheatmarketFabric implements ModInitializer {
+public final class WheatMarketFabric implements ModInitializer {
     @Override
     public void onInitialize() {
         // This code runs as soon as Minecraft is in a mod-load-ready state.
@@ -11,6 +11,6 @@ public final class WheatmarketFabric implements ModInitializer {
         // Proceed with mild caution.
 
         // Run our common setup.
-        Wheatmarket.init();
+        WheatMarket.init();
     }
 }

@@ -27,7 +27,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.Shapes;
 import org.jetbrains.annotations.NotNull;
-import top.rookiestwo.wheatmarket.Wheatmarket;
+import top.rookiestwo.wheatmarket.WheatMarket;
 
 public class LaptopBlock extends HorizontalDirectionalBlock implements SimpleWaterloggedBlock {
 
@@ -36,8 +36,8 @@ public class LaptopBlock extends HorizontalDirectionalBlock implements SimpleWat
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
     public static final MapCodec<LaptopBlock> CODEC = BlockBehaviour.simpleCodec(LaptopBlock::new);
-    public static final SoundEvent LAPTOP_OPEN = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(Wheatmarket.MOD_ID,"laptop_open"));
-    public static final SoundEvent LAPTOP_CLOSE = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(Wheatmarket.MOD_ID,"laptop_close"));
+    public static final SoundEvent LAPTOP_OPEN = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"laptop_open"));
+    public static final SoundEvent LAPTOP_CLOSE = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"laptop_close"));
 
     public LaptopBlock(Properties properties) {
         super(properties);

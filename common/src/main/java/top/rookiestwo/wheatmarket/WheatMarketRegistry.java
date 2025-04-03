@@ -1,6 +1,8 @@
 package top.rookiestwo.wheatmarket;
 
+import com.mojang.brigadier.CommandDispatcher;
 import dev.architectury.event.events.common.LifecycleEvent;
+import dev.architectury.event.events.common.PlayerEvent;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;
@@ -13,6 +15,7 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import top.rookiestwo.wheatmarket.blocks.LaptopBlock;
 import top.rookiestwo.wheatmarket.database.WheatMarketDatabase;
+import top.rookiestwo.wheatmarket.database.tables.PlayerInfo;
 
 public class WheatMarketRegistry {
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(WheatMarket.MOD_ID, Registries.BLOCK);
@@ -40,12 +43,19 @@ public class WheatMarketRegistry {
             //}
             WheatMarket.DATABASE=new WheatMarketDatabase();
         });
+
         //服务器关闭时关闭数据库
         LifecycleEvent.SERVER_STOPPING.register((server) -> {
             //if(!server.isDedicatedServer()){
             //    return;
             //}
             WheatMarket.DATABASE.closeConnection();
+        });
+
+        //玩家进入时，若没有账号则创建账号
+        PlayerEvent.PLAYER_JOIN.register((player) -> {;
+            WheatMarket.LOGGER.info("Player Joined.");
+            PlayerInfo.ifNotExistsCreateRecord(WheatMarket.DATABASE.getConnection(),player.getUUID());
         });
     }
 }

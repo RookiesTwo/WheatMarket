@@ -4,6 +4,7 @@ import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.database.WheatMarketDatabase;
 
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 import java.sql.Connection;
@@ -49,10 +50,11 @@ public class PlayerInfo {
     }
 
     public static boolean uuidExists(Connection connection, UUID uuid) {
-        String checkUUID = "SELECT COUNT(*) FROM player_info WHERE uuid = ?";
+        String checkUUID = "SELECT 1 FROM player_info WHERE uuid = ? LIMIT 1";
         try (PreparedStatement pstmt = connection.prepareStatement(checkUUID)) {
             pstmt.setString(1, uuid.toString());
-            return pstmt.executeQuery().next();
+            ResultSet rs = pstmt.executeQuery();
+            return rs.next();
         } catch (SQLException e) {
             WheatMarket.LOGGER.error("Check UUID failed.", e);
             return false;

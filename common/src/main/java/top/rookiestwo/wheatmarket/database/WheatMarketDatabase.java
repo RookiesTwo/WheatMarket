@@ -8,7 +8,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public class WheatMarketDatabase {
-    private static final String databaseUrl = "jdbc:h2:file:./config/WheatMarket/database";
+    private static final String databaseUrl = "jdbc:h2:file:./config/WheatMarket/database/WheatMarketDB";
     private Connection connection;
 
     public WheatMarketDatabase() {
@@ -28,7 +28,6 @@ public class WheatMarketDatabase {
     private void createTables() {
         String createPlayerInfoTable = "CREATE TABLE IF NOT EXISTS player_info (" +
                 "uuid VARCHAR(36) PRIMARY KEY," +
-                "name VARCHAR(255)," +
                 "balance DOUBLE" +
                 ");";
         String createMarketItemTable = "CREATE TABLE IF NOT EXISTS market_item (" +

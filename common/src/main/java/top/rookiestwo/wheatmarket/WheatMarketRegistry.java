@@ -35,20 +35,20 @@ public class WheatMarketRegistry {
         ITEMS.register();
     }
 
+    public static void registerCommands(){
+        CommandRegistrationEvent.EVENT.register((CommandDispatcher, CommandBuildContext, CommandSelection)->{
+
+        });
+    }
+
     public static void registerEvents(){
         //服务器启动时启动数据库
         LifecycleEvent.SERVER_STARTING.register((server) -> {
-            //if(!server.isDedicatedServer()){
-            //    return;
-            //}
             WheatMarket.DATABASE=new WheatMarketDatabase();
         });
 
         //服务器关闭时关闭数据库
         LifecycleEvent.SERVER_STOPPING.register((server) -> {
-            //if(!server.isDedicatedServer()){
-            //    return;
-            //}
             WheatMarket.DATABASE.closeConnection();
         });
 

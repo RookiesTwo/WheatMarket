@@ -32,8 +32,9 @@ repositories {
 }
 
 dependencies {
-    shadowBundle "com.h2database:h2:2.3.232"
     neoForge "net.neoforged:neoforge:$rootProject.neoforge_version"
+    implementation "com.h2database:h2:2.3.232"
+    shadowBundle "com.h2database:h2:2.3.232"
 
     modImplementation "dev.architectury:architectury-neoforge:$rootProject.architectury_api_version"
 

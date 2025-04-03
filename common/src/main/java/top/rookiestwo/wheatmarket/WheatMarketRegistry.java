@@ -33,12 +33,11 @@ public class WheatMarketRegistry {
     }
 
     public static void registerEvents(){
-        //专用服务器启动时启动数据库等服务端组件
+        //服务器启动时启动数据库等服务端组件
         LifecycleEvent.SERVER_STARTING.register((server) -> {
-            if(!server.isDedicatedServer()){
-                return;
-            }
-            Wheatmarket.LOGGER.info("WheatMarket Server Starting...");
+            //if(!server.isDedicatedServer()){
+            //    return;
+            //}
             Wheatmarket.DATABASE=new WheatMarketDatabase();
         });
     }

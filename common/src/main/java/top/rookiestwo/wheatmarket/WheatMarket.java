@@ -2,6 +2,7 @@ package top.rookiestwo.wheatmarket;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import top.rookiestwo.wheatmarket.command.WheatMarketCommands;
 import top.rookiestwo.wheatmarket.database.WheatMarketDatabase;
 
 public final class WheatMarket {
@@ -10,10 +11,12 @@ public final class WheatMarket {
     public static WheatMarketRegistry REGISTRY = null;
     public static final Logger LOGGER = LogManager.getLogger("Wheat Market");
     public static WheatMarketDatabase DATABASE = null;
+    public static WheatMarketCommands WHEAT_MARKET_COMMANDS = null;
 
     public static void init() {
         WheatMarket.LOGGER.info("WheatMarket Initializing...");
         // Write common init code here.
+        WHEAT_MARKET_COMMANDS = new WheatMarketCommands();
         WheatMarketRegistry.registerEvents();
         REGISTRY=new WheatMarketRegistry();
     }

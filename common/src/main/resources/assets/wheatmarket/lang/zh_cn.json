@@ -1,5 +1,8 @@
 {
     "block.wheatmarket.laptop": "笔记本电脑",
     "sound.wheatmarket.laptop_open": "笔记本电脑:打开",
-    "sound.wheatmarket.laptop_close": "笔记本电脑:关闭"
+    "sound.wheatmarket.laptop_close": "笔记本电脑:关闭",
+    "info.command.wheatmarket.not_enough_money": "余额不足。",
+    "info.command.wheatmarket.pay_success": "支付成功。",
+    "error.command.wheatmarket.player_not_found_or_offline": "目标玩家离线或不存在！"
 }

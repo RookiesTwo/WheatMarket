@@ -1,7 +1,6 @@
 package top.rookiestwo.wheatmarket.database.tables;
 
 import top.rookiestwo.wheatmarket.WheatMarket;
-import top.rookiestwo.wheatmarket.database.WheatMarketDatabase;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,7 +24,7 @@ public class PlayerInfo {
         }
     }
 
-    public static void updatePlayerInfo(Connection connection, UUID uuid, Double balance) {
+    public static void updatePlayerBalance(Connection connection, UUID uuid, Double balance) {
         String updatePlayerInfo = "UPDATE player_info SET balance = ? WHERE uuid = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(updatePlayerInfo)) {
             pstmt.setDouble(1, balance);
@@ -39,13 +38,34 @@ public class PlayerInfo {
         }
     }
 
-    public static void getPlayerBalance(Connection connection, UUID uuid) {
+    public static void addPlayerBalance(Connection connection, UUID uuid, Double amount) {
+        String addPlayerBalance = "UPDATE player_info SET balance = balance + ? WHERE uuid = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(addPlayerBalance)) {
+            pstmt.setDouble(1, amount);
+            pstmt.setString(2, uuid.toString());
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected == 0) {
+                WheatMarket.LOGGER.warn("Failed to add balance for player with UUID: {}", uuid);
+            }
+        } catch (SQLException e) {
+            WheatMarket.LOGGER.error("Add player balance failed.", e);
+        }
+    }
+
+    public static double getPlayerBalance(Connection connection, UUID uuid) {
         String getPlayerBalance = "SELECT balance FROM player_info WHERE uuid = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(getPlayerBalance)) {
             pstmt.setString(1, uuid.toString());
-            pstmt.executeQuery();
+            ResultSet rs = pstmt.executeQuery();
+            if(rs.next()){
+                return rs.getDouble("balance");
+            } else {
+                WheatMarket.LOGGER.warn("No player found with UUID: {}", uuid);
+                return 0.0;
+            }
         } catch (SQLException e) {
             WheatMarket.LOGGER.error("Get player balance failed.", e);
+            return 0.0;
         }
     }
 

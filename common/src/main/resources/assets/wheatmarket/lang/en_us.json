@@ -1,5 +1,8 @@
 {
     "block.wheatmarket.laptop": "Laptop",
     "sound.wheatmarket.laptop_open": "Laptop: Open",
-    "sound.wheatmarket.laptop_close": "Laptop: Close"
+    "sound.wheatmarket.laptop_close": "Laptop: Close",
+    "info.command.wheatmarket.not_enough_money": "Not enough money.",
+    "info.command.wheatmarket.pay_success": "Payment successful.",
+    "error.command.wheatmarket.player_not_found_or_offline": "Target player is offline or not exist!"
 }

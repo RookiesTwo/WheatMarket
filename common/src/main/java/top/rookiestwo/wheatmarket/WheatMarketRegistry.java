@@ -1,12 +1,15 @@
 package top.rookiestwo.wheatmarket;
 
+import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.event.events.common.PlayerEvent;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
+import net.minecraft.commands.Commands;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.BlockItem;
@@ -37,12 +40,6 @@ public class WheatMarketRegistry {
         ITEMS.register();
     }
 
-    public static void registerCommands(){
-        CommandRegistrationEvent.EVENT.register((CommandDispatcher, CommandBuildContext, CommandSelection)->{
-            ""
-        });
-    }
-
     public static void registerEvents(){
         //服务器启动时启动数据库
         LifecycleEvent.SERVER_STARTING.register((server) -> {
@@ -55,8 +52,7 @@ public class WheatMarketRegistry {
         });
 
         //玩家进入时，若没有账号则创建账号
-        PlayerEvent.PLAYER_JOIN.register((player) -> {;
-            WheatMarket.LOGGER.info("Player Joined.");
+        PlayerEvent.PLAYER_JOIN.register((player) -> {
             PlayerInfo.ifNotExistsCreateRecord(WheatMarket.DATABASE.getConnection(),player.getUUID());
         });
     }

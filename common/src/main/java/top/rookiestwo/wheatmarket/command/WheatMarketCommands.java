@@ -67,7 +67,8 @@ public class WheatMarketCommands {
 
                 double targetBalance = PlayerInfo.getPlayerBalance(WheatMarket.DATABASE.getConnection(),target.getUUID());
 
-                sender.sendSystemMessage(Component.translatable("info.command.wheatmarket.pay_success").withColor(CommonColors.GREEN));
+                sender.sendSystemMessage(Component.translatable("info.command.wheatmarket.pay_success",String.valueOf(amount),sender.getName().getString(),senderBalance-amount).withColor(CommonColors.GREEN));
+                target.sendSystemMessage(Component.translatable("info.command.wheatmarket.receive_success",String.valueOf(amount),sender.getName().getString(),targetBalance).withColor(CommonColors.GREEN));
                 return Command.SINGLE_SUCCESS;
             } catch (Exception e){
                 WheatMarket.LOGGER.error("Pay command failed.", e);

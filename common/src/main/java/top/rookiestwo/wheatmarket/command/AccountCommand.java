@@ -97,7 +97,7 @@ public class AccountCommand extends BaseCommand implements CommandInterface {
                             );
                         }
                         else{
-                            PlayerInfo.updatePlayerBalance(WheatMarket.DATABASE.getConnection(),target.getUUID(),0-amount);
+                            PlayerInfo.addPlayerBalance(WheatMarket.DATABASE.getConnection(),target.getUUID(),0-amount);
                             source.sendSystemMessage(
                                     Component
                                             .translatable("info.command.wheatmarket.admin_remove_balance",String.valueOf(amount),target.getName().getString())

@@ -26,7 +26,9 @@ public class WheatMarketCommands {
         CommandRegistrationEvent.EVENT.register((CommandDispatcher, CommandBuildContext, CommandSelection)->{
             CommandDispatcher.register(Commands.literal(WheatMarketCommand).executes(this::WheatMarketCommand));
         });
-        //PayCommand
+        AccountCommand accountCommand = new AccountCommand();
+        BalanceCommand balanceCommand = new BalanceCommand();
+        PayCommand payCommand = new PayCommand();
     }
 
     private int WheatMarketCommand(CommandContext<CommandSourceStack> commandContext){

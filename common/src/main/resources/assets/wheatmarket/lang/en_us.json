@@ -3,6 +3,7 @@
     "sound.wheatmarket.laptop_open": "Laptop: Open",
     "sound.wheatmarket.laptop_close": "Laptop: Close",
     "info.command.wheatmarket.not_enough_money": "Not enough money.",
-    "info.command.wheatmarket.pay_success": "Payment successful.",
+    "info.command.wheatmarket.pay_success": "Successfully paid %1$s to %2$s. Now you have %3$s left.",
+    "info.command.wheatmarket.receive_success": "Successfully received %1$s from %2$s. Now you have %3$s.",
     "error.command.wheatmarket.player_not_found_or_offline": "Target player is offline or not exist!"
 }

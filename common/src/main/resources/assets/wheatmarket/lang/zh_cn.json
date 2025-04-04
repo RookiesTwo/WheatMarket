@@ -3,6 +3,7 @@
     "sound.wheatmarket.laptop_open": "笔记本电脑:打开",
     "sound.wheatmarket.laptop_close": "笔记本电脑:关闭",
     "info.command.wheatmarket.not_enough_money": "余额不足。",
-    "info.command.wheatmarket.pay_success": "支付成功。",
+    "info.command.wheatmarket.pay_success": "成功向 %2$s 支付 %1$s。当前余额为 %3$s。",
+    "info.command.wheatmarket.receive_success": "%2$s 向你支付了 %1$s。现在你有 %3$s.",
     "error.command.wheatmarket.player_not_found_or_offline": "目标玩家离线或不存在！"
 }

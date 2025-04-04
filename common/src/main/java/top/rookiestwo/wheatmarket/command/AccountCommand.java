@@ -95,21 +95,22 @@ public class AccountCommand extends BaseCommand implements CommandInterface {
                                         .append(Component.translatable("info.command.wheatmarket.balance",String.valueOf(targetBalance)))
                                         .withColor(CommonColors.SOFT_RED)
                             );
-                            return Command.SINGLE_SUCCESS;
                         }
-                        PlayerInfo.updatePlayerBalance(WheatMarket.DATABASE.getConnection(),target.getUUID(),0-amount);
-                        source.sendSystemMessage(
-                                Component
-                                    .translatable("info.command.wheatmarket.admin_remove_balance",String.valueOf(amount),target.getName().getString())
-                                    .append(Component.translatable("info.command.wheatmarket.balance",String.valueOf(targetBalance-amount)))
-                                    .withColor(CommonColors.SOFT_YELLOW)
-                        );
-                        target.sendSystemMessage(
-                                Component
-                                    .translatable("info.command.wheatmarket.remove_from_admin",String.valueOf(amount))
-                                    .append(Component.translatable("info.command.wheatmarket.balance",String.valueOf(targetBalance-amount)))
-                                    .withColor(CommonColors.SOFT_YELLOW)
-                        );
+                        else{
+                            PlayerInfo.updatePlayerBalance(WheatMarket.DATABASE.getConnection(),target.getUUID(),0-amount);
+                            source.sendSystemMessage(
+                                    Component
+                                            .translatable("info.command.wheatmarket.admin_remove_balance",String.valueOf(amount),target.getName().getString())
+                                            .append(Component.translatable("info.command.wheatmarket.balance",String.valueOf(targetBalance-amount)))
+                                            .withColor(CommonColors.SOFT_YELLOW)
+                            );
+                            target.sendSystemMessage(
+                                    Component
+                                            .translatable("info.command.wheatmarket.remove_from_admin",String.valueOf(amount))
+                                            .append(Component.translatable("info.command.wheatmarket.balance",String.valueOf(targetBalance-amount)))
+                                            .withColor(CommonColors.SOFT_YELLOW)
+                            );
+                        }
                         return Command.SINGLE_SUCCESS;
                     }
                 }

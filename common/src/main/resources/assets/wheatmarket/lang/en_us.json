@@ -1,9 +1,20 @@
 {
     "block.wheatmarket.laptop": "Laptop",
+
     "sound.wheatmarket.laptop_open": "Laptop: Open",
     "sound.wheatmarket.laptop_close": "Laptop: Close",
+
     "info.command.wheatmarket.not_enough_money": "Not enough money.",
-    "info.command.wheatmarket.pay_success": "Successfully paid %1$s to %2$s. Now you have %3$s left.",
-    "info.command.wheatmarket.receive_success": "Successfully received %1$s from %2$s. Now you have %3$s.",
-    "error.command.wheatmarket.player_not_found_or_offline": "Target player is offline or not exist!"
+    "info.command.wheatmarket.pay_success": "Successfully paid %1$s to %2$s.",
+    "info.command.wheatmarket.receive_success": "Successfully received %1$s from %2$s.",
+    "info.command.wheatmarket.balance": "Current balance is %1$s.",
+    "info.command.wheatmarket.admin_add_balance": "Successfully added %1$s to %2$s's account.",
+    "info.command.wheatmarket.receive_from_admin": "You received %1$s from server admin.",
+    "info.command.wheatmarket.admin_set_balance": "Successfully set %1$s's balance to %2$s.",
+    "info.command.wheatmarket.set_from_admin": "Your balance has been set to %1$s by server admin.",
+    "info.command.wheatmarket.admin_remove_balance": "Successfully removed %1$s from %2$s's account.",
+    "info.command.wheatmarket.remove_from_admin": "Your balance has been reduced %1$s by server admin.",
+
+    "error.command.wheatmarket.player_not_found_or_offline": "Target player is offline or not exist!",
+    "error.command.wheatmarket.admin_remove_balance": "Target player don't have enough money!"
 }

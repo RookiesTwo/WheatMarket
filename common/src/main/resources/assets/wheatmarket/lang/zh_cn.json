@@ -1,9 +1,20 @@
 {
     "block.wheatmarket.laptop": "笔记本电脑",
+
     "sound.wheatmarket.laptop_open": "笔记本电脑:打开",
     "sound.wheatmarket.laptop_close": "笔记本电脑:关闭",
+
     "info.command.wheatmarket.not_enough_money": "余额不足。",
-    "info.command.wheatmarket.pay_success": "成功向 %2$s 支付 %1$s。当前余额为 %3$s。",
-    "info.command.wheatmarket.receive_success": "%2$s 向你支付了 %1$s。现在你有 %3$s.",
-    "error.command.wheatmarket.player_not_found_or_offline": "目标玩家离线或不存在！"
+    "info.command.wheatmarket.pay_success": "成功向 %2$s 支付 %1$s。",
+    "info.command.wheatmarket.receive_success": "%2$s 向你支付了 %1$s。",
+    "info.command.wheatmarket.balance": "当前余额为 %1$s。",
+    "info.command.wheatmarket.admin_add_balance": "成功向 %2$s 的账户添加 %1$s。",
+    "info.command.wheatmarket.receive_from_admin": "服务器管理员向你的账户添加了 %1$s 。",
+    "info.command.wheatmarket.admin_set_balance": "成功将 %1$s 的余额设置为 %2$s。",
+    "info.command.wheatmarket.set_from_admin": "你的余额被服务器管理员设置为 %1$s 。",
+    "info.command.wheatmarket.admin_remove_balance": "成功从 %2$s 的账户中移除了 %1$s 。",
+    "info.command.wheatmarket.remove_from_admin": "你的余额被服务器管理员减少了 %1$s 。",
+
+    "error.command.wheatmarket.player_not_found_or_offline": "目标玩家离线或不存在！",
+    "error.command.wheatmarket.admin_remove_balance": "目标玩家没有这么多钱！"
 }

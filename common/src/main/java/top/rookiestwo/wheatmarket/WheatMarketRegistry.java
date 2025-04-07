@@ -26,9 +26,13 @@ import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
 public class WheatMarketRegistry {
-    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(WheatMarket.MOD_ID, Registries.BLOCK);
-    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(WheatMarket.MOD_ID, Registries.ITEM);
-    public static final DeferredRegister<SoundEvent> SOUND_EVENTS = DeferredRegister.create(WheatMarket.MOD_ID, Registries.SOUND_EVENT);
+    private static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(WheatMarket.MOD_ID, Registries.BLOCK);
+    private static final DeferredRegister<Item> ITEMS = DeferredRegister.create(WheatMarket.MOD_ID, Registries.ITEM);
+    private static final DeferredRegister<SoundEvent> SOUND_EVENTS = DeferredRegister.create(WheatMarket.MOD_ID, Registries.SOUND_EVENT);
+    private static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(WheatMarket.MOD_ID, Registries.MENU);
+
+    private static RegistrySupplier<Block> LAPTOP_BLOCK = null;
+    public static RegistrySupplier<MenuType<WheatMarketMenu>> WHEAT_MARKET_MENU = null;
 
     public WheatMarketRegistry(){
         WheatMarket.LOGGER.info("WheatMarket Registering...");

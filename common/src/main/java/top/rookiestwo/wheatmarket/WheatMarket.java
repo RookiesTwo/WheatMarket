@@ -19,9 +19,6 @@ public final class WheatMarket {
 
     public static void init() {
         WheatMarket.LOGGER.info("WheatMarket Initializing...");
-        // Write common init code here.
-        WHEAT_MARKET_COMMANDS = new WheatMarketCommands();
-        WheatMarketRegistry.registerEvents();
         REGISTRY=new WheatMarketRegistry();
     }
 }

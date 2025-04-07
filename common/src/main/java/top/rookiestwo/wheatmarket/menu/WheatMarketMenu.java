@@ -9,8 +9,8 @@ import top.rookiestwo.wheatmarket.WheatMarketRegistry;
 
 public class WheatMarketMenu extends AbstractContainerMenu {
 
-    public WheatMarketMenu(int i, Inventory inventory) {
-        super(WheatMarketRegistry.WHEAT_MARKET_MENU.get(), i);
+    public WheatMarketMenu(int containerId, Inventory inventory) {
+        super(WheatMarketRegistry.WHEAT_MARKET_MENU.get(), containerId);
     }
 
     @Override

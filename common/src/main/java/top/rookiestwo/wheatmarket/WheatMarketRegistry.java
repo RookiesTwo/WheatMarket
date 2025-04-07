@@ -7,9 +7,12 @@ import dev.architectury.registry.menu.MenuRegistry;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.flag.FeatureFlags;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -91,6 +94,7 @@ public class WheatMarketRegistry {
             },WheatMarket.ASYNC);
         });
 
+        //客户端启动时注册界面
         ClientLifecycleEvent.CLIENT_SETUP.register((client) -> {;
             registerClientScreens();
         });

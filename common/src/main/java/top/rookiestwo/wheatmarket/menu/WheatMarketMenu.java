@@ -20,6 +20,6 @@ public class WheatMarketMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return false;
+        return true;
     }
 }

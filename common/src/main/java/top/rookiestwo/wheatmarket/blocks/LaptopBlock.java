@@ -3,11 +3,16 @@ package top.rookiestwo.wheatmarket.blocks;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.inventory.CraftingMenu;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -28,6 +33,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.Shapes;
 import org.jetbrains.annotations.NotNull;
 import top.rookiestwo.wheatmarket.WheatMarket;
+import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
 
 public class LaptopBlock extends HorizontalDirectionalBlock implements SimpleWaterloggedBlock {
 
@@ -38,6 +44,7 @@ public class LaptopBlock extends HorizontalDirectionalBlock implements SimpleWat
     public static final MapCodec<LaptopBlock> CODEC = BlockBehaviour.simpleCodec(LaptopBlock::new);
     public static final SoundEvent LAPTOP_OPEN = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"laptop_open"));
     public static final SoundEvent LAPTOP_CLOSE = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"laptop_close"));
+    private static final Component CONTAINER_TITLE = Component.translatable("block.wheatmarket.laptop.title");
 
     public LaptopBlock(Properties properties) {
         super(properties);
@@ -53,11 +60,18 @@ public class LaptopBlock extends HorizontalDirectionalBlock implements SimpleWat
         if(blockState.getValue(OPEN)){
             if(!player.isShiftKeyDown()){
                 togglePower(blockState, level, blockPos, player);
-                return InteractionResult.PASS;
+                player.openMenu(blockState.getMenuProvider(level, blockPos));
+                return InteractionResult.CONSUME;
             }
         }
         this.toggleOpen(blockState, level, blockPos, player);
         return InteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    @Override
+    protected MenuProvider getMenuProvider(BlockState blockState, Level level, BlockPos blockPos) {
+        WheatMarket.LOGGER.info("Opening menu");
+        return new SimpleMenuProvider((containerId, inventory, player) -> new WheatMarketMenu(containerId, inventory), CONTAINER_TITLE);
     }
 
     @Override

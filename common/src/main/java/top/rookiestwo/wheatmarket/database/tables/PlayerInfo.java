@@ -14,7 +14,6 @@ public class PlayerInfo {
 
     public static void insertPlayerInfo(Connection connection,UUID uuid,Double balance) {
         String insertPlayerInfo = "INSERT INTO player_info (uuid, balance) VALUES (?, ?)";
-
         try (PreparedStatement pstmt = connection.prepareStatement(insertPlayerInfo)) {
             pstmt.setString(1, uuid.toString());
             pstmt.setDouble(2, balance);

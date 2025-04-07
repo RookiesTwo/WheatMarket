@@ -21,6 +21,10 @@ import top.rookiestwo.wheatmarket.blocks.LaptopBlock;
 import top.rookiestwo.wheatmarket.database.WheatMarketDatabase;
 import top.rookiestwo.wheatmarket.database.tables.PlayerInfo;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 public class WheatMarketRegistry {
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(WheatMarket.MOD_ID, Registries.BLOCK);
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(WheatMarket.MOD_ID, Registries.ITEM);
@@ -43,6 +47,7 @@ public class WheatMarketRegistry {
     public static void registerEvents(){
         //服务器启动时启动数据库
         LifecycleEvent.SERVER_STARTING.register((server) -> {
+            WheatMarket.ASYNC =  Executors.newFixedThreadPool(4);
             WheatMarket.DATABASE=new WheatMarketDatabase();
         });
 
@@ -53,7 +58,9 @@ public class WheatMarketRegistry {
 
         //玩家进入时，若没有账号则创建账号
         PlayerEvent.PLAYER_JOIN.register((player) -> {
-            PlayerInfo.ifNotExistsCreateRecord(WheatMarket.DATABASE.getConnection(),player.getUUID());
+            CompletableFuture.runAsync(() -> {
+                PlayerInfo.ifNotExistsCreateRecord(WheatMarket.DATABASE.getConnection(),player.getUUID());
+            },WheatMarket.ASYNC);
         });
     }
 }

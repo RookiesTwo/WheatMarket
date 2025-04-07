@@ -1,5 +1,6 @@
 package top.rookiestwo.wheatmarket;
 
+import dev.architectury.event.events.client.ClientLifecycleEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.event.events.common.PlayerEvent;
 import dev.architectury.registry.menu.MenuRegistry;
@@ -16,14 +17,13 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import top.rookiestwo.wheatmarket.blocks.LaptopBlock;
+import top.rookiestwo.wheatmarket.client.gui.WheatMarketMenuScreen;
 import top.rookiestwo.wheatmarket.command.WheatMarketCommands;
 import top.rookiestwo.wheatmarket.database.WheatMarketDatabase;
 import top.rookiestwo.wheatmarket.database.tables.PlayerInfo;
 import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
-
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
-import java.util.function.Supplier;
 
 public class WheatMarketRegistry {
     private static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(WheatMarket.MOD_ID, Registries.BLOCK);
@@ -67,6 +67,11 @@ public class WheatMarketRegistry {
         MENUS.register();
     }
 
+    private static void registerClientScreens() {
+        WheatMarket.LOGGER.info("WheatMarket Client Registering...");
+        MenuRegistry.registerScreenFactory(WHEAT_MARKET_MENU.get(), WheatMarketMenuScreen::new);
+    }
+
     public static void registerEvents(){
         //服务器启动时启动数据库
         LifecycleEvent.SERVER_STARTING.register((server) -> {
@@ -84,6 +89,10 @@ public class WheatMarketRegistry {
             CompletableFuture.runAsync(() -> {
                 PlayerInfo.ifNotExistsCreateRecord(WheatMarket.DATABASE.getConnection(),player.getUUID());
             },WheatMarket.ASYNC);
+        });
+
+        ClientLifecycleEvent.CLIENT_SETUP.register((client) -> {;
+            registerClientScreens();
         });
     }
 }

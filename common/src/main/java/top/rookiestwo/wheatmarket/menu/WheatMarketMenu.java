@@ -9,8 +9,15 @@ import top.rookiestwo.wheatmarket.WheatMarketRegistry;
 
 public class WheatMarketMenu extends AbstractContainerMenu {
 
+    private Player player=null;
+
     public WheatMarketMenu(int containerId, Inventory inventory) {
         super(WheatMarketRegistry.WHEAT_MARKET_MENU.get(), containerId);
+    }
+
+    public WheatMarketMenu(int containerId, Inventory inventory, Player player) {
+        this(containerId, inventory);
+        this.player=player;
     }
 
     @Override
@@ -21,5 +28,9 @@ public class WheatMarketMenu extends AbstractContainerMenu {
     @Override
     public boolean stillValid(Player player) {
         return true;
+    }
+
+    public Player getPlayer() {
+        return player;
     }
 }

@@ -71,7 +71,7 @@ public class LaptopBlock extends HorizontalDirectionalBlock implements SimpleWat
     @Override
     protected MenuProvider getMenuProvider(BlockState blockState, Level level, BlockPos blockPos) {
         WheatMarket.LOGGER.info("Opening menu");
-        return new SimpleMenuProvider((containerId, inventory, player) -> new WheatMarketMenu(containerId, inventory), CONTAINER_TITLE);
+        return new SimpleMenuProvider(WheatMarketMenu::new, CONTAINER_TITLE);
     }
 
     @Override

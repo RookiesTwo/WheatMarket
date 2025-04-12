@@ -11,4 +11,9 @@ public class MarketListing {
     private Double price;
     private int amount;
     private Timestamp timestamp;
+    private Boolean ifAdmin;
+    private Boolean ifSell;
+    private String BuyerTimerJson;
+    private int CooldownAmount;
+    private int CooldownTimeInMinutes;
 }

@@ -17,5 +17,7 @@
     "info.command.wheatmarket.remove_from_admin": "你的余额被服务器管理员减少了 %1$s 。",
 
     "error.command.wheatmarket.player_not_found_or_offline": "目标玩家离线或不存在！",
-    "error.command.wheatmarket.admin_remove_balance": "目标玩家没有这么多钱！"
+    "error.command.wheatmarket.admin_remove_balance": "目标玩家没有这么多钱！",
+
+    "gui.wheatmarket.main_title": "小麦市场"
 }

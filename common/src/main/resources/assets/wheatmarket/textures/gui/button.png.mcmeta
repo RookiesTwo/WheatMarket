@@ -1,10 +1,10 @@
 {
-  "animation": 0,
-  "frame": 0,
-  "ninepatch": {
-    "left": 2,
-    "right": 2,
-    "top": 2,
-    "bottom": 2
+  "gui": {
+    "scaling": {
+      "type": "nine_slice",
+      "width": 16,
+      "height": 16,
+      "border": 2
+    }
   }
 }

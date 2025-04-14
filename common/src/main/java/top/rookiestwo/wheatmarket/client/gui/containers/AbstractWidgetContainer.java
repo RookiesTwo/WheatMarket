@@ -3,6 +3,7 @@ package top.rookiestwo.wheatmarket.client.gui.containers;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import top.rookiestwo.wheatmarket.client.gui.widgets.WheatAbstractWidget;
 
@@ -10,26 +11,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class AbstractWidgetContainer extends AbstractWidget {
-    private final List<WheatAbstractWidget> widgets=new ArrayList<>();
 
-    public AbstractWidgetContainer(int i, int j, int k, int l, Component component) {
-        super(i, j, k, l, component);
-    }
+    protected Screen screen;
 
-    public void addWidget(WheatAbstractWidget w) {
-        widgets.add(w);
+    public AbstractWidgetContainer(int x, int y, int width, int height, Component message, Screen screen) {
+        super(x, y, width, height, message);
+        this.screen = screen;
     }
 
     //处理组件的位置干涉关系
     public abstract void fitWidgets();
 
     @Override
-    protected void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.fitWidgets();
-        for(WheatAbstractWidget w: widgets) {
-            w.render(guiGraphics, mouseX, mouseY, partialTick);
-        }
-    }
+    protected abstract void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick);
 
     @Override
     protected void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {}

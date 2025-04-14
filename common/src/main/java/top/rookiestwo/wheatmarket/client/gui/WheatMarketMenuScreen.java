@@ -8,6 +8,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import top.rookiestwo.wheatmarket.WheatMarket;
+import top.rookiestwo.wheatmarket.client.gui.containers.TitleContainer;
+import top.rookiestwo.wheatmarket.client.gui.widgets.TitleWidget;
 import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
 
 public class WheatMarketMenuScreen extends AbstractContainerScreen<WheatMarketMenu> {
@@ -38,7 +40,7 @@ public class WheatMarketMenuScreen extends AbstractContainerScreen<WheatMarketMe
     private static int GoodsFrameWidth;
     private static int GoodsFrameHeight;
 
-    private PlayerInfo playerInfo;
+    private TitleContainer titleContainer;
 
     public WheatMarketMenuScreen(WheatMarketMenu abstractContainerMenu, Inventory inventory, Component component) {
         super(abstractContainerMenu,inventory,component);
@@ -46,9 +48,7 @@ public class WheatMarketMenuScreen extends AbstractContainerScreen<WheatMarketMe
 
     @Override
     protected void init() {
-        if (Minecraft.getInstance().player != null) {
-            playerInfo= new PlayerInfo(Minecraft.getInstance().player.getGameProfile(),false);
-        }
+        this.titleContainer=new TitleContainer(TitleX,TitleY,this.width,this.height,Component.empty(),this);
     }
 
     @Override
@@ -64,13 +64,13 @@ public class WheatMarketMenuScreen extends AbstractContainerScreen<WheatMarketMe
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta){
         this.renderBackground(guiGraphics,mouseX,mouseY,delta);
-        this.drawTitle(guiGraphics);
-        this.drawPlayerHead(guiGraphics);
-        this.drawPlayerID(guiGraphics);
+        /*
         this.drawFilterColumn(guiGraphics);
         this.drawClassificationColumn(guiGraphics);
         this.drawAddGoodsButton(guiGraphics);
         this.drawGoodsColumn(guiGraphics);
+        */
+        this.titleContainer.render(guiGraphics,mouseX,mouseY,delta);
     }
 
     private void drawTitle(GuiGraphics guiGraphics) {
@@ -84,17 +84,6 @@ public class WheatMarketMenuScreen extends AbstractContainerScreen<WheatMarketMe
         guiGraphics.blit(MARKET_MENU_TITLE, TitleX, TitleY+TitleOriginHeight-TitleRenderHeight, TitleRenderWidth, TitleRenderHeight, 0, 0, 249, 25, 256, 128);
     }
 
-    private void drawPlayerHead(GuiGraphics guiGraphics) {
-        ResourceLocation skinLocation = playerInfo.getSkin().texture();
-        // draw base layer
-        guiGraphics.blit(skinLocation, this.width-HeadX, HeadY, HeadWidth, HeadWidth, 8.0f, 8, 8, 8, 64, 64);
-        // draw hat
-        guiGraphics.blit(skinLocation, this.width-HeadX, HeadY, HeadWidth, HeadWidth, 40.0f, 8, 8, 8, 64, 64);
-    }
-
-    private void drawPlayerID(GuiGraphics guiGraphics){
-        guiGraphics.drawString(font,Component.literal(playerInfo.getProfile().getName()),this.width-HeadX+HeadWidth+10,HeadY+5,0xFFFFFF,true);
-    }
 
     private void drawFilterColumn(GuiGraphics guiGraphics) {
         FilterFrameWidth=this.width-125;
@@ -103,7 +92,6 @@ public class WheatMarketMenuScreen extends AbstractContainerScreen<WheatMarketMe
 
     private void drawClassificationColumn(GuiGraphics guiGraphics) {
         guiGraphics.blitSprite(FRAME,TitleX,TitleY+TitleRenderHeight+5,ClassFrameWidth,ClassFrameHeight);
-        //guiGraphics.blitSprite(FRAME,ClassFrameWidth,ClassFrameHeight,6,6,TitleX,TitleY+TitleRenderHeight+5,17,17);
     }
 
     private void drawAddGoodsButton(GuiGraphics guiGraphics) {

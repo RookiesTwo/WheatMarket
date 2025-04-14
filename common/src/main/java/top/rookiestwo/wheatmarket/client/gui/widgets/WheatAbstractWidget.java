@@ -11,15 +11,10 @@ public abstract class WheatAbstractWidget extends AbstractWidget {
     protected Pair<Float, Float> anchor;
     protected ResourceLocation background;
 
-    protected int renderWidth;
-    protected int renderHeight;
-
     public WheatAbstractWidget(int x, int y, int width, int height, Component message, float anchorX, float anchorY, ResourceLocation background) {
         super(x,y,width,height,message);
         this.anchor = new Pair<>(anchorX, anchorY);
         this.background = background;
-        this.renderWidth = width;
-        this.renderHeight = height;
     }
 
     protected int getRenderX(){
@@ -38,15 +33,8 @@ public abstract class WheatAbstractWidget extends AbstractWidget {
         this.background = background;
     }
 
-    public void setRenderWidth(int renderWidth) {
-        this.renderWidth = renderWidth;
-    }
-
-    public void setRenderHeight(int renderHeight) {
-        this.renderHeight = renderHeight;
-    }
-
     protected void renderWidget(GuiGraphics guiGraphics, int i, int j, float f) {
-        guiGraphics.blitSprite(background, (int) (this.getX()-anchor.getFirst()*width),(int) (this.getY()-anchor.getFirst()*height),this.getWidth(),this.getHeight());
+        if(background == null) return;
+        guiGraphics.blitSprite(background, getRenderX(), getRenderY(),this.getWidth(),this.getHeight());
     }
 }

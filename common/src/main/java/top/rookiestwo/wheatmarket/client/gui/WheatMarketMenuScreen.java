@@ -1,7 +1,6 @@
 package top.rookiestwo.wheatmarket.client.gui;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
@@ -14,7 +13,7 @@ import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
 public class WheatMarketMenuScreen extends AbstractContainerScreen<WheatMarketMenu> {
     private static final ResourceLocation BACKGROUND_LOCATION = ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"textures/gui/background.png");
     private static final ResourceLocation MARKET_MENU_TITLE = ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"textures/gui/market_menu_title.png");
-    private static final ResourceLocation FRAME = ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"screen/main_menu/frame");
+    private static final ResourceLocation FRAME = ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"screen/main_menu/widget_bg");
 
     private static final int TitleX = 30;
     private static final int TitleY = 15;
@@ -82,7 +81,7 @@ public class WheatMarketMenuScreen extends AbstractContainerScreen<WheatMarketMe
             float temp= (float) TitleRenderWidth /TitleOriginWidth;
             TitleRenderHeight=(int)(temp*TitleOriginHeight);
         }
-        guiGraphics.blit(MARKET_MENU_TITLE, TitleX, TitleY+TitleOriginHeight-TitleRenderHeight, TitleOriginWidth, TitleRenderHeight, 0, 0, 249, 25, 256, 128);
+        guiGraphics.blit(MARKET_MENU_TITLE, TitleX, TitleY+TitleOriginHeight-TitleRenderHeight, TitleRenderWidth, TitleRenderHeight, 0, 0, 249, 25, 256, 128);
     }
 
     private void drawPlayerHead(GuiGraphics guiGraphics) {
@@ -104,6 +103,7 @@ public class WheatMarketMenuScreen extends AbstractContainerScreen<WheatMarketMe
 
     private void drawClassificationColumn(GuiGraphics guiGraphics) {
         guiGraphics.blitSprite(FRAME,TitleX,TitleY+TitleRenderHeight+5,ClassFrameWidth,ClassFrameHeight);
+        //guiGraphics.blitSprite(FRAME,ClassFrameWidth,ClassFrameHeight,6,6,TitleX,TitleY+TitleRenderHeight+5,17,17);
     }
 
     private void drawAddGoodsButton(GuiGraphics guiGraphics) {

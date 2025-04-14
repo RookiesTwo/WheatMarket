@@ -5,10 +5,6 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import top.rookiestwo.wheatmarket.client.gui.widgets.WheatAbstractWidget;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public abstract class AbstractWidgetContainer extends AbstractWidget {
 

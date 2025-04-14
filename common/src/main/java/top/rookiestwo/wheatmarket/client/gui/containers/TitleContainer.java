@@ -1,7 +1,6 @@
 package top.rookiestwo.wheatmarket.client.gui.containers;
 
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -41,14 +40,14 @@ public class TitleContainer extends AbstractWidgetContainer {
 
     @Override
     public void fitWidgets() {
+        //重设容器大小
         this.setWidth(this.screen.width-ContainerPaddingX*2);
+        //设置head为右对齐
         headWidget.setX(this.getX() + this.getWidth());
         if(titleWidget.getWidth()+headWidget.getWidth()>this.getWidth()) {
+            //因为有锚点存在，可以直接重新设置大小，而不改变（视觉上的）绝对位置，Title的锚点在左中心（左边的中点），Head的锚点在右中心
             titleWidget.setWidth(this.getWidth()-headWidget.getWidth()-5);
             titleWidget.setHeight((int)((float)TitleOriginHeight*((float)titleWidget.getWidth()/(float)TitleOriginWidth)));
-            WheatMarket.LOGGER.info("Title width changed to "+titleWidget.getWidth());
-            WheatMarket.LOGGER.info("Title height changed to "+titleWidget.getHeight());
         }
     }
-
 }

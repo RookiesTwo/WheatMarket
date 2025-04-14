@@ -17,5 +17,7 @@
     "info.command.wheatmarket.remove_from_admin": "Your balance has been reduced %1$s by server admin.",
 
     "error.command.wheatmarket.player_not_found_or_offline": "Target player is offline or not exist!",
-    "error.command.wheatmarket.admin_remove_balance": "Target player don't have enough money!"
+    "error.command.wheatmarket.admin_remove_balance": "Target player don't have enough money!",
+
+    "gui.wheatmarket.main_title": "Wheat Market"
 }

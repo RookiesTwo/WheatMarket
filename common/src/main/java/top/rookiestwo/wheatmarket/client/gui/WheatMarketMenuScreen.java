@@ -64,12 +64,12 @@ public class WheatMarketMenuScreen extends AbstractContainerScreen<WheatMarketMe
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta){
         this.renderBackground(guiGraphics,mouseX,mouseY,delta);
-        /*
+
         this.drawFilterColumn(guiGraphics);
         this.drawClassificationColumn(guiGraphics);
         this.drawAddGoodsButton(guiGraphics);
         this.drawGoodsColumn(guiGraphics);
-        */
+
         this.titleContainer.render(guiGraphics,mouseX,mouseY,delta);
     }
 
@@ -102,5 +102,10 @@ public class WheatMarketMenuScreen extends AbstractContainerScreen<WheatMarketMe
         GoodsFrameWidth=FilterFrameWidth;
         GoodsFrameHeight=ClassFrameHeight+AddGoodsButtonHeight-FilterFrameHeight;
         guiGraphics.blitSprite(FRAME,TitleX+ClassFrameWidth+5,TitleY+TitleRenderHeight+5+FilterFrameHeight+5,GoodsFrameWidth,GoodsFrameHeight);
+    }
+
+    @Override
+    public void onClose(){
+        super.onClose();
     }
 }

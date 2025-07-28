@@ -69,7 +69,7 @@ public class MainContentContainer extends AbstractWidgetContainer{
         searchBackgroundWidget.setWidth(this.getWidth()-3*widgetCommonPadding-filter1BackgroundWidget.getWidth());
         searchBackgroundWidget.setHeight(searchBarHeight);
 
-        goodsBackgroundWidget.setWidth(this.getWidth());
+        goodsBackgroundWidget.setWidth(searchBackgroundWidget.getWidth());
         goodsBackgroundWidget.setHeight(this.getHeight()- searchBarHeight - 3 * widgetCommonPadding);
 
         //设置背景组件的位置

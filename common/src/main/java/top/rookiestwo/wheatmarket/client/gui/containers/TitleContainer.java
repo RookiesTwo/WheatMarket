@@ -47,6 +47,7 @@ public class TitleContainer extends AbstractWidgetContainer {
     public void fitWidgets() {
         //重设容器大小
         this.setWidth(this.screen.width-ContainerPaddingX*2);
+        this.setHeight(Integer.max(titleWidget.getHeight(), playerHeadWidget.getHeight()));
         //设置head为右对齐
         playerHeadWidget.setX(this.getX() + this.getWidth());
         if(titleWidget.getWidth()+ playerHeadWidget.getWidth()>this.getWidth()) {

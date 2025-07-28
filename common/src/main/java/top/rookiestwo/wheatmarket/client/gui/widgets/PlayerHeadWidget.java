@@ -2,18 +2,16 @@ package top.rookiestwo.wheatmarket.client.gui.widgets;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import top.rookiestwo.wheatmarket.client.gui.containers.AbstractWidgetContainer;
 
-public class HeadWidget extends WheatAbstractWidget {
+public class PlayerHeadWidget extends WheatAbstractWidget {
 
     private PlayerInfo playerInfo;
 
-    public HeadWidget(int x, int y, int width, int height, Component message, float anchorX, float anchorY, ResourceLocation background) {
+    public PlayerHeadWidget(int x, int y, int width, int height, Component message, float anchorX, float anchorY, ResourceLocation background) {
         super(x, y, width, height, message, anchorX, anchorY, background);
         if (Minecraft.getInstance().player != null) {
             playerInfo= new PlayerInfo(Minecraft.getInstance().player.getGameProfile(),false);

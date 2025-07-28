@@ -3,7 +3,7 @@ package top.rookiestwo.wheatmarket.database.tables;
 import java.sql.Timestamp;
 import java.util.UUID;
 
-public class MarketListing {
+public class MarketGood {
     private UUID listingID;
     private String itemID;
     private String classification;

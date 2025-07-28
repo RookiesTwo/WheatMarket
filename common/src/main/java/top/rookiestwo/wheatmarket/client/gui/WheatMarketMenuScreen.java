@@ -3,6 +3,7 @@ package top.rookiestwo.wheatmarket.client.gui;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -25,6 +26,10 @@ public class WheatMarketMenuScreen extends AbstractContainerScreen<WheatMarketMe
 
     public WheatMarketMenuScreen(WheatMarketMenu abstractContainerMenu, Inventory inventory, Component component) {
         super(abstractContainerMenu,inventory,component);
+    }
+
+    public void addButton(AbstractButton button){
+        this.addRenderableWidget(button);
     }
 
     @Override

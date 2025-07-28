@@ -19,5 +19,14 @@
     "error.command.wheatmarket.player_not_found_or_offline": "Target player is offline or not exist!",
     "error.command.wheatmarket.admin_remove_balance": "Target player don't have enough money!",
 
-    "gui.wheatmarket.main_title": "Wheat Market"
+    "gui.wheatmarket.main_title": "Wheat Market",
+
+    "gui.wheatmarket.filter.sell": "Sell",
+    "gui.wheatmarket.filter.buy": "Buy",
+    "gui.wheatmarket.filter.all": "All",
+    "gui.wheatmarket.filter.list_time": "List Time",
+    "gui.wheatmarket.filter.last_trade": "Last Trade Time",
+    "gui.wheatmarket.filter.item_id": "Item ID",
+    "gui.wheatmarket.filter.system": "System",
+    "gui.wheatmarket.filter.player": "Player"
 }

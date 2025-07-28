@@ -3,11 +3,17 @@ package top.rookiestwo.wheatmarket.client.gui.containers;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import top.rookiestwo.wheatmarket.WheatMarket;
+import top.rookiestwo.wheatmarket.client.gui.WheatMarketMenuScreen;
 import top.rookiestwo.wheatmarket.client.gui.widgets.BlockBackgroundWidget;
+import top.rookiestwo.wheatmarket.client.gui.widgets.buttons.FilterButton;
+import top.rookiestwo.wheatmarket.client.gui.widgets.buttons.ItemType;
+import top.rookiestwo.wheatmarket.client.gui.widgets.buttons.SortType;
+import top.rookiestwo.wheatmarket.client.gui.widgets.buttons.TradeType;
 
 @Environment(EnvType.CLIENT)
 public class MainContentContainer extends AbstractWidgetContainer{
@@ -22,6 +28,10 @@ public class MainContentContainer extends AbstractWidgetContainer{
     private BlockBackgroundWidget filter3BackgroundWidget;
     private BlockBackgroundWidget searchBackgroundWidget;
     private BlockBackgroundWidget goodsBackgroundWidget;
+
+    private FilterButton<TradeType> filter1Button;
+    private FilterButton<SortType> filter2Button;
+    private FilterButton<ItemType> filter3Button;
 
     private static int containerPaddingX = 15;
     private static int containerPaddingY = 15;
@@ -47,7 +57,19 @@ public class MainContentContainer extends AbstractWidgetContainer{
         filter3BackgroundWidget = new BlockBackgroundWidget(x, y, width, 16, Component.empty(), 0.0f, 0.0f, BACKGROUND);
         searchBackgroundWidget = new BlockBackgroundWidget(x, y, width, 16, Component.empty(), 0.0f, 0.0f, BACKGROUND);
         goodsBackgroundWidget = new BlockBackgroundWidget(x, y, width, 16, Component.empty(), 0.0f, 0.0f, BACKGROUND);
+
+        filter1Button= new FilterButton<>(
+                x,
+                y,
+                defaultFilterWidth,
+                16,
+                Component.empty(),
+                BACKGROUND,
+                TradeType.ALL
+        );
+        //filter2Button = new FilterButton<>(x,y,defaultFilterWidth,16,Component.empty(),)
         this.fitWidgets();
+        this.addButtons();
     }
 
     @Override
@@ -91,14 +113,29 @@ public class MainContentContainer extends AbstractWidgetContainer{
 
         goodsBackgroundWidget.setX(searchBackgroundWidget.getX());
         goodsBackgroundWidget.setY(searchBackgroundWidget.getY() + searchBackgroundWidget.getHeight() + widgetCommonPadding);
+
+        //设置按钮大小和位置
+        filter1Button.setX(filter1BackgroundWidget.getX() + 2);
+        filter1Button.setY(filter1BackgroundWidget.getY() + 2);
+        filter1Button.setWidth(filter1BackgroundWidget.getWidth() - 4);
+        filter1Button.setHeight(filter1BackgroundWidget.getHeight() - 4);
+    }
+
+    private void addButtons(){
+        if(this.screen instanceof WheatMarketMenuScreen){
+            ((WheatMarketMenuScreen) this.screen).addButton(filter1Button);
+        }
     }
 
     @Override
     protected void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        //渲染背景
         filter1BackgroundWidget.render(guiGraphics, mouseX, mouseY, partialTick);
         filter2BackgroundWidget.render(guiGraphics, mouseX, mouseY, partialTick);
         filter3BackgroundWidget.render(guiGraphics, mouseX, mouseY, partialTick);
         searchBackgroundWidget.render(guiGraphics, mouseX, mouseY, partialTick);
         goodsBackgroundWidget.render(guiGraphics, mouseX, mouseY, partialTick);
+        //渲染按钮
+        filter1Button.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 }

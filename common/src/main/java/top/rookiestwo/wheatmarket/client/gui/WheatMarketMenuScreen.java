@@ -84,7 +84,6 @@ public class WheatMarketMenuScreen extends AbstractContainerScreen<WheatMarketMe
         guiGraphics.blit(MARKET_MENU_TITLE, TitleX, TitleY+TitleOriginHeight-TitleRenderHeight, TitleRenderWidth, TitleRenderHeight, 0, 0, 249, 25, 256, 128);
     }
 
-
     private void drawFilterColumn(GuiGraphics guiGraphics) {
         FilterFrameWidth=this.width-125;
         guiGraphics.blitSprite(FRAME,TitleX+ClassFrameWidth+5,TitleY+TitleRenderHeight+5,FilterFrameWidth,FilterFrameHeight);

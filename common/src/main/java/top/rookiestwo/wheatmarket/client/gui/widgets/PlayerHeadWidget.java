@@ -26,7 +26,4 @@ public class PlayerHeadWidget extends WheatAbstractWidget {
         // draw hat
         guiGraphics.blit(skinLocation, getRenderX(), getRenderY(), width, height, 40.0f, 8, 8, 8, 64, 64);
     }
-
-    @Override
-    protected void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {}
 }

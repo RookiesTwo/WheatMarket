@@ -3,6 +3,7 @@ package top.rookiestwo.wheatmarket.client.gui.widgets;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
@@ -37,4 +38,7 @@ public abstract class WheatAbstractWidget extends AbstractWidget {
         if(background == null) return;
         guiGraphics.blitSprite(background, getRenderX(), getRenderY(),this.getWidth(),this.getHeight());
     }
+
+    @Override
+    protected void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {}
 }

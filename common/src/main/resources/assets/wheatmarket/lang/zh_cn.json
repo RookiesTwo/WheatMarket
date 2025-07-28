@@ -19,5 +19,14 @@
     "error.command.wheatmarket.player_not_found_or_offline": "目标玩家离线或不存在！",
     "error.command.wheatmarket.admin_remove_balance": "目标玩家没有这么多钱！",
 
-    "gui.wheatmarket.main_title": "小麦市场"
+    "gui.wheatmarket.main_title": "小麦市场",
+
+    "gui.wheatmarket.filter.sell": "出售",
+    "gui.wheatmarket.filter.buy": "收购",
+    "gui.wheatmarket.filter.all": "全部",
+    "gui.wheatmarket.filter.list_time": "上架时间",
+    "gui.wheatmarket.filter.last_trade": "最后交易时间",
+    "gui.wheatmarket.filter.item_id": "物品ID",
+    "gui.wheatmarket.filter.system": "系统",
+    "gui.wheatmarket.filter.player": "玩家"
 }

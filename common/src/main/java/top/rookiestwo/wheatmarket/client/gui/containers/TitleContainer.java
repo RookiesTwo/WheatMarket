@@ -1,5 +1,7 @@
 package top.rookiestwo.wheatmarket.client.gui.containers;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
@@ -9,6 +11,7 @@ import top.rookiestwo.wheatmarket.client.gui.widgets.PlayerHeadWidget;
 import top.rookiestwo.wheatmarket.client.gui.widgets.TitleWidget;
 import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
 
+@Environment(EnvType.CLIENT)
 public class TitleContainer extends AbstractWidgetContainer {
 
     /**

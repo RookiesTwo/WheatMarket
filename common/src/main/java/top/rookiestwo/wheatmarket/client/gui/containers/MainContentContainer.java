@@ -1,5 +1,7 @@
 package top.rookiestwo.wheatmarket.client.gui.containers;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -7,6 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.client.gui.widgets.BlockBackgroundWidget;
 
+@Environment(EnvType.CLIENT)
 public class MainContentContainer extends AbstractWidgetContainer{
 
     /**

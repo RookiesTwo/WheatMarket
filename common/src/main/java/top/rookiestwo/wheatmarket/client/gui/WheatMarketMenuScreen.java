@@ -1,5 +1,7 @@
 package top.rookiestwo.wheatmarket.client.gui;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
@@ -10,6 +12,7 @@ import top.rookiestwo.wheatmarket.client.gui.containers.MainContentContainer;
 import top.rookiestwo.wheatmarket.client.gui.containers.TitleContainer;
 import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
 
+@Environment(EnvType.CLIENT)
 public class WheatMarketMenuScreen extends AbstractContainerScreen<WheatMarketMenu> {
 
     private static final ResourceLocation BACKGROUND_LOCATION = ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"textures/gui/background.png");

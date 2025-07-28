@@ -1,11 +1,14 @@
 package top.rookiestwo.wheatmarket.client.gui.containers;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+@Environment(EnvType.CLIENT)
 public abstract class AbstractWidgetContainer extends AbstractWidget {
 
     protected Screen screen;

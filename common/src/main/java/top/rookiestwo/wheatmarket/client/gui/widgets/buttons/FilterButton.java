@@ -38,9 +38,9 @@ public class FilterButton<T extends Enum<T>> extends WheatButton{
 
     @Override
     public void onPress() {
-        WheatMarket.LOGGER.info("button pressed, current state: {}", currentState.name());
         cycleState();
         this.setMessage(getStateText());
+        WheatMarket.LOGGER.info("button pressed, current state: {}", currentState.name());
     }
 
     private Component getStateText() {

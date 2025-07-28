@@ -10,10 +10,12 @@ public class MarketGood {
     private UUID sellerID;
     private Double price;
     private int amount;
-    private Timestamp timestamp;
+    private Timestamp listingTime;
     private Boolean ifAdmin;
     private Boolean ifSell;
     private String BuyerTimerJson;
     private int CooldownAmount;
     private int CooldownTimeInMinutes;
+    private int daysToExpire;
+    private Timestamp lastTradeTime;
 }

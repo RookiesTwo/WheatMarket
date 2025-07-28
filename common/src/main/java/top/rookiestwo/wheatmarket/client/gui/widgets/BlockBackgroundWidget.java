@@ -5,19 +5,14 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
-public class TitleWidget extends WheatAbstractWidget {
+public class BlockBackgroundWidget extends WheatAbstractWidget{
 
-    private int originWidth;
-    private int originHeight;
-
-    public TitleWidget(int x, int y, int width, int height, Component message, float anchorX, float anchorY, ResourceLocation background) {
+    public BlockBackgroundWidget(int x, int y, int width, int height, Component message, float anchorX, float anchorY, ResourceLocation background) {
         super(x, y, width, height, message, anchorX, anchorY, background);
-        this.originWidth = width;
-        this.originHeight = height;
     }
 
     @Override
     protected void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        guiGraphics.blit(background, getRenderX(),getRenderY(),width,height,0,0,originWidth,originHeight,256,128);
+        guiGraphics.blitSprite(this.background,this.getRenderX(),this.getRenderY(),width,height);
     }
 }

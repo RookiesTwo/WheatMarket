@@ -10,6 +10,11 @@ import top.rookiestwo.wheatmarket.client.gui.widgets.TitleWidget;
 import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
 
 public class TitleContainer extends AbstractWidgetContainer {
+
+    /**
+     * 标题容器，包含标题和玩家头像
+     */
+
     private TitleWidget titleWidget;
     private static final ResourceLocation MARKET_MENU_TITLE = ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "textures/gui/market_menu_title.png");
     private static final int TitleOriginWidth=249;
@@ -29,11 +34,11 @@ public class TitleContainer extends AbstractWidgetContainer {
         titleWidget.setY(this.getY() + 12);
         playerHeadWidget =new PlayerHeadWidget(x, y, HeadWidth, HeadWidth, message, 1.0f, 0.5f, MARKET_MENU_TITLE);
         playerHeadWidget.setY(this.getY() + 12);
+        this.fitWidgets();
     }
 
     @Override
     protected void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.fitWidgets();
         titleWidget.render(guiGraphics, mouseX, mouseY, partialTick);
         playerHeadWidget.render(guiGraphics, mouseX, mouseY, partialTick);
     }

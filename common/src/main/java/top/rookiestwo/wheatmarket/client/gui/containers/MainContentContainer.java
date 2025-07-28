@@ -28,9 +28,9 @@ public class MainContentContainer extends AbstractWidgetContainer{
 
     private static int widgetCommonPadding = 5;
 
-    private static int filterWidth = 60;
+    private static int defaultFilterWidth = 60;
 
-    private static int searchBarHeight = 32;
+    private static int defaultSearchBarHeight = 32;
 
     private AbstractWidgetContainer parentContainer;
 
@@ -61,6 +61,7 @@ public class MainContentContainer extends AbstractWidgetContainer{
         this.setHeight(this.screen.height - parentContainer.getY() - parentContainer.getHeight() - containerPaddingY * 2);
 
         //设置背景组件的大小
+        int filterWidth = Integer.max(defaultFilterWidth, this.getWidth()/10);
         int filterHeight = (this.getHeight()-4*widgetCommonPadding)/3; //将高度分为三等分
         filter1BackgroundWidget.setWidth(filterWidth);
         filter1BackgroundWidget.setHeight(filterHeight);
@@ -70,10 +71,10 @@ public class MainContentContainer extends AbstractWidgetContainer{
         filter3BackgroundWidget.setHeight(filterHeight);
 
         searchBackgroundWidget.setWidth(this.getWidth()-3*widgetCommonPadding-filter1BackgroundWidget.getWidth());
-        searchBackgroundWidget.setHeight(searchBarHeight);
+        searchBackgroundWidget.setHeight(Integer.max(defaultSearchBarHeight,this.getHeight()/10));
 
         goodsBackgroundWidget.setWidth(searchBackgroundWidget.getWidth());
-        goodsBackgroundWidget.setHeight(this.getHeight()- searchBarHeight - 3 * widgetCommonPadding);
+        goodsBackgroundWidget.setHeight(this.getHeight()- searchBackgroundWidget.getHeight() - 3 * widgetCommonPadding);
 
         //设置背景组件的位置
         filter1BackgroundWidget.setX(this.getX() + widgetCommonPadding);

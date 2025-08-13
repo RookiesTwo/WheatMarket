@@ -33,7 +33,7 @@ public class FilterButton<T extends Enum<T>> extends WheatButton{
         Minecraft minecraft = Minecraft.getInstance();
         guiGraphics.blitSprite(this.background, this.getX(), this.getY(), width, height);
         //guiGraphics.drawString(minecraft.font, getStateText(), this.getRenderX() + 5, this.getRenderY() + 5, 0xFFFFFF, false);
-        super.renderScrollingString(guiGraphics, minecraft.font,2,5);
+        renderScrollingString(guiGraphics, minecraft.font,getStateText(),this.getX()+2,this.getY()+2,this.getX()+this.width-2,this.getY()+this.height-2,0xFFFFFF);
     }
 
     @Override

@@ -6,9 +6,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 import top.rookiestwo.wheatmarket.WheatMarket;
+import top.rookiestwo.wheatmarket.client.gui.widgets.BlockBackgroundWidget;
+import top.rookiestwo.wheatmarket.client.gui.widgets.WheatAbstractWidget;
 
 public class FilterButton<T extends Enum<T>> extends WheatButton{
     private T currentState;
+
+    private static final ResourceLocation FILTER_ICON=ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "textures/gui/filter_icon.png");
+    private static final ResourceLocation FILTER_ICON_HOVERED=ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "textures/gui/filter_icon_hovered.png");
 
     public FilterButton(int x, int y, int width, int height, Component component, @NotNull ResourceLocation background,T initialState) {
         super(x, y, width, height, component, background);
@@ -33,7 +38,9 @@ public class FilterButton<T extends Enum<T>> extends WheatButton{
         Minecraft minecraft = Minecraft.getInstance();
         guiGraphics.blitSprite(this.background, this.getX(), this.getY(), width, height);
         //guiGraphics.drawString(minecraft.font, getStateText(), this.getRenderX() + 5, this.getRenderY() + 5, 0xFFFFFF, false);
-        renderScrollingString(guiGraphics, minecraft.font,getStateText(),this.getX()+2,this.getY()+2,this.getX()+this.width-2,this.getY()+this.height-2,0xFFFFFF);
+        ResourceLocation icon = this.isHovered() ? FILTER_ICON_HOVERED : FILTER_ICON;
+        guiGraphics.blit(icon, this.getX() + 2, this.getY() + 2, 0, 0, 16, 16, 16, 16);
+        renderScrollingString(guiGraphics, minecraft.font,getStateText(),this.getX()+4,this.getY()+4,this.getX()+this.width-4,this.getY()+this.height-4,0xFFFFFF);
     }
 
     @Override

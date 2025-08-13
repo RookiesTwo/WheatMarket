@@ -88,11 +88,11 @@ public class MainContentContainer extends AbstractWidgetContainer{
     public void fitWidgets() {
         //重设容器位置
         this.setX(containerPaddingX);
-        this.setY(parentContainer.getY() + parentContainer.getHeight() + containerPaddingY);
+        this.setY(parentContainer.getY() + parentContainer.getHeight());
 
         //重设容器大小
         this.setWidth(this.screen.width - containerPaddingX * 2);
-        this.setHeight(this.screen.height - parentContainer.getY() - parentContainer.getHeight() - containerPaddingY * 2);
+        this.setHeight(this.screen.height - parentContainer.getY() - parentContainer.getHeight() - containerPaddingY);
 
         //设置组件的大小
         int filterWidth = Integer.max(defaultFilterWidth, this.getWidth()/10);

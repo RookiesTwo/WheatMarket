@@ -1,22 +1,24 @@
 package top.rookiestwo.wheatmarket.client.gui;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.texture.SpriteContents;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.client.gui.containers.MainContentContainer;
 import top.rookiestwo.wheatmarket.client.gui.containers.TitleContainer;
+import top.rookiestwo.wheatmarket.client.gui.widgets.BlockBackgroundWidget;
 import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
 
-@Environment(EnvType.CLIENT)
 public class WheatMarketMenuScreen extends AbstractContainerScreen<WheatMarketMenu> {
 
-    private static final ResourceLocation BACKGROUND_LOCATION = ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"textures/gui/background.png");
+    private static final ResourceLocation SCREEN_BACKGROUND = ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"screen/main_menu/widget_bg");
+
+    private static BlockBackgroundWidget backgroundWidget;
 
     private static final int TitleX = 30;
     private static final int TitleY = 15;
@@ -36,6 +38,7 @@ public class WheatMarketMenuScreen extends AbstractContainerScreen<WheatMarketMe
     protected void init() {
         this.titleContainer=new TitleContainer(TitleX,TitleY,this.width,this.height,Component.empty(),this);
         this.mainContentContainer=new MainContentContainer(0,0,this.width,this.height,Component.empty(),this,titleContainer);
+        backgroundWidget=new BlockBackgroundWidget(-7, -7, this.width+14, this.height+14, Component.empty(), 0.0f, 0.0f, SCREEN_BACKGROUND);
     }
 
     @Override
@@ -45,7 +48,7 @@ public class WheatMarketMenuScreen extends AbstractContainerScreen<WheatMarketMe
 
     @Override
     protected void renderBg(GuiGraphics guiGraphics, float f, int i, int j) {
-        guiGraphics.blit(BACKGROUND_LOCATION, 0, 0, 0, 0,width,height,16,16);
+        backgroundWidget.render(guiGraphics,i,j,f);
     }
 
     @Override

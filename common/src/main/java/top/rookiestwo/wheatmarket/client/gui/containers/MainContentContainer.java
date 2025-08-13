@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
@@ -26,7 +27,7 @@ public class MainContentContainer extends AbstractWidgetContainer{
     private static final ResourceLocation BUTTON = ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"screen/main_menu/button");
     private static final ResourceLocation WIDGET_BG=ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"screen/main_menu/widget_bg");
     private static final ResourceLocation PAPER =ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"screen/main_menu/paper");
-    private static final ResourceLocation PAPER_WITH_WRINKLES =ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"screen/main_menu/paper_with_wrinkles");
+    private static final ResourceLocation PAPER_WITH_WRINKLES =ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"textures/gui/paper_with_wrinkles.png");
 
     //搜索框及其背景
     private BlockBackgroundWidget searchBackgroundWidget;
@@ -155,7 +156,7 @@ public class MainContentContainer extends AbstractWidgetContainer{
         searchEditBox.render(guiGraphics, mouseX, mouseY, partialTick);
         int x=goodsBackgroundWidget.getX()+8;
         int y=goodsBackgroundWidget.getY() + 8;
-        int width=(goodsBackgroundWidget.getHeight()-24)/2;
+        int width=64;
         for(int i=0;i<10;i++){
             if(i==5)y= y+8+width;
             if(i<5){
@@ -164,7 +165,7 @@ public class MainContentContainer extends AbstractWidgetContainer{
             else{
                 x =goodsBackgroundWidget.getX() + 8 + (i-5) * (width+8);
             }
-            guiGraphics.blitSprite(PAPER_WITH_WRINKLES, x, y, width, width);
+            guiGraphics.blit(PAPER_WITH_WRINKLES,x,y,0,0,width,width,64,64);
         }
     }
 }

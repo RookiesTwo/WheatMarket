@@ -2,7 +2,6 @@ package top.rookiestwo.wheatmarket.client.gui.containers;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -66,12 +65,12 @@ public class MainContentContainer extends AbstractWidgetContainer{
         searchBackgroundWidget = new BlockBackgroundWidget(x, y, width, 16, Component.empty(), 0.0f, 0.0f, BOARD);
         goodsBackgroundWidget = new BlockBackgroundWidget(x, y, width, 16, Component.empty(), 0.0f, 0.0f, BOARD);
 
-        filter1Button= new FilterButton<>(x, y, defaultFilterWidth, 16, Component.empty(), BUTTON, TradeType.ALL);
-        filter2Button = new FilterButton<>(x, y, defaultFilterWidth, 16, Component.empty(),BUTTON,SortType.LAST_TRADE);
+        filter1Button = new FilterButton<>(x, y, defaultFilterWidth, 16, Component.empty(), BUTTON, TradeType.ALL);
+        filter2Button = new FilterButton<>(x, y, defaultFilterWidth, 16, Component.empty(), BUTTON, SortType.LAST_TRADE);
         filter3Button = new FilterButton<>(x, y, defaultFilterWidth, 16, Component.empty(), BUTTON, ItemType.ALL);
 
-        searchBarBackgroundWidget=new BlockBackgroundWidget(x, y, width, 16, Component.empty(), 0.0f, 0.0f, PAPER);
-        searchEditBox =new WheatEditBox(Minecraft.getInstance().font, x, y, 0, 0, Component.translatable("gui.wheatmarket.searchbar"));
+        searchBarBackgroundWidget = new BlockBackgroundWidget(x, y, width, 16, Component.empty(), 0.0f, 0.0f, PAPER);
+        searchEditBox = new WheatEditBox(Minecraft.getInstance().font, x, y, 0, 0, Component.translatable("gui.wheatmarket.searchbar"));
         this.fitWidgets();
         this.addWidgets();
     }
@@ -88,7 +87,7 @@ public class MainContentContainer extends AbstractWidgetContainer{
 
         //设置组件的大小
         int filterWidth = Integer.max(defaultFilterWidth, this.getWidth()/10);
-        int filterHeight = (this.getHeight()-4*widgetCommonPadding)/3; //将高度分为三等分
+        int filterHeight = Integer.max(defaultSearchBarHeight,this.getHeight()/10);
 
         filter1Button.setWidth(filterWidth);
         filter1Button.setHeight(filterHeight);
@@ -97,39 +96,35 @@ public class MainContentContainer extends AbstractWidgetContainer{
         filter3Button.setWidth(filterWidth);
         filter3Button.setHeight(filterHeight);
 
-        searchBackgroundWidget.setWidth(this.getWidth()-3*widgetCommonPadding-filter1Button.getWidth());
+        searchBackgroundWidget.setWidth(this.getWidth() - 5*widgetCommonPadding - 3*filter1Button.getWidth());
         searchBackgroundWidget.setHeight(Integer.max(defaultSearchBarHeight,this.getHeight()/10));
-        //searchEditBox.setWidth(searchBackgroundWidget.getWidth()/5*4-searchBarPaddingX*2);
-        //searchEditBox.setHeight(searchBackgroundWidget.getHeight()/5*4);
-        searchEditBox.setWidth(searchBackgroundWidget.getWidth()/5*4-searchBarPaddingX*2);
+        searchEditBox.setWidth(searchBackgroundWidget.getWidth()/5*4 - searchBarPaddingX*2);
         searchEditBox.setHeight(searchBackgroundWidget.getHeight()/5*4);
         searchBarBackgroundWidget.setWidth(searchBackgroundWidget.getWidth()/5*4);
         searchBarBackgroundWidget.setHeight(searchBackgroundWidget.getHeight()/5*4);
 
-        goodsBackgroundWidget.setWidth(searchBackgroundWidget.getWidth());
+        goodsBackgroundWidget.setWidth(this.getWidth()-2*widgetCommonPadding);
         goodsBackgroundWidget.setHeight(this.getHeight()- searchBackgroundWidget.getHeight() - 3 * widgetCommonPadding);
 
         //设置组件的位置
         filter1Button.setX(this.getX() + widgetCommonPadding);
         filter1Button.setY(this.getY() + widgetCommonPadding);
 
-        filter2Button.setX(this.getX() + widgetCommonPadding);
-        filter2Button.setY(filter1Button.getY()+ filter1Button.getHeight() + widgetCommonPadding);
+        filter2Button.setX(filter1Button.getX() + filter1Button.getWidth() + widgetCommonPadding);
+        filter2Button.setY(this.getY() + widgetCommonPadding);
 
-        filter3Button.setX(this.getX()+ widgetCommonPadding);
-        filter3Button.setY(filter2Button.getY()+ filter2Button.getHeight() + widgetCommonPadding);
+        filter3Button.setX(filter2Button.getX() + filter2Button.getWidth() + widgetCommonPadding);
+        filter3Button.setY(this.getY() + widgetCommonPadding);
 
-        searchBackgroundWidget.setX(filter1Button.getX() + filter1Button.getWidth() + widgetCommonPadding);
+        searchBackgroundWidget.setX(filter3Button.getX() + filter3Button.getWidth() + widgetCommonPadding);
         searchBackgroundWidget.setY(filter1Button.getY());
         searchBarBackgroundWidget.setX(searchBackgroundWidget.getX()+searchBarPaddingX);
         searchBarBackgroundWidget.setY(searchBackgroundWidget.getY()+searchBackgroundWidget.getHeight()/10);
-        //searchEditBox.setX(searchBarBackgroundWidget.getX()+searchBarPaddingX);
-        //searchEditBox.setY(searchBarBackgroundWidget.getY()+(searchBarBackgroundWidget.getHeight()-8)/2);
         searchEditBox.setX(searchBarBackgroundWidget.getX()+searchBarPaddingX);
         searchEditBox.setY(searchBarBackgroundWidget.getY()+(searchBarBackgroundWidget.getHeight()-8)/2);
 
-        goodsBackgroundWidget.setX(searchBackgroundWidget.getX());
-        goodsBackgroundWidget.setY(searchBackgroundWidget.getY() + searchBackgroundWidget.getHeight() + widgetCommonPadding);
+        goodsBackgroundWidget.setX(filter1Button.getX());
+        goodsBackgroundWidget.setY(filter1Button.getY() + filter1Button.getHeight() + widgetCommonPadding);
     }
 
     private void addWidgets(){
@@ -155,7 +150,6 @@ public class MainContentContainer extends AbstractWidgetContainer{
         filter3Button.render(guiGraphics, mouseX, mouseY, partialTick);
         //渲染搜索框
         searchBarBackgroundWidget.render(guiGraphics, mouseX, mouseY, partialTick);
-        //searchEditBox.render(guiGraphics, mouseX, mouseY, partialTick);
         searchEditBox.render(guiGraphics, mouseX, mouseY, partialTick);
         int x=goodsBackgroundWidget.getX()+8;
         int y=goodsBackgroundWidget.getY() + 8;

@@ -40,7 +40,7 @@ public class FilterButton<T extends Enum<T>> extends WheatButton{
         //guiGraphics.drawString(minecraft.font, getStateText(), this.getRenderX() + 5, this.getRenderY() + 5, 0xFFFFFF, false);
         ResourceLocation icon = this.isHovered() ? FILTER_ICON_HOVERED : FILTER_ICON;
         guiGraphics.blit(icon, this.getX() + 2, this.getY() + 2, 0, 0, 16, 16, 16, 16);
-        renderScrollingString(guiGraphics, minecraft.font,getStateText(),this.getX()+4,this.getY()+4,this.getX()+this.width-4,this.getY()+this.height-4,0xFFFFFF);
+        renderScrollingString(guiGraphics, minecraft.font,getStateText(),this.getX()+17,this.getY()+4,this.getX()+this.width-16,this.getY()+this.height-4,0xFFFFFF);
     }
 
     @Override

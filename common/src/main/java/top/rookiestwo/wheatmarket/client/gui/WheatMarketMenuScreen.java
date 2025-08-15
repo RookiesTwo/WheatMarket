@@ -1,22 +1,16 @@
 package top.rookiestwo.wheatmarket.client.gui;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.renderer.texture.SpriteContents;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.ClickType;
 import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.client.gui.containers.MainContentContainer;
 import top.rookiestwo.wheatmarket.client.gui.containers.TitleContainer;
 import top.rookiestwo.wheatmarket.client.gui.widgets.BlockBackgroundWidget;
-import top.rookiestwo.wheatmarket.client.gui.widgets.WheatAbstractWidget;
-import net.minecraft.client.gui.screens.Screen;
 import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
 
 public class WheatMarketMenuScreen extends AbstractContainerScreen<WheatMarketMenu> {

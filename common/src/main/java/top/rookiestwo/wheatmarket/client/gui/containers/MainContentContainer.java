@@ -9,10 +9,7 @@ import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.client.gui.WheatMarketMenuScreen;
 import top.rookiestwo.wheatmarket.client.gui.widgets.BlockBackgroundWidget;
 import top.rookiestwo.wheatmarket.client.gui.widgets.WheatEditBox;
-import top.rookiestwo.wheatmarket.client.gui.widgets.buttons.FilterButton;
-import top.rookiestwo.wheatmarket.client.gui.widgets.buttons.ItemType;
-import top.rookiestwo.wheatmarket.client.gui.widgets.buttons.SortType;
-import top.rookiestwo.wheatmarket.client.gui.widgets.buttons.TradeType;
+import top.rookiestwo.wheatmarket.client.gui.widgets.buttons.*;
 
 public class MainContentContainer extends AbstractWidgetContainer{
 
@@ -37,16 +34,13 @@ public class MainContentContainer extends AbstractWidgetContainer{
     private FilterButton<SortType> filter2Button;
     private FilterButton<ItemType> filter3Button;
 
-    private static int containerPaddingX = 15;
-    private static int containerPaddingY = 15;
-
-    private static int searchBarPaddingX = 8;
-
-    private static int widgetCommonPadding = 5;
-
-    private static int defaultFilterWidth = 60;
-
-    private static int defaultSearchBarHeight = 32;
+    private static final int containerPaddingX = 15;
+    private static final int containerPaddingY = 15;
+    private static final int searchBarPaddingX = 8;
+    private static final int widgetCommonPadding = 5;
+    private static final int defaultFilterWidth = 40;
+    private static final int defaultSearchBarHeight = 25;
+    private SearchButton searchButton;
 
     private AbstractWidgetContainer parentContainer;
 
@@ -69,8 +63,12 @@ public class MainContentContainer extends AbstractWidgetContainer{
         filter2Button = new FilterButton<>(x, y, defaultFilterWidth, 16, Component.empty(), BUTTON, SortType.LAST_TRADE);
         filter3Button = new FilterButton<>(x, y, defaultFilterWidth, 16, Component.empty(), BUTTON, ItemType.ALL);
 
+        searchButton = new SearchButton(x, y, 16, 16, Component.empty(), BUTTON);
+
         searchBarBackgroundWidget = new BlockBackgroundWidget(x, y, width, 16, Component.empty(), 0.0f, 0.0f, PAPER);
         searchEditBox = new WheatEditBox(Minecraft.getInstance().font, x, y, 0, 0, Component.translatable("gui.wheatmarket.searchbar"));
+        searchEditBox.setMaxLength(50);
+        searchEditBox.setTextColor(0x2B2D30);
         this.fitWidgets();
         this.addWidgets();
     }
@@ -86,8 +84,8 @@ public class MainContentContainer extends AbstractWidgetContainer{
         this.setHeight(this.screen.height - parentContainer.getY() - parentContainer.getHeight() - containerPaddingY);
 
         //设置组件的大小
-        int filterWidth = Integer.max(defaultFilterWidth, this.getWidth()/10);
-        int filterHeight = Integer.max(defaultSearchBarHeight,this.getHeight()/10);
+        int filterWidth = Integer.max(defaultFilterWidth, this.getWidth() / 5);
+        int filterHeight = Integer.max(defaultSearchBarHeight, this.getHeight() / 15);
 
         filter1Button.setWidth(filterWidth);
         filter1Button.setHeight(filterHeight);
@@ -97,13 +95,16 @@ public class MainContentContainer extends AbstractWidgetContainer{
         filter3Button.setHeight(filterHeight);
 
         searchBackgroundWidget.setWidth(this.getWidth() - 5*widgetCommonPadding - 3*filter1Button.getWidth());
-        searchBackgroundWidget.setHeight(Integer.max(defaultSearchBarHeight,this.getHeight()/10));
+        searchBackgroundWidget.setHeight(filterHeight);
 
-        searchEditBox.setWidth(searchBackgroundWidget.getWidth()/5*4 - searchBarPaddingX*2);
-        searchEditBox.setHeight(searchBackgroundWidget.getHeight()/5*4);
+        searchBarBackgroundWidget.setWidth((searchBackgroundWidget.getWidth() - searchBarPaddingX * 3) / 4 * 3);
+        searchBarBackgroundWidget.setHeight(searchBackgroundWidget.getHeight() / 4 * 3);
 
-        searchBarBackgroundWidget.setWidth(searchBackgroundWidget.getWidth()/5*4);
-        searchBarBackgroundWidget.setHeight(searchBackgroundWidget.getHeight()/5*4);
+        searchEditBox.setWidth(searchBarBackgroundWidget.getWidth() - searchBarPaddingX);
+        searchEditBox.setHeight(searchBackgroundWidget.getHeight() / 4 * 3);
+
+        searchButton.setWidth((searchBackgroundWidget.getWidth() - searchBarPaddingX * 3) / 4);
+        searchButton.setHeight(Math.max(searchBarBackgroundWidget.getHeight(), 20));
 
         goodsBackgroundWidget.setWidth(this.getWidth()-2*widgetCommonPadding);
         goodsBackgroundWidget.setHeight(this.getHeight()- searchBackgroundWidget.getHeight() - 3 * widgetCommonPadding);
@@ -122,10 +123,14 @@ public class MainContentContainer extends AbstractWidgetContainer{
         searchBackgroundWidget.setY(filter1Button.getY());
 
         searchBarBackgroundWidget.setX(searchBackgroundWidget.getX()+searchBarPaddingX);
-        searchBarBackgroundWidget.setY(searchBackgroundWidget.getY()+searchBackgroundWidget.getHeight()/10);
+        searchBarBackgroundWidget.setY(searchBackgroundWidget.getY() + searchBackgroundWidget.getHeight() / 10 + 1);
 
         searchEditBox.setX(searchBarBackgroundWidget.getX()+searchBarPaddingX);
         searchEditBox.setY(searchBarBackgroundWidget.getY()+(searchBarBackgroundWidget.getHeight()-8)/2);
+
+        searchButton.setX(searchBarBackgroundWidget.getX() + searchBarBackgroundWidget.getWidth() + searchBarPaddingX);
+        searchButton.setY(searchBarBackgroundWidget.getY() - 2);
+        searchButton.fitIcon();
 
         goodsBackgroundWidget.setX(filter1Button.getX());
         goodsBackgroundWidget.setY(filter1Button.getY() + filter1Button.getHeight() + widgetCommonPadding);
@@ -136,6 +141,7 @@ public class MainContentContainer extends AbstractWidgetContainer{
             ((WheatMarketMenuScreen) this.screen).addButton(filter1Button);
             ((WheatMarketMenuScreen) this.screen).addButton(filter2Button);
             ((WheatMarketMenuScreen) this.screen).addButton(filter3Button);
+            ((WheatMarketMenuScreen) this.screen).addButton(searchButton);
             ((WheatMarketMenuScreen) this.screen).addWidget(searchEditBox);
         }
     }
@@ -152,18 +158,23 @@ public class MainContentContainer extends AbstractWidgetContainer{
         //渲染搜索框
         searchBarBackgroundWidget.render(guiGraphics, mouseX, mouseY, partialTick);
         searchEditBox.render(guiGraphics, mouseX, mouseY, partialTick);
-        int x=goodsBackgroundWidget.getX()+8;
-        int y=goodsBackgroundWidget.getY() + 8;
-        int width=64;
-        for(int i=0;i<10;i++){
-            if(i==5)y= y+8+width;
-            if(i<5){
-                x =goodsBackgroundWidget.getX() + 8 + i * (width+8);
+        searchButton.render(guiGraphics, mouseX, mouseY, partialTick);
+        //以下为暂用的渲染商品用的代码，以后需要删除
+        renderGoods(guiGraphics, mouseX, mouseY, partialTick);
+    }
+
+    private void renderGoods(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        int x = goodsBackgroundWidget.getX() + 8;
+        int y = goodsBackgroundWidget.getY() + 8;
+        int width = 64;
+        for (int i = 0; i < 10; i++) {
+            if (i == 5) y = y + 8 + width;
+            if (i < 5) {
+                x = goodsBackgroundWidget.getX() + 8 + i * (width + 8);
+            } else {
+                x = goodsBackgroundWidget.getX() + 8 + (i - 5) * (width + 8);
             }
-            else{
-                x =goodsBackgroundWidget.getX() + 8 + (i-5) * (width+8);
-            }
-            guiGraphics.blit(PAPER_WITH_WRINKLES[i%7],x,y,0,0,width,width,64,64);
+            guiGraphics.blit(PAPER_WITH_WRINKLES[i % 7], x, y, 0, 0, width, width, 64, 64);
         }
     }
 }

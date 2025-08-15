@@ -3,16 +3,15 @@ package top.rookiestwo.wheatmarket;
 import dev.architectury.event.events.client.ClientLifecycleEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.event.events.common.PlayerEvent;
+import dev.architectury.platform.Platform;
 import dev.architectury.registry.menu.MenuRegistry;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
+import dev.architectury.utils.Env;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.world.MenuProvider;
 import net.minecraft.world.flag.FeatureFlags;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -25,6 +24,7 @@ import top.rookiestwo.wheatmarket.command.WheatMarketCommands;
 import top.rookiestwo.wheatmarket.database.WheatMarketDatabase;
 import top.rookiestwo.wheatmarket.database.tables.PlayerInfo;
 import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 
@@ -94,9 +94,12 @@ public class WheatMarketRegistry {
             },WheatMarket.ASYNC);
         });
 
-        //客户端启动时注册界面
-        ClientLifecycleEvent.CLIENT_SETUP.register((client) -> {;
-            registerClientScreens();
-        });
+        if (Platform.getEnvironment() == Env.CLIENT) {
+            //客户端启动时注册界面
+            ClientLifecycleEvent.CLIENT_SETUP.register((client) -> {
+                ;
+                registerClientScreens();
+            });
+        }
     }
 }

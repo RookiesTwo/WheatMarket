@@ -4,63 +4,134 @@ import net.minecraft.Util;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
-import top.rookiestwo.wheatmarket.WheatMarket;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Mth;
+import top.rookiestwo.wheatmarket.mixin.EditBoxAccessor;
+
+import java.util.Objects;
+import java.util.function.BiFunction;
 
 public class WheatEditBox extends EditBox {
-
+    private int displayPos;
+    private int textColor;
     private Font font;
     private long focusedTime;
-    private int textColor;
-    private int displayPos;//文本起始显示位置
+    private int highlightPos;
+    private BiFunction<String, Integer, FormattedCharSequence> formatter;
+    private int maxLength;
 
     public WheatEditBox(Font font, int x, int y, int width, int height, Component component) {
         super(font, x, y, width, height, component);
-        this.font = font;
     }
 
-    public int getTextColor() {
-        return this.textColor;
-    }
-
-    @Override
-    public void setTextColor(int color) {
-        this.textColor = color;
-    }
-
-    @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        WheatMarket.LOGGER.info("按下键盘: keyCode={}, scanCode={}, modifiers={}", keyCode, scanCode, modifiers);
-        // 处理键盘输入逻辑
-        if (keyCode == 257 || keyCode == 335) { // Enter key
-            return true;
-        }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+    private void getPrivateValues(){
+        displayPos=((EditBoxAccessor)this).getDisplayPos();
+        textColor=((EditBoxAccessor)this).getTextColor();
+        font=((EditBoxAccessor)this).getFont();
+        focusedTime=((EditBoxAccessor)this).getFocusedTime();
+        highlightPos=((EditBoxAccessor)this).getHighlightPos();
+        formatter=((EditBoxAccessor)this).getFormatter();
+        maxLength=((EditBoxAccessor)this).getMaxLength();
     }
 
     @Override
     public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        if (!this.isVisible()) {
-            return;
-        }
+        getPrivateValues();
+        if (this.isVisible()) {
+            // 计算光标在显示区域内的偏移量
+            int cursorOffset = this.getCursorPosition() - this.displayPos;
 
-        boolean showCursor = this.isFocused() && (Util.getMillis() - this.focusedTime) / 300L % 2L == 0L;
-        String fullText = this.getValue();
-        this.displayPos = Math.min(this.displayPos, fullText.length());
-        //从displayPos开始截取字符串，直到文本宽度超过EditBox的宽度
-        String visibleText = this.font.plainSubstrByWidth(fullText.substring(this.displayPos), this.getInnerWidth());
+            // 截取适合当前控件宽度的显示文本
+            String displayText = this.font.plainSubstrByWidth(this.getValue().substring(this.displayPos), this.getInnerWidth());
 
+            // 判断光标是否在显示区域内
+            boolean isCursorInDisplay = cursorOffset >= 0 && cursorOffset <= displayText.length();
 
-        int cursorOffset = this.getCursorPosition() - this.displayPos;
-        if (!visibleText.isEmpty()) {
-            guiGraphics.drawString(this.font, visibleText, this.getX(), this.getY(), this.getTextColor(), false);
-        }
-        if (showCursor) {
-            int cursorX = this.getX() + this.font.width(visibleText.substring(0, Math.max(Math.min(getCursorPosition(), visibleText.length()), 0))); // 光标在文字末尾
-            //int cursorY = this.getY();
-            //int lineHeight = this.font.lineHeight;
-            //guiGraphics.fill(cursorX, cursorY, cursorX + 1, cursorY + lineHeight, this.getTextColor());
-            //guiGraphics.drawString(this.font, "_", cursorX, cursorY, this.getTextColor(), false);
+            // 判断是否需要闪烁光标（聚焦状态下每300ms切换一次）
+            boolean shouldBlinkCursor = this.isFocused() && (Util.getMillis() - this.focusedTime) / 300L % 2L == 0L && isCursorInDisplay;
+
+            // 计算文本绘制的起始坐标（考虑边框偏移）
+            int textX = this.getX();
+            int textY = this.getY();
+
+            // 当前绘制位置
+            int currentX = textX;
+
+            // 计算高亮区域的结束位置
+            int highlightEnd = Mth.clamp(this.highlightPos - this.displayPos, 0, displayText.length());
+
+            // 绘制文本前半部分
+            if (!displayText.isEmpty()) {
+                String firstPart = isCursorInDisplay ? displayText.substring(0, cursorOffset) : displayText;
+                currentX = guiGraphics.drawString(
+                        this.font,
+                        (FormattedCharSequence)this.formatter.apply(firstPart, this.displayPos),
+                        textX,
+                        textY,
+                        textColor,
+                        false
+                );
+            }
+
+            // 判断光标是否在文本末尾或已达到最大长度
+            boolean isCursorAtEndOrMaxed = this.getCursorPosition() < this.getValue().length() || this.getValue().length() >= this.maxLength;
+
+            // 计算光标位置
+            int cursorX = currentX;
+            if (!isCursorInDisplay) {
+                // 如果光标不在显示区域，根据位置调整光标坐标
+                cursorX = cursorOffset > 0 ? textX + this.width : textX;
+            } else if (isCursorAtEndOrMaxed) {
+                // 如果在末尾或已达最大长度，调整光标位置
+                cursorX = currentX - 1;
+                --currentX;
+            }
+
+            // 绘制文本后半部分
+            if (!displayText.isEmpty() && isCursorInDisplay && cursorOffset < displayText.length()) {
+                guiGraphics.drawString(
+                        this.font,
+                        (FormattedCharSequence)this.formatter.apply(displayText.substring(cursorOffset), this.getCursorPosition()),
+                        currentX,
+                        textY,
+                        textColor,
+                        false
+                );
+            }
+
+            // 绘制光标或闪烁效果
+            if (shouldBlinkCursor) {
+                if (isCursorAtEndOrMaxed) {
+                    // 绘制高亮矩形（在末尾时）
+                    RenderType overlay = RenderType.guiOverlay();
+                    int highlightYStart = textY - 1;
+                    int highlightXEnd = cursorX + 1;
+                    int highlightYEnd = textY + 1;
+                    Objects.requireNonNull(this.font);
+                    guiGraphics.fill(overlay, cursorX, highlightYStart, highlightXEnd, highlightYEnd + 7, 0xFF000000+textColor);
+                } else {
+                    // 绘制高亮矩形（在末尾时）
+                    RenderType overlay = RenderType.guiOverlay();
+                    int highlightYStart = textY - 1;
+                    int highlightXEnd = cursorX + 1;
+                    int highlightYEnd = textY + 1;
+                    Objects.requireNonNull(this.font);
+                    guiGraphics.fill(overlay, cursorX, highlightYStart, highlightXEnd, highlightYEnd + 7, 0xFF000000+textColor);
+                    //guiGraphics.drawString(this.font, "_", cursorX, textY, textColor, false);
+                }
+            }
+
+            // 绘制高亮选区（当有选中文本时）
+            if (highlightEnd != cursorOffset) {
+                int highlightXStart = textX + this.font.width(displayText.substring(0, highlightEnd));
+                int highlightYStart = textY - 1;
+                int highlightXEnd = highlightXStart - 1;
+                int highlightYEnd = textY + 1;
+                Objects.requireNonNull(this.font);
+                ((EditBoxAccessor)this).invokeRenderHighlight(guiGraphics, cursorX, highlightYStart, highlightXEnd, highlightYEnd + 9);
+            }
         }
     }
 }

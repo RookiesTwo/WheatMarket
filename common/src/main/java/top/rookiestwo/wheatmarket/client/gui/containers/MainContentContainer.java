@@ -98,8 +98,10 @@ public class MainContentContainer extends AbstractWidgetContainer{
 
         searchBackgroundWidget.setWidth(this.getWidth() - 5*widgetCommonPadding - 3*filter1Button.getWidth());
         searchBackgroundWidget.setHeight(Integer.max(defaultSearchBarHeight,this.getHeight()/10));
+
         searchEditBox.setWidth(searchBackgroundWidget.getWidth()/5*4 - searchBarPaddingX*2);
         searchEditBox.setHeight(searchBackgroundWidget.getHeight()/5*4);
+
         searchBarBackgroundWidget.setWidth(searchBackgroundWidget.getWidth()/5*4);
         searchBarBackgroundWidget.setHeight(searchBackgroundWidget.getHeight()/5*4);
 
@@ -118,8 +120,10 @@ public class MainContentContainer extends AbstractWidgetContainer{
 
         searchBackgroundWidget.setX(filter3Button.getX() + filter3Button.getWidth() + widgetCommonPadding);
         searchBackgroundWidget.setY(filter1Button.getY());
+
         searchBarBackgroundWidget.setX(searchBackgroundWidget.getX()+searchBarPaddingX);
         searchBarBackgroundWidget.setY(searchBackgroundWidget.getY()+searchBackgroundWidget.getHeight()/10);
+
         searchEditBox.setX(searchBarBackgroundWidget.getX()+searchBarPaddingX);
         searchEditBox.setY(searchBarBackgroundWidget.getY()+(searchBarBackgroundWidget.getHeight()-8)/2);
 
@@ -139,9 +143,6 @@ public class MainContentContainer extends AbstractWidgetContainer{
     @Override
     protected void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         //渲染背景
-        //filter1BackgroundWidget.render(guiGraphics, mouseX, mouseY, partialTick);
-        //filter2BackgroundWidget.render(guiGraphics, mouseX, mouseY, partialTick);
-        //filter3BackgroundWidget.render(guiGraphics, mouseX, mouseY, partialTick);
         searchBackgroundWidget.render(guiGraphics, mouseX, mouseY, partialTick);
         goodsBackgroundWidget.render(guiGraphics, mouseX, mouseY, partialTick);
         //渲染按钮

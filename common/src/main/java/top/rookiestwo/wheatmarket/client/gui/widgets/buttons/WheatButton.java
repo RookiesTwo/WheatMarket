@@ -24,8 +24,6 @@ public abstract class WheatButton extends AbstractButton {
         guiGraphics.blitSprite(background, getX(), getY(), width, height);
     }
 
-    ;
-
     @Override
     protected void updateWidgetNarration(@NotNull NarrationElementOutput narrationElementOutput) {}
 }

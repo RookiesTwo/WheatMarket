@@ -6,14 +6,15 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 import top.rookiestwo.wheatmarket.WheatMarket;
-import top.rookiestwo.wheatmarket.client.gui.widgets.BlockBackgroundWidget;
-import top.rookiestwo.wheatmarket.client.gui.widgets.WheatAbstractWidget;
 
 public class FilterButton<T extends Enum<T>> extends WheatButton{
     private T currentState;
 
     private static final ResourceLocation FILTER_ICON=ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "textures/gui/filter_icon.png");
     private static final ResourceLocation FILTER_ICON_HOVERED=ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "textures/gui/filter_icon_hovered.png");
+
+    protected static final int textColor = 0xFFFFFF;
+    protected static final int textColorHovered = 0xF9AF12;
 
     public FilterButton(int x, int y, int width, int height, Component component, @NotNull ResourceLocation background,T initialState) {
         super(x, y, width, height, component, background);
@@ -35,12 +36,18 @@ public class FilterButton<T extends Enum<T>> extends WheatButton{
 
     @Override
     public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        Minecraft minecraft = Minecraft.getInstance();
-        guiGraphics.blitSprite(this.background, this.getX(), this.getY(), width, height);
-        //guiGraphics.drawString(minecraft.font, getStateText(), this.getRenderX() + 5, this.getRenderY() + 5, 0xFFFFFF, false);
-        ResourceLocation icon = this.isHovered() ? FILTER_ICON_HOVERED : FILTER_ICON;
+        super.renderWidget(guiGraphics, mouseX, mouseY, partialTick);
+        ResourceLocation icon = FILTER_ICON;
+        int textRenderColor = textColor;
+        if (this.isHovered) {
+            icon = FILTER_ICON_HOVERED;
+            textRenderColor = textColorHovered;
+        }
+        //渲染漏斗图标
         guiGraphics.blit(icon, this.getX() + 2, this.getY() + 2, 0, 0, 16, 16, 16, 16);
-        renderScrollingString(guiGraphics, minecraft.font,getStateText(),this.getX()+17,this.getY()+4,this.getX()+this.width-16,this.getY()+this.height-4,0xFFFFFF);
+        //渲染文字
+        Minecraft minecraft = Minecraft.getInstance();
+        renderScrollingString(guiGraphics, minecraft.font, getStateText(), this.getX() + 17, this.getY() + 4, this.getX() + this.width - 16, this.getY() + this.height - 4, textRenderColor);
     }
 
     @Override

@@ -11,6 +11,8 @@ import top.rookiestwo.wheatmarket.client.gui.widgets.BlockBackgroundWidget;
 import top.rookiestwo.wheatmarket.client.gui.widgets.WheatEditBox;
 import top.rookiestwo.wheatmarket.client.gui.widgets.buttons.*;
 
+import java.util.Random;
+
 public class MainContentContainer extends AbstractWidgetContainer{
 
     /**
@@ -21,7 +23,8 @@ public class MainContentContainer extends AbstractWidgetContainer{
     private static final ResourceLocation BUTTON = ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"screen/main_menu/button");
     private static final ResourceLocation WIDGET_BG=ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"screen/main_menu/widget_bg");
     private static final ResourceLocation PAPER =ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"screen/main_menu/paper");
-    private static final ResourceLocation[] PAPER_WITH_WRINKLES =new ResourceLocation[7];
+    private static final ResourceLocation[] PAPER_WITH_WRINKLES = new ResourceLocation[5];
+    private static final int[] randomNumbers = new int[10];
 
     //搜索框及其背景
     private BlockBackgroundWidget searchBackgroundWidget;
@@ -47,7 +50,7 @@ public class MainContentContainer extends AbstractWidgetContainer{
     public MainContentContainer(int x, int y, int width, int height, Component message, Screen screen,AbstractWidgetContainer parentContainer) {
         super(x, y, width, height, message, screen);
 
-        for(int i=0;i<7;i++){
+        for (int i = 0; i < 5; i++) {
             PAPER_WITH_WRINKLES[i]=ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"textures/gui/paper_with_wrinkles_"+i+".png");
         }
 
@@ -134,6 +137,8 @@ public class MainContentContainer extends AbstractWidgetContainer{
 
         goodsBackgroundWidget.setX(filter1Button.getX());
         goodsBackgroundWidget.setY(filter1Button.getY() + filter1Button.getHeight() + widgetCommonPadding);
+        //以下为暂用的渲染商品用的代码，以后需要删除
+        generateRandomNum();
     }
 
     private void addWidgets(){
@@ -163,6 +168,13 @@ public class MainContentContainer extends AbstractWidgetContainer{
         renderGoods(guiGraphics, mouseX, mouseY, partialTick);
     }
 
+    private void generateRandomNum() {
+        Random random = new Random();
+        for (int i = 0; i < 10; i++) {
+            randomNumbers[i] = random.nextInt(5);
+        }
+    }
+
     private void renderGoods(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         int x = goodsBackgroundWidget.getX() + 8;
         int y = goodsBackgroundWidget.getY() + 8;
@@ -174,7 +186,7 @@ public class MainContentContainer extends AbstractWidgetContainer{
             } else {
                 x = goodsBackgroundWidget.getX() + 8 + (i - 5) * (width + 8);
             }
-            guiGraphics.blit(PAPER_WITH_WRINKLES[i % 7], x, y, 0, 0, width, width, 64, 64);
+            guiGraphics.blit(PAPER_WITH_WRINKLES[randomNumbers[i]], x, y, 0, 0, width, width, 64, 64);
         }
     }
 }

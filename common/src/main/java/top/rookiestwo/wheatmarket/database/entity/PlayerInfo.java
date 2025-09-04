@@ -9,9 +9,6 @@ public class PlayerInfo {
     private UUID uuid;
     private Double balance;
 
-    public PlayerInfo() {
-    }
-
     public PlayerInfo(UUID uuid, Double balance) {
         this.uuid = uuid;
         this.balance = balance;

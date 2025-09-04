@@ -13,9 +13,6 @@ public class PurchaseRecord {
     private Timestamp lastPurchaseTime;
     private int purchasedAmount;
 
-    public PurchaseRecord() {
-    }
-
     public PurchaseRecord(UUID recordID, UUID marketItemID, UUID buyerID,
                           Timestamp lastPurchaseTime, int purchasedAmount) {
         this.recordID = recordID;

@@ -27,9 +27,7 @@ public class WheatMarketDatabase {
     private void clientInitialize() {
         //获取存档路径
         Path levelPath = Minecraft.getInstance().getSingleplayerServer().getWorldPath(LevelResource.ROOT);
-        WheatMarket.LOGGER.info("Current level path: {}", levelPath.toString());
         String levelName = levelPath.getName(levelPath.getNameCount() - 2).toString();
-        WheatMarket.LOGGER.info("Current level name: {}", levelName);
         clientDatabaseUrl = "jdbc:h2:file:./saves/" + levelName + "/WheatMarketDB";
         try {
             connection = DriverManager.getConnection(clientDatabaseUrl);
@@ -47,6 +45,7 @@ public class WheatMarketDatabase {
             WheatMarket.LOGGER.error("Database connection failed.", e);
         }
         createTables();
+        WheatMarket.LOGGER.info("Database initialized.");
     }
 
     private void createTables() {

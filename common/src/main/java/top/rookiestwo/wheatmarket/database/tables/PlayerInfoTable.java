@@ -90,7 +90,6 @@ public class PlayerInfoTable {
     }
 
     public static void ifNotExistsCreateRecord(Connection connection,UUID uuid) {
-        WheatMarket.LOGGER.info("Creating player info record.");
         if(WheatMarket.DATABASE==null){
             WheatMarket.LOGGER.error("Database is null");
             return;

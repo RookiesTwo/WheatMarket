@@ -2,15 +2,24 @@ package top.rookiestwo.wheatmarket.database.tables;
 
 import top.rookiestwo.wheatmarket.WheatMarket;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.UUID;
-import java.sql.Connection;
 
 public class PlayerInfo {
     private UUID uuid;
     private Double balance;
+
+    public static void createTable(Connection connection) {
+        String createPlayerInfoTable = "CREATE TABLE IF NOT EXISTS player_info (" +
+                "uuid VARCHAR(36) PRIMARY KEY," +
+                "balance DOUBLE" +
+                ");";
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute(createPlayerInfoTable);
+        } catch (SQLException e) {
+            WheatMarket.LOGGER.error("Create tables failed.", e);
+        }
+    }
 
     public static void insertPlayerInfo(Connection connection,UUID uuid,Double balance) {
         String insertPlayerInfo = "INSERT INTO player_info (uuid, balance) VALUES (?, ?)";

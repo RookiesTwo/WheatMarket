@@ -1,11 +1,13 @@
 package top.rookiestwo.wheatmarket.database;
 
 import top.rookiestwo.wheatmarket.WheatMarket;
+import top.rookiestwo.wheatmarket.database.tables.MarketItem;
+import top.rookiestwo.wheatmarket.database.tables.PlayerInfo;
+import top.rookiestwo.wheatmarket.database.tables.PurchaseRecord;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 public class WheatMarketDatabase {
     private static final String databaseUrl = "jdbc:h2:file:./config/WheatMarket/database/WheatMarketDB";
@@ -26,26 +28,9 @@ public class WheatMarketDatabase {
     }
 
     private void createTables() {
-        String createPlayerInfoTable = "CREATE TABLE IF NOT EXISTS player_info (" +
-                "uuid VARCHAR(36) PRIMARY KEY," +
-                "balance DOUBLE" +
-                ");";
-        String createMarketItemTable = "CREATE TABLE IF NOT EXISTS market_item (" +
-                "listingID VARCHAR(36) PRIMARY KEY," +
-                "itemID VARCHAR(255) NOT NULL," +
-                "classification VARCHAR(255) NOT NULL," +
-                "sellerID VARCHAR(36) NOT NULL," +
-                "price DOUBLE NOT NULL," +
-                "amount INT NOT NULL," +
-                "timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
-                "FOREIGN KEY (sellerID) REFERENCES player_info(uuid)" +
-                ");";
-        try (Statement stmt = connection.createStatement()) {
-            stmt.execute(createPlayerInfoTable);
-            stmt.execute(createMarketItemTable);
-        } catch (SQLException e) {
-            WheatMarket.LOGGER.error("Create tables failed.", e);
-        }
+        PlayerInfo.createTable(connection);
+        MarketItem.createTable(connection);
+        PurchaseRecord.createTable(connection);
     }
 
     public Connection getConnection() {

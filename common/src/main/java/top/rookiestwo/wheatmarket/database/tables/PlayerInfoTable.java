@@ -5,7 +5,7 @@ import top.rookiestwo.wheatmarket.WheatMarket;
 import java.sql.*;
 import java.util.UUID;
 
-public class PlayerInfo {
+public class PlayerInfoTable {
     private UUID uuid;
     private Double balance;
 

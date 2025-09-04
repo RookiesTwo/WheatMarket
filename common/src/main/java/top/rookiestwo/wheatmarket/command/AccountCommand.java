@@ -12,7 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.CommonColors;
 import top.rookiestwo.wheatmarket.WheatMarket;
-import top.rookiestwo.wheatmarket.database.tables.PlayerInfo;
+import top.rookiestwo.wheatmarket.database.tables.PlayerInfoTable;
 
 public class AccountCommand extends BaseCommand implements CommandInterface {
 
@@ -56,8 +56,8 @@ public class AccountCommand extends BaseCommand implements CommandInterface {
                 String keyWord = commandContext.getInput().split(" ")[2];
                 switch (keyWord){
                     case "add"->{
-                        PlayerInfo.addPlayerBalance(WheatMarket.DATABASE.getConnection(),target.getUUID(),amount);
-                        double targetBalance=PlayerInfo.getPlayerBalance(WheatMarket.DATABASE.getConnection(),target.getUUID());
+                        PlayerInfoTable.addPlayerBalance(WheatMarket.DATABASE.getConnection(), target.getUUID(), amount);
+                        double targetBalance = PlayerInfoTable.getPlayerBalance(WheatMarket.DATABASE.getConnection(), target.getUUID());
                         source.sendSystemMessage(
                                 Component
                                     .translatable("info.command.wheatmarket.admin_add_balance",String.valueOf(amount),target.getName().getString())
@@ -73,7 +73,7 @@ public class AccountCommand extends BaseCommand implements CommandInterface {
                         return Command.SINGLE_SUCCESS;
                     }
                     case "set"->{
-                        PlayerInfo.updatePlayerBalance(WheatMarket.DATABASE.getConnection(),target.getUUID(),amount);
+                        PlayerInfoTable.updatePlayerBalance(WheatMarket.DATABASE.getConnection(), target.getUUID(), amount);
                         source.sendSystemMessage(
                                 Component
                                     .translatable("info.command.wheatmarket.admin_set_balance",target.getName().getString(),String.valueOf(amount))
@@ -87,7 +87,7 @@ public class AccountCommand extends BaseCommand implements CommandInterface {
                         return Command.SINGLE_SUCCESS;
                     }
                     case "remove"->{
-                        double targetBalance=PlayerInfo.getPlayerBalance(WheatMarket.DATABASE.getConnection(),target.getUUID());
+                        double targetBalance = PlayerInfoTable.getPlayerBalance(WheatMarket.DATABASE.getConnection(), target.getUUID());
                         if(amount>targetBalance){
                             source.sendSystemMessage(
                                     Component
@@ -97,7 +97,7 @@ public class AccountCommand extends BaseCommand implements CommandInterface {
                             );
                         }
                         else{
-                            PlayerInfo.addPlayerBalance(WheatMarket.DATABASE.getConnection(),target.getUUID(),0-amount);
+                            PlayerInfoTable.addPlayerBalance(WheatMarket.DATABASE.getConnection(), target.getUUID(), 0 - amount);
                             source.sendSystemMessage(
                                     Component
                                             .translatable("info.command.wheatmarket.admin_remove_balance",String.valueOf(amount),target.getName().getString())

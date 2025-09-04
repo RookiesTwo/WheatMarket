@@ -8,7 +8,7 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.UUID;
 
-public class MarketItem {
+public class MarketItemTable {
     private UUID MarketItemID;
     private String itemID;
     private UUID sellerID;

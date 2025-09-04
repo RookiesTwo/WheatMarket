@@ -12,7 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.CommonColors;
 import top.rookiestwo.wheatmarket.WheatMarket;
-import top.rookiestwo.wheatmarket.database.tables.PlayerInfo;
+import top.rookiestwo.wheatmarket.database.tables.PlayerInfoTable;
 
 public class PayCommand extends BaseCommand implements CommandInterface {
     private final String COMMAND_ROOT = "pay";
@@ -39,7 +39,7 @@ public class PayCommand extends BaseCommand implements CommandInterface {
 
         ServerPlayer sender=commandContext.getSource().getPlayer();
         double amount = DoubleArgumentType.getDouble(commandContext, "amount");
-        double senderBalance = PlayerInfo.getPlayerBalance(WheatMarket.DATABASE.getConnection(),sender.getUUID());
+        double senderBalance = PlayerInfoTable.getPlayerBalance(WheatMarket.DATABASE.getConnection(), sender.getUUID());
 
         if(senderBalance<amount){
             sender.sendSystemMessage(Component.translatable("info.command.wheatmarket.not_enough_money").withColor(CommonColors.SOFT_RED));
@@ -48,10 +48,10 @@ public class PayCommand extends BaseCommand implements CommandInterface {
         try{
             ServerPlayer target = EntityArgument.getPlayer(commandContext, "player");
             try{
-                PlayerInfo.addPlayerBalance(WheatMarket.DATABASE.getConnection(),sender.getUUID(),0-amount);
-                PlayerInfo.addPlayerBalance(WheatMarket.DATABASE.getConnection(),target.getUUID(),amount);
+                PlayerInfoTable.addPlayerBalance(WheatMarket.DATABASE.getConnection(), sender.getUUID(), 0 - amount);
+                PlayerInfoTable.addPlayerBalance(WheatMarket.DATABASE.getConnection(), target.getUUID(), amount);
 
-                double targetBalance = PlayerInfo.getPlayerBalance(WheatMarket.DATABASE.getConnection(),target.getUUID());
+                double targetBalance = PlayerInfoTable.getPlayerBalance(WheatMarket.DATABASE.getConnection(), target.getUUID());
                 senderBalance-=amount;
 
                 sender.sendSystemMessage(

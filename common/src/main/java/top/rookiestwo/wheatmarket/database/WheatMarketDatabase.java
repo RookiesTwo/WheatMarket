@@ -1,9 +1,9 @@
 package top.rookiestwo.wheatmarket.database;
 
 import top.rookiestwo.wheatmarket.WheatMarket;
-import top.rookiestwo.wheatmarket.database.tables.MarketItem;
-import top.rookiestwo.wheatmarket.database.tables.PlayerInfo;
-import top.rookiestwo.wheatmarket.database.tables.PurchaseRecord;
+import top.rookiestwo.wheatmarket.database.tables.MarketItemTable;
+import top.rookiestwo.wheatmarket.database.tables.PlayerInfoTable;
+import top.rookiestwo.wheatmarket.database.tables.PurchaseRecordTable;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -28,9 +28,9 @@ public class WheatMarketDatabase {
     }
 
     private void createTables() {
-        PlayerInfo.createTable(connection);
-        MarketItem.createTable(connection);
-        PurchaseRecord.createTable(connection);
+        PlayerInfoTable.createTable(connection);
+        MarketItemTable.createTable(connection);
+        PurchaseRecordTable.createTable(connection);
     }
 
     public Connection getConnection() {

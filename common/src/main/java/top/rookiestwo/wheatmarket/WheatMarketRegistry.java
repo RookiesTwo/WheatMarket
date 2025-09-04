@@ -22,7 +22,7 @@ import top.rookiestwo.wheatmarket.blocks.LaptopBlock;
 import top.rookiestwo.wheatmarket.client.gui.WheatMarketMenuScreen;
 import top.rookiestwo.wheatmarket.command.WheatMarketCommands;
 import top.rookiestwo.wheatmarket.database.WheatMarketDatabase;
-import top.rookiestwo.wheatmarket.database.tables.PlayerInfo;
+import top.rookiestwo.wheatmarket.database.tables.PlayerInfoTable;
 import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
 
 import java.util.concurrent.CompletableFuture;
@@ -90,7 +90,7 @@ public class WheatMarketRegistry {
         //玩家进入时，若没有账号则创建账号
         PlayerEvent.PLAYER_JOIN.register((player) -> {
             CompletableFuture.runAsync(() -> {
-                PlayerInfo.ifNotExistsCreateRecord(WheatMarket.DATABASE.getConnection(),player.getUUID());
+                PlayerInfoTable.ifNotExistsCreateRecord(WheatMarket.DATABASE.getConnection(), player.getUUID());
             },WheatMarket.ASYNC);
         });
 

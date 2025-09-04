@@ -7,8 +7,8 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import top.rookiestwo.wheatmarket.database.tables.PlayerInfo;
 import top.rookiestwo.wheatmarket.WheatMarket;
+import top.rookiestwo.wheatmarket.database.tables.PlayerInfoTable;
 
 
 public class BalanceCommand extends BaseCommand implements CommandInterface {
@@ -28,7 +28,7 @@ public class BalanceCommand extends BaseCommand implements CommandInterface {
     @Override
     public int run(CommandContext<CommandSourceStack> commandContext) {
         ServerPlayer sender = commandContext.getSource().getPlayer();
-        double balance = PlayerInfo.getPlayerBalance(WheatMarket.DATABASE.getConnection(), sender.getUUID());
+        double balance = PlayerInfoTable.getPlayerBalance(WheatMarket.DATABASE.getConnection(), sender.getUUID());
         sender.sendSystemMessage(Component.translatable("info.command.wheatmarket.balance", String.valueOf(balance)));
         return Command.SINGLE_SUCCESS;
     }

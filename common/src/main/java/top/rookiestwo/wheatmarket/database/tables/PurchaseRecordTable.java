@@ -8,7 +8,7 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.UUID;
 
-public class PurchaseRecord {
+public class PurchaseRecordTable {
     private UUID recordID;
     private UUID marketItemID;  // 外键关联MarketItem
     private UUID buyerID;       // 外键关联PlayerInfo

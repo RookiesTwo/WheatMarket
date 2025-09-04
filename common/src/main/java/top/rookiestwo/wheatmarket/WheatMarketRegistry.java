@@ -91,6 +91,11 @@ public class WheatMarketRegistry {
             WheatMarket.DATABASE.closeConnection();
         });
 
+        //服务器保存时
+        LifecycleEvent.SERVER_LEVEL_SAVE.register((server) -> {
+            //保存数据库（待完成）
+        });
+
         //玩家进入时
         PlayerEvent.PLAYER_JOIN.register((player) -> {
             //若没有信息则创建信息
@@ -99,6 +104,7 @@ public class WheatMarketRegistry {
             }, WheatMarket.ASYNC);
         });
 
+        /*==========Client Only Events=========*/
         if (Platform.getEnvironment() == Env.CLIENT) {
             //客户端启动时
             ClientLifecycleEvent.CLIENT_SETUP.register((client) -> {

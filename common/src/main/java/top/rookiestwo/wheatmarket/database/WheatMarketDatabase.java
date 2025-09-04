@@ -1,26 +1,48 @@
 package top.rookiestwo.wheatmarket.database;
 
+import dev.architectury.utils.Env;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.level.storage.LevelResource;
 import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.database.tables.MarketItemTable;
 import top.rookiestwo.wheatmarket.database.tables.PlayerInfoTable;
 import top.rookiestwo.wheatmarket.database.tables.PurchaseRecordTable;
 
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class WheatMarketDatabase {
-    private static final String databaseUrl = "jdbc:h2:file:./config/WheatMarket/database/WheatMarketDB";
+    private static final String serverDatabaseUrl = "jdbc:h2:file:./config/WheatMarket/database/WheatMarketDB";
+    private static String clientDatabaseUrl = null;
     private Connection connection;
 
-    public WheatMarketDatabase() {
+    public WheatMarketDatabase(Env environment) {
         WheatMarket.LOGGER.info("Initializing Database...");
-        initialize();
+        if (environment == Env.SERVER) serverInitialize();
+        else clientInitialize();
     }
 
-    public void initialize() {
+    private void clientInitialize() {
+        //获取存档路径
+        Path levelPath = Minecraft.getInstance().getSingleplayerServer().getWorldPath(LevelResource.ROOT);
+        WheatMarket.LOGGER.info("Current level path: {}", levelPath.toString());
+        String levelName = levelPath.getName(levelPath.getNameCount() - 2).toString();
+        WheatMarket.LOGGER.info("Current level name: {}", levelName);
+        clientDatabaseUrl = "jdbc:h2:file:./saves/" + levelName + "/WheatMarketDB";
         try {
-            connection = DriverManager.getConnection(databaseUrl);
+            connection = DriverManager.getConnection(clientDatabaseUrl);
+        } catch (SQLException e) {
+            WheatMarket.LOGGER.error("Database connection failed.", e);
+        }
+        createTables();
+        WheatMarket.LOGGER.info("Database initialized.");
+    }
+
+    public void serverInitialize() {
+        try {
+            connection = DriverManager.getConnection(serverDatabaseUrl);
         } catch (SQLException e) {
             WheatMarket.LOGGER.error("Database connection failed.", e);
         }
@@ -47,4 +69,3 @@ public class WheatMarketDatabase {
         }
     }
 }
-

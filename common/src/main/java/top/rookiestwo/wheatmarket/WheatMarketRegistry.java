@@ -76,28 +76,33 @@ public class WheatMarketRegistry {
     }
 
     public static void registerEvents(){
-        //服务器启动时启动数据库
+        //服务器启动时
         LifecycleEvent.SERVER_STARTING.register((server) -> {
+            //创建线程池
             WheatMarket.ASYNC =  Executors.newFixedThreadPool(4);
-            WheatMarket.DATABASE=new WheatMarketDatabase();
+
+            //初始化数据库
+            WheatMarket.DATABASE = new WheatMarketDatabase(Platform.getEnvironment());
         });
 
-        //服务器关闭时关闭数据库
+        //服务器关闭时
         LifecycleEvent.SERVER_STOPPING.register((server) -> {
+            //关闭数据库连接
             WheatMarket.DATABASE.closeConnection();
         });
 
-        //玩家进入时，若没有账号则创建账号
+        //玩家进入时
         PlayerEvent.PLAYER_JOIN.register((player) -> {
+            //若没有信息则创建信息
             CompletableFuture.runAsync(() -> {
                 PlayerInfoTable.ifNotExistsCreateRecord(WheatMarket.DATABASE.getConnection(), player.getUUID());
-            },WheatMarket.ASYNC);
+            }, WheatMarket.ASYNC);
         });
 
         if (Platform.getEnvironment() == Env.CLIENT) {
-            //客户端启动时注册界面
+            //客户端启动时
             ClientLifecycleEvent.CLIENT_SETUP.register((client) -> {
-                ;
+                //注册界面
                 registerClientScreens();
             });
         }

@@ -23,7 +23,7 @@ public class MainContentContainer extends AbstractWidgetContainer{
     private static final ResourceLocation BUTTON = ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"screen/main_menu/button");
     private static final ResourceLocation WIDGET_BG=ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"screen/main_menu/widget_bg");
     private static final ResourceLocation PAPER =ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"screen/main_menu/paper");
-    private static final ResourceLocation[] PAPER_WITH_WRINKLES = new ResourceLocation[5];
+    private static final ResourceLocation[] PAPER_WITH_WRINKLES = new ResourceLocation[10];
     private static final int[] randomNumbers = new int[10];
 
     //搜索框及其背景
@@ -43,6 +43,10 @@ public class MainContentContainer extends AbstractWidgetContainer{
     private static final int widgetCommonPadding = 5;
     private static final int defaultFilterWidth = 40;
     private static final int defaultSearchBarHeight = 25;
+
+    private static int maxGoodsColumn = 5;
+    private static int maxGoodsRow = 2;
+
     private SearchButton searchButton;
 
     private AbstractWidgetContainer parentContainer;
@@ -50,7 +54,7 @@ public class MainContentContainer extends AbstractWidgetContainer{
     public MainContentContainer(int x, int y, int width, int height, Component message, Screen screen,AbstractWidgetContainer parentContainer) {
         super(x, y, width, height, message, screen);
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 10; i++) {
             PAPER_WITH_WRINKLES[i]=ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"textures/gui/paper_with_wrinkles_"+i+".png");
         }
 
@@ -137,7 +141,7 @@ public class MainContentContainer extends AbstractWidgetContainer{
 
         goodsBackgroundWidget.setX(filter1Button.getX());
         goodsBackgroundWidget.setY(filter1Button.getY() + filter1Button.getHeight() + widgetCommonPadding);
-        //以下为暂用的渲染商品用的代码，以后需要删除
+        //todo:以下为暂用的渲染商品用的代码，以后需要删除
         generateRandomNum();
     }
 
@@ -171,7 +175,7 @@ public class MainContentContainer extends AbstractWidgetContainer{
     private void generateRandomNum() {
         Random random = new Random();
         for (int i = 0; i < 10; i++) {
-            randomNumbers[i] = random.nextInt(5);
+            randomNumbers[i] = random.nextInt(10);
         }
     }
 

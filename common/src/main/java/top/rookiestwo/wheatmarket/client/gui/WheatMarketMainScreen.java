@@ -13,7 +13,7 @@ import top.rookiestwo.wheatmarket.client.gui.containers.TitleContainer;
 import top.rookiestwo.wheatmarket.client.gui.widgets.BlockBackgroundWidget;
 import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
 
-public class WheatMarketMenuScreen extends AbstractContainerScreen<WheatMarketMenu> {
+public class WheatMarketMainScreen extends AbstractContainerScreen<WheatMarketMenu> {
 
     private static final ResourceLocation SCREEN_BACKGROUND = ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID,"screen/main_menu/widget_bg");
 
@@ -25,7 +25,7 @@ public class WheatMarketMenuScreen extends AbstractContainerScreen<WheatMarketMe
     private TitleContainer titleContainer;
     private MainContentContainer mainContentContainer;
 
-    public WheatMarketMenuScreen(WheatMarketMenu abstractContainerMenu, Inventory inventory, Component component) {
+    public WheatMarketMainScreen(WheatMarketMenu abstractContainerMenu, Inventory inventory, Component component) {
         super(abstractContainerMenu,inventory,component);
     }
 

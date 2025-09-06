@@ -19,7 +19,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import top.rookiestwo.wheatmarket.blocks.LaptopBlock;
-import top.rookiestwo.wheatmarket.client.gui.WheatMarketMenuScreen;
+import top.rookiestwo.wheatmarket.client.gui.WheatMarketMainScreen;
 import top.rookiestwo.wheatmarket.command.WheatMarketCommands;
 import top.rookiestwo.wheatmarket.database.WheatMarketDatabase;
 import top.rookiestwo.wheatmarket.database.tables.PlayerInfoTable;
@@ -72,7 +72,7 @@ public class WheatMarketRegistry {
 
     private static void registerClientScreens() {
         WheatMarket.LOGGER.info("WheatMarket Client Registering...");
-        MenuRegistry.registerScreenFactory(WHEAT_MARKET_MENU.get(), WheatMarketMenuScreen::new);
+        MenuRegistry.registerScreenFactory(WHEAT_MARKET_MENU.get(), WheatMarketMainScreen::new);
     }
 
     public static void registerEvents(){

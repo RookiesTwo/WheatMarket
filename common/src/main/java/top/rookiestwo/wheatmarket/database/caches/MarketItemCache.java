@@ -14,7 +14,8 @@ public class MarketItemCache extends AbstractDatabaseCache {
 
     private final Map<UUID, MarketItem> cache = new ConcurrentHashMap<>();
 
-    public MarketItemCache() {
+    public MarketItemCache(Connection connection) {
+        loadAllFromDatabase(connection);
     }
 
     public Map<UUID, MarketItem> getCache() {
@@ -26,7 +27,7 @@ public class MarketItemCache extends AbstractDatabaseCache {
         try (PreparedStatement stmt = connection.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
-                UUID marketItemID = rs.getObject("MarketItemID", UUID.class);
+                UUID marketItemID = UUID.fromString(rs.getString("MarketItemID"));
                 String itemID = rs.getString("itemID");
                 CompoundTag itemNBTCompound;
                 try {
@@ -35,7 +36,7 @@ public class MarketItemCache extends AbstractDatabaseCache {
                     itemNBTCompound = null;
                     WheatMarket.LOGGER.error("Failed to parse itemNBTCompound for marketItemID: {}", marketItemID, e);
                 }
-                UUID sellerID = rs.getObject("sellerID", UUID.class);
+                UUID sellerID = UUID.fromString(rs.getString("sellerID"));
                 Double price = rs.getDouble("price");
                 int amount = rs.getInt("amount");
                 Timestamp listingTime = rs.getTimestamp("listingTime");
@@ -60,6 +61,7 @@ public class MarketItemCache extends AbstractDatabaseCache {
     }
 
     public void saveAllToDatabase(Connection connection) {
+        //todo:区分脏数据节约保存时间
         String sql = "INSERT INTO market_item (" +
                 "MarketItemID, itemID, itemNBTCompound, sellerID, price, amount, listingTime, " +
                 "ifAdmin, ifSell, cooldownAmount, cooldownTimeInMinutes, timeToExpire, lastTradeTime) " +

@@ -6,7 +6,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import top.rookiestwo.wheatmarket.WheatMarket;
-import top.rookiestwo.wheatmarket.client.gui.WheatMarketMenuScreen;
+import top.rookiestwo.wheatmarket.client.gui.WheatMarketMainScreen;
 import top.rookiestwo.wheatmarket.client.gui.widgets.BlockBackgroundWidget;
 import top.rookiestwo.wheatmarket.client.gui.widgets.WheatEditBox;
 import top.rookiestwo.wheatmarket.client.gui.widgets.buttons.*;
@@ -142,12 +142,12 @@ public class MainContentContainer extends AbstractWidgetContainer{
     }
 
     private void addWidgets(){
-        if(this.screen instanceof WheatMarketMenuScreen){
-            ((WheatMarketMenuScreen) this.screen).addButton(filter1Button);
-            ((WheatMarketMenuScreen) this.screen).addButton(filter2Button);
-            ((WheatMarketMenuScreen) this.screen).addButton(filter3Button);
-            ((WheatMarketMenuScreen) this.screen).addButton(searchButton);
-            ((WheatMarketMenuScreen) this.screen).addWidget(searchEditBox);
+        if (this.screen instanceof WheatMarketMainScreen) {
+            ((WheatMarketMainScreen) this.screen).addButton(filter1Button);
+            ((WheatMarketMainScreen) this.screen).addButton(filter2Button);
+            ((WheatMarketMainScreen) this.screen).addButton(filter3Button);
+            ((WheatMarketMainScreen) this.screen).addButton(searchButton);
+            ((WheatMarketMainScreen) this.screen).addWidget(searchEditBox);
         }
     }
 

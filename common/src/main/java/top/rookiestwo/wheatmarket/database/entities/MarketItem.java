@@ -161,6 +161,10 @@ public class MarketItem {
         this.lastTradeTime = lastTradeTime;
     }
 
+    public CompoundTag getItemNBTCompound() {
+        return this.itemNBTCompound;
+    }
+
     // 实用方法
 
     /**
@@ -226,4 +230,6 @@ public class MarketItem {
                 ", totalValue=" + getTotalValue() +
                 '}';
     }
+
+
 }

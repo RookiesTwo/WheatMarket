@@ -1,5 +1,7 @@
 package top.rookiestwo.wheatmarket.database.entities;
 
+import net.minecraft.nbt.CompoundTag;
+
 import java.sql.Timestamp;
 import java.util.UUID;
 
@@ -10,6 +12,7 @@ import java.util.UUID;
 public class MarketItem {
     private UUID marketItemID;
     private String itemID;
+    private CompoundTag itemNBTCompound;
     private UUID sellerID;
     private Double price;
     private int amount;
@@ -26,12 +29,13 @@ public class MarketItem {
     }
 
     // 完整参数构造函数
-    public MarketItem(UUID marketItemID, String itemID, UUID sellerID, Double price,
+    public MarketItem(UUID marketItemID, String itemID, CompoundTag itemNBTCompound, UUID sellerID, Double price,
                       int amount, Timestamp listingTime, Boolean ifAdmin, Boolean ifSell,
                       int cooldownAmount, int cooldownTimeInMinutes, long timeToExpire,
                       Timestamp lastTradeTime) {
         this.marketItemID = marketItemID;
         this.itemID = itemID;
+        this.itemNBTCompound = itemNBTCompound;
         this.sellerID = sellerID;
         this.price = price;
         this.amount = amount;
@@ -207,6 +211,7 @@ public class MarketItem {
         return "MarketItem{" +
                 "marketItemID=" + marketItemID +
                 ", itemID='" + itemID + '\'' +
+                ", itemNBTCompound=" + itemNBTCompound +
                 ", sellerID=" + sellerID +
                 ", price=" + price +
                 ", amount=" + amount +

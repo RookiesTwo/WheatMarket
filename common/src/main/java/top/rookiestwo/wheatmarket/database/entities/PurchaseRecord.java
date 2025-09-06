@@ -1,4 +1,4 @@
-package top.rookiestwo.wheatmarket.database.entity;
+package top.rookiestwo.wheatmarket.database.entities;
 
 import java.sql.Timestamp;
 import java.util.UUID;

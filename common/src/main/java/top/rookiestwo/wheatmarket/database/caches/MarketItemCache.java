@@ -62,15 +62,10 @@ public class MarketItemCache extends AbstractDatabaseCache {
 
     public void saveAllToDatabase(Connection connection) {
         //todo:区分脏数据节约保存时间
-        String sql = "INSERT INTO market_item (" +
+        String sql = "MERGE INTO market_item (" +
                 "MarketItemID, itemID, itemNBTCompound, sellerID, price, amount, listingTime, " +
                 "ifAdmin, ifSell, cooldownAmount, cooldownTimeInMinutes, timeToExpire, lastTradeTime) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-                "ON DUPLICATE KEY UPDATE " +
-                "itemID=VALUES(itemID), itemNBTCompound=VALUES(itemNBTCompound), sellerID=VALUES(sellerID), price=VALUES(price), " +
-                "amount=VALUES(amount), listingTime=VALUES(listingTime), ifAdmin=VALUES(ifAdmin), ifSell=VALUES(ifSell), " +
-                "cooldownAmount=VALUES(cooldownAmount), cooldownTimeInMinutes=VALUES(cooldownTimeInMinutes), " +
-                "timeToExpire=VALUES(timeToExpire), lastTradeTime=VALUES(lastTradeTime)";
+                "KEY (MarketItemID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             for (MarketItem item : cache.values()) {

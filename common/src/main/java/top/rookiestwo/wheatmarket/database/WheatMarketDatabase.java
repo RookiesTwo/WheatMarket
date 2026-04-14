@@ -4,6 +4,7 @@ import dev.architectury.utils.Env;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.storage.LevelResource;
 import top.rookiestwo.wheatmarket.WheatMarket;
+import top.rookiestwo.wheatmarket.database.caches.MarketItemCache;
 import top.rookiestwo.wheatmarket.database.tables.MarketItemTable;
 import top.rookiestwo.wheatmarket.database.tables.PlayerInfoTable;
 import top.rookiestwo.wheatmarket.database.tables.PurchaseRecordTable;
@@ -17,6 +18,7 @@ public class WheatMarketDatabase {
     private static final String serverDatabaseUrl = "jdbc:h2:file:./config/WheatMarket/database/WheatMarketDB";
     private static String clientDatabaseUrl = null;
     private Connection connection;
+    private MarketItemCache marketItemCache;
 
     public WheatMarketDatabase(Env environment) {
         WheatMarket.LOGGER.info("Initializing Database...");
@@ -52,10 +54,15 @@ public class WheatMarketDatabase {
         PlayerInfoTable.createTable(connection);
         MarketItemTable.createTable(connection);
         PurchaseRecordTable.createTable(connection);
+        this.marketItemCache = new MarketItemCache(connection);
     }
 
     public Connection getConnection() {
         return connection;
+    }
+
+    public MarketItemCache getMarketItemCache() {
+        return marketItemCache;
     }
 
     public void closeConnection() {

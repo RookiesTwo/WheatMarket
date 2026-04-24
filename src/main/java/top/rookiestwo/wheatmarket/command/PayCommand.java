@@ -1,10 +1,10 @@
 package top.rookiestwo.wheatmarket.command;
 
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import dev.architectury.event.events.common.CommandRegistrationEvent;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
@@ -18,17 +18,15 @@ public class PayCommand extends BaseCommand implements CommandInterface {
     private final String COMMAND_ROOT = "pay";
 
     @Override
-    public void register() {
-        CommandRegistrationEvent.EVENT.register((CommandDispatcher, CommandBuildContext, CommandSelection)->{
-            CommandDispatcher.register(
-                    Commands.literal(COMMAND_ROOT)
-                            .then(Commands.argument("player", EntityArgument.player())
-                                    .then(Commands.argument("amount", DoubleArgumentType.doubleArg(0.0F))
-                                            .executes(this::run)
-                                    )
-                            )
-            );
-        });
+    public void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+        dispatcher.register(
+                Commands.literal(COMMAND_ROOT)
+                        .then(Commands.argument("player", EntityArgument.player())
+                                .then(Commands.argument("amount", DoubleArgumentType.doubleArg(0.0F))
+                                        .executes(this::run)
+                                )
+                        )
+        );
     }
 
     @Override

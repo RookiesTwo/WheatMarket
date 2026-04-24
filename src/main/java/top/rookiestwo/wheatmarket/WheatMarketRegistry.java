@@ -1,13 +1,5 @@
 package top.rookiestwo.wheatmarket;
 
-import dev.architectury.event.events.client.ClientLifecycleEvent;
-import dev.architectury.event.events.common.LifecycleEvent;
-import dev.architectury.event.events.common.PlayerEvent;
-import dev.architectury.platform.Platform;
-import dev.architectury.registry.menu.MenuRegistry;
-import dev.architectury.registry.registries.DeferredRegister;
-import dev.architectury.registry.registries.RegistrySupplier;
-import dev.architectury.utils.Env;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
@@ -18,6 +10,15 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import top.rookiestwo.wheatmarket.blocks.LaptopBlock;
 import top.rookiestwo.wheatmarket.client.gui.WheatMarketMainScreen;
 import top.rookiestwo.wheatmarket.command.WheatMarketCommands;
@@ -29,21 +30,21 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 
 public class WheatMarketRegistry {
-    private static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(WheatMarket.MOD_ID, Registries.BLOCK);
-    private static final DeferredRegister<Item> ITEMS = DeferredRegister.create(WheatMarket.MOD_ID, Registries.ITEM);
-    private static final DeferredRegister<SoundEvent> SOUND_EVENTS = DeferredRegister.create(WheatMarket.MOD_ID, Registries.SOUND_EVENT);
-    private static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(WheatMarket.MOD_ID, Registries.MENU);
+    private static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(Registries.BLOCK, WheatMarket.MOD_ID);
+    private static final DeferredRegister<Item> ITEMS = DeferredRegister.create(Registries.ITEM, WheatMarket.MOD_ID);
+    private static final DeferredRegister<SoundEvent> SOUND_EVENTS = DeferredRegister.create(Registries.SOUND_EVENT, WheatMarket.MOD_ID);
+    private static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, WheatMarket.MOD_ID);
+    public static DeferredHolder<MenuType<?>, MenuType<WheatMarketMenu>> WHEAT_MARKET_MENU = null;
+    private static DeferredHolder<Block, Block> LAPTOP_BLOCK = null;
 
-    private static RegistrySupplier<Block> LAPTOP_BLOCK = null;
-    public static RegistrySupplier<MenuType<WheatMarketMenu>> WHEAT_MARKET_MENU = null;
-
-    public WheatMarketRegistry(){
+    public WheatMarketRegistry(IEventBus modBus) {
         WheatMarket.LOGGER.info("WheatMarket Registering...");
 
         registerBlocks();
         registerItems();
         registerSounds();
         registerMenus();
+        registerDeferredRegisters(modBus);
         registerEvents();
 
         WheatMarketCommands.registerCommands();
@@ -51,66 +52,61 @@ public class WheatMarketRegistry {
 
     private static void registerBlocks(){
         LAPTOP_BLOCK = BLOCKS.register("laptop", () -> new LaptopBlock(BlockBehaviour.Properties.of().sound(SoundType.METAL)));
-        BLOCKS.register();
     }
 
     private static void registerItems(){
-        RegistrySupplier<BlockItem> LAPTOP_ITEM = ITEMS.register("laptop", () -> new BlockItem(LAPTOP_BLOCK.get(), new Item.Properties()));
-        ITEMS.register();
+        ITEMS.register("laptop", () -> new BlockItem(LAPTOP_BLOCK.get(), new Item.Properties()));
     }
 
     private static void registerSounds(){
-        RegistrySupplier<SoundEvent> LAPTOP_OPEN_SOUND = SOUND_EVENTS.register("laptop_open", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "laptop_open")));
-        RegistrySupplier<SoundEvent> LAPTOP_CLOSE_SOUND = SOUND_EVENTS.register("laptop_close", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "laptop_close")));
-        SOUND_EVENTS.register();
+        SOUND_EVENTS.register("laptop_open", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "laptop_open")));
+        SOUND_EVENTS.register("laptop_close", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "laptop_close")));
     }
 
     private static void registerMenus() {
         WHEAT_MARKET_MENU = MENUS.register("wheat_market_menu", () -> new MenuType<>(WheatMarketMenu::new, FeatureFlags.DEFAULT_FLAGS));
-        MENUS.register();
     }
 
-    private static void registerClientScreens() {
+    private static void registerDeferredRegisters(IEventBus modBus) {
+        BLOCKS.register(modBus);
+        ITEMS.register(modBus);
+        SOUND_EVENTS.register(modBus);
+        MENUS.register(modBus);
+    }
+
+    public static void registerClientScreens(RegisterMenuScreensEvent event) {
         WheatMarket.LOGGER.info("WheatMarket Client Registering...");
-        MenuRegistry.registerScreenFactory(WHEAT_MARKET_MENU.get(), WheatMarketMainScreen::new);
+        event.register(WHEAT_MARKET_MENU.get(), WheatMarketMainScreen::new);
     }
 
     public static void registerEvents(){
-        //服务器启动时
-        LifecycleEvent.SERVER_STARTING.register((server) -> {
-            //创建线程池
-            WheatMarket.ASYNC =  Executors.newFixedThreadPool(4);
+        NeoForge.EVENT_BUS.addListener(WheatMarketRegistry::onServerStarting);
+        NeoForge.EVENT_BUS.addListener(WheatMarketRegistry::onServerStopping);
+        NeoForge.EVENT_BUS.addListener(WheatMarketRegistry::onPlayerLoggedIn);
+    }
 
-            //初始化数据库
-            WheatMarket.DATABASE = new WheatMarketDatabase(Platform.getEnvironment());
-        });
+    private static void onServerStarting(ServerStartingEvent event) {
+        WheatMarket.ASYNC = Executors.newFixedThreadPool(4);
+        WheatMarket.DATABASE = new WheatMarketDatabase(FMLEnvironment.dist);
+    }
 
-        //服务器关闭时
-        LifecycleEvent.SERVER_STOPPING.register((server) -> {
-            //关闭数据库连接
+    private static void onServerStopping(ServerStoppingEvent event) {
+        if (WheatMarket.DATABASE != null) {
             WheatMarket.DATABASE.closeConnection();
-        });
-
-        //服务器保存时
-        LifecycleEvent.SERVER_LEVEL_SAVE.register((server) -> {
-            //保存数据库（待完成）
-        });
-
-        //玩家进入时
-        PlayerEvent.PLAYER_JOIN.register((player) -> {
-            //若没有信息则创建信息
-            CompletableFuture.runAsync(() -> {
-                PlayerInfoTable.ifNotExistsCreateRecord(WheatMarket.DATABASE.getConnection(), player.getUUID());
-            }, WheatMarket.ASYNC);
-        });
-
-        /*==========Client Only Events=========*/
-        if (Platform.getEnvironment() == Env.CLIENT) {
-            //客户端启动时
-            ClientLifecycleEvent.CLIENT_SETUP.register((client) -> {
-                //注册界面
-                registerClientScreens();
-            });
         }
+        if (WheatMarket.ASYNC != null) {
+            WheatMarket.ASYNC.shutdown();
+            WheatMarket.ASYNC = null;
+        }
+    }
+
+    private static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+        if (WheatMarket.DATABASE == null || WheatMarket.ASYNC == null) {
+            return;
+        }
+
+        CompletableFuture.runAsync(() -> {
+            PlayerInfoTable.ifNotExistsCreateRecord(WheatMarket.DATABASE.getConnection(), event.getEntity().getUUID());
+        }, WheatMarket.ASYNC);
     }
 }

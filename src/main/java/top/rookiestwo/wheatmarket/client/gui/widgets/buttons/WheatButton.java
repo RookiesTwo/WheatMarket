@@ -1,7 +1,5 @@
 package top.rookiestwo.wheatmarket.client.gui.widgets.buttons;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -9,7 +7,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
-@Environment(EnvType.CLIENT)
 public abstract class WheatButton extends AbstractButton {
     @NotNull
     ResourceLocation background;

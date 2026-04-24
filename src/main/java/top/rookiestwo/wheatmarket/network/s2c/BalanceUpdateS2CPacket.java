@@ -1,8 +1,8 @@
 package top.rookiestwo.wheatmarket.network.s2c;
 
-import dev.architectury.networking.PacketContext;
 import net.minecraft.network.FriendlyByteBuf;
 import top.rookiestwo.wheatmarket.WheatMarket;
+import top.rookiestwo.wheatmarket.network.PacketContext;
 
 import java.util.function.Supplier;
 

@@ -165,6 +165,10 @@ public class MarketItem {
         return this.itemNBTCompound;
     }
 
+    public void setItemNBTCompound(CompoundTag itemNBTCompound) {
+        this.itemNBTCompound = itemNBTCompound;
+    }
+
     // 实用方法
 
     /**

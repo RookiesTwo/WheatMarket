@@ -1,8 +1,8 @@
 package top.rookiestwo.wheatmarket.database;
 
-import dev.architectury.utils.Env;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.storage.LevelResource;
+import net.neoforged.api.distmarker.Dist;
 import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.database.caches.MarketItemCache;
 import top.rookiestwo.wheatmarket.database.tables.MarketItemTable;
@@ -20,9 +20,9 @@ public class WheatMarketDatabase {
     private Connection connection;
     private MarketItemCache marketItemCache;
 
-    public WheatMarketDatabase(Env environment) {
+    public WheatMarketDatabase(Dist environment) {
         WheatMarket.LOGGER.info("Initializing Database...");
-        if (environment == Env.SERVER) serverInitialize();
+        if (environment == Dist.DEDICATED_SERVER) serverInitialize();
         else clientInitialize();
     }
 

@@ -1,5 +1,6 @@
 package top.rookiestwo.wheatmarket;
 
+import net.neoforged.bus.api.IEventBus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import top.rookiestwo.wheatmarket.command.WheatMarketCommands;
@@ -9,7 +10,6 @@ import top.rookiestwo.wheatmarket.network.s2c.MarketListS2CPacket;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public final class WheatMarket {
     public static final String MOD_ID = "wheatmarket";
@@ -25,9 +25,9 @@ public final class WheatMarket {
     public static int CLIENT_CURRENT_PAGE = 0;
     public static double CLIENT_BALANCE = 0.0;
 
-    public static void init() {
+    public static void init(IEventBus modBus) {
         WheatMarket.LOGGER.info("WheatMarket Initializing...");
-        REGISTRY = new WheatMarketRegistry();
+        REGISTRY = new WheatMarketRegistry(modBus);
         WheatMarketNetwork.init();
     }
 }

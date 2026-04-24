@@ -1,8 +1,8 @@
 package top.rookiestwo.wheatmarket.command;
 
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
-import dev.architectury.event.events.common.CommandRegistrationEvent;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -16,13 +16,11 @@ public class BalanceCommand extends BaseCommand implements CommandInterface {
     String COMMAND_ROOT = "balance";
 
     @Override
-    public void register() {
-        CommandRegistrationEvent.EVENT.register((CommandDispatcher, CommandBuildContext, CommandSelection)->{
-            CommandDispatcher.register(
-                    Commands.literal(COMMAND_ROOT)
-                            .executes(this::run)
-            );
-        });
+    public void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+        dispatcher.register(
+                Commands.literal(COMMAND_ROOT)
+                        .executes(this::run)
+        );
     }
 
     @Override

@@ -5,20 +5,33 @@ import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.api.distmarker.Dist;
 import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.database.caches.MarketItemCache;
-import top.rookiestwo.wheatmarket.database.tables.MarketItemTable;
-import top.rookiestwo.wheatmarket.database.tables.PlayerInfoTable;
-import top.rookiestwo.wheatmarket.database.tables.PurchaseRecordTable;
+import top.rookiestwo.wheatmarket.database.repository.MarketItemRepository;
+import top.rookiestwo.wheatmarket.database.repository.PlayerInfoRepository;
+import top.rookiestwo.wheatmarket.database.repository.PurchaseRecordRepository;
+import top.rookiestwo.wheatmarket.database.transaction.TransactionManager;
+import top.rookiestwo.wheatmarket.service.EconomyService;
+import top.rookiestwo.wheatmarket.service.MarketService;
 
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class WheatMarketDatabase {
     private static final String serverDatabaseUrl = "jdbc:h2:file:./config/WheatMarket/database/WheatMarketDB";
     private static String clientDatabaseUrl = null;
     private Connection connection;
     private MarketItemCache marketItemCache;
+    private ExecutorService dbExecutor;
+    private TransactionManager transactionManager;
+    private PlayerInfoRepository playerInfoRepository;
+    private MarketItemRepository marketItemRepository;
+    private PurchaseRecordRepository purchaseRecordRepository;
+    private EconomyService economyService;
+    private MarketService marketService;
 
     public WheatMarketDatabase(Dist environment) {
         WheatMarket.LOGGER.info("Initializing Database...");
@@ -52,21 +65,53 @@ public class WheatMarketDatabase {
     }
 
     private void createTables() {
-        PlayerInfoTable.createTable(connection);
-        MarketItemTable.createTable(connection);
-        PurchaseRecordTable.createTable(connection);
-        this.marketItemCache = new MarketItemCache(connection);
-    }
+        dbExecutor = Executors.newSingleThreadExecutor(r -> {
+            Thread thread = new Thread(r, "WheatMarket-DB");
+            thread.setDaemon(true);
+            return thread;
+        });
+        transactionManager = new TransactionManager(connection, dbExecutor);
+        playerInfoRepository = new PlayerInfoRepository();
+        marketItemRepository = new MarketItemRepository();
+        purchaseRecordRepository = new PurchaseRecordRepository();
 
-    public Connection getConnection() {
-        return connection;
+        try {
+            playerInfoRepository.createTable(connection);
+            marketItemRepository.createTable(connection);
+            purchaseRecordRepository.createTable(connection);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to create WheatMarket database tables", e);
+        }
+
+        this.marketItemCache = new MarketItemCache(connection);
+        economyService = new EconomyService(transactionManager, playerInfoRepository);
+        marketService = new MarketService(transactionManager, playerInfoRepository, marketItemRepository, purchaseRecordRepository, marketItemCache);
     }
 
     public MarketItemCache getMarketItemCache() {
         return marketItemCache;
     }
 
+    public EconomyService getEconomyService() {
+        return economyService;
+    }
+
+    public MarketService getMarketService() {
+        return marketService;
+    }
+
     public void closeConnection() {
+        if (dbExecutor != null) {
+            dbExecutor.shutdown();
+            try {
+                if (!dbExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
+                    dbExecutor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                dbExecutor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
         try {
             if (connection != null && !connection.isClosed()) {
                 connection.close();

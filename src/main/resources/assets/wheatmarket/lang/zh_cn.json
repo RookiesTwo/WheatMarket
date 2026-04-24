@@ -52,5 +52,6 @@
     "gui.wheatmarket.operation.toggle_admin_success": "服务器商店: %1$s",
     "gui.wheatmarket.operation.toggle_infinite_success": "无限数量: %1$s",
     "gui.wheatmarket.operation.cooldown_set_success": "冷却设置已更新。",
-    "gui.wheatmarket.operation.invalid_action": "无效的操作。"
+    "gui.wheatmarket.operation.invalid_action": "无效的操作。",
+    "gui.wheatmarket.operation.failed": "操作失败。"
 }

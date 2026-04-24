@@ -7,14 +7,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import top.rookiestwo.wheatmarket.WheatMarket;
-import top.rookiestwo.wheatmarket.database.caches.MarketItemCache;
-import top.rookiestwo.wheatmarket.database.entities.MarketItem;
 import top.rookiestwo.wheatmarket.network.WheatMarketNetwork;
 import top.rookiestwo.wheatmarket.network.s2c.MarketListS2CPacket;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
+import top.rookiestwo.wheatmarket.network.s2c.OperationResultS2CPacket;
+import top.rookiestwo.wheatmarket.service.MarketService;
+import top.rookiestwo.wheatmarket.service.result.ServiceResult;
 
 public class RequestMarketListC2SPacket implements CustomPacketPayload {
     public static final Type<RequestMarketListC2SPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "request_market_list"));
@@ -60,49 +57,16 @@ public class RequestMarketListC2SPacket implements CustomPacketPayload {
             if (!(context.player() instanceof ServerPlayer player)) return;
             if (WheatMarket.DATABASE == null) return;
 
-            MarketItemCache cache = WheatMarket.DATABASE.getMarketItemCache();
-            if (cache == null) return;
+            ServiceResult<MarketService.MarketListResult> result = WheatMarket.DATABASE.getMarketService()
+                    .requestMarketList(tradeType, itemType, sortType, searchQuery, page);
+            if (!result.isSuccess()) {
+                WheatMarketNetwork.sendToPlayer(player, new OperationResultS2CPacket(false, result.getMessageKey(), result.getMessageArgs()));
+                return;
+            }
 
-            Collection<MarketItem> allItems = cache.getCache().values();
-            List<MarketItem> filtered = allItems.stream()
-                    .filter(item -> !item.isExpired())
-                    .filter(item -> {
-                        if (tradeType == 1) return item.getIfSell();
-                        if (tradeType == 2) return !item.getIfSell();
-                        return true;
-                    })
-                    .filter(item -> {
-                        if (itemType == 1) return item.getIfAdmin();
-                        if (itemType == 2) return !item.getIfAdmin();
-                        return true;
-                    })
-                    .filter(item -> {
-                        if (searchQuery == null || searchQuery.isEmpty()) return true;
-                        return item.getItemID().toLowerCase().contains(searchQuery.toLowerCase());
-                    })
-                    .sorted((a, b) -> {
-                        switch (sortType) {
-                            case 1:
-                                return a.getItemID().compareToIgnoreCase(b.getItemID());
-                            case 2:
-                                long aTime = a.getLastTradeTime() != null ? a.getLastTradeTime().getTime() : 0;
-                                long bTime = b.getLastTradeTime() != null ? b.getLastTradeTime().getTime() : 0;
-                                return Long.compare(bTime, aTime);
-                            default:
-                                return b.getListingTime().compareTo(a.getListingTime());
-                        }
-                    })
-                    .collect(Collectors.toList());
-
-            int itemsPerPage = 10;
-            int totalPages = Math.max(1, (int) Math.ceil((double) filtered.size() / itemsPerPage));
-            int safePage = Math.max(0, Math.min(page, totalPages - 1));
-            int fromIndex = safePage * itemsPerPage;
-            int toIndex = Math.min(fromIndex + itemsPerPage, filtered.size());
-            List<MarketItem> pageItems = filtered.subList(fromIndex, toIndex);
-
+            MarketService.MarketListResult marketList = result.getValue();
             WheatMarketNetwork.sendToPlayer(player,
-                    new MarketListS2CPacket(pageItems, totalPages, safePage));
+                    new MarketListS2CPacket(marketList.items(), marketList.totalPages(), marketList.currentPage()));
         }).exceptionally(e -> {
             WheatMarket.LOGGER.error("Failed to handle market list request packet.", e);
             return null;

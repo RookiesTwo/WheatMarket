@@ -23,11 +23,7 @@ import top.rookiestwo.wheatmarket.blocks.LaptopBlock;
 import top.rookiestwo.wheatmarket.client.gui.WheatMarketMainScreen;
 import top.rookiestwo.wheatmarket.command.WheatMarketCommands;
 import top.rookiestwo.wheatmarket.database.WheatMarketDatabase;
-import top.rookiestwo.wheatmarket.database.tables.PlayerInfoTable;
 import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
 
 public class WheatMarketRegistry {
     private static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(Registries.BLOCK, WheatMarket.MOD_ID);
@@ -86,7 +82,6 @@ public class WheatMarketRegistry {
     }
 
     private static void onServerStarting(ServerStartingEvent event) {
-        WheatMarket.ASYNC = Executors.newFixedThreadPool(4);
         WheatMarket.DATABASE = new WheatMarketDatabase(FMLEnvironment.dist);
     }
 
@@ -94,19 +89,14 @@ public class WheatMarketRegistry {
         if (WheatMarket.DATABASE != null) {
             WheatMarket.DATABASE.closeConnection();
         }
-        if (WheatMarket.ASYNC != null) {
-            WheatMarket.ASYNC.shutdown();
-            WheatMarket.ASYNC = null;
-        }
     }
 
     private static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
-        if (WheatMarket.DATABASE == null || WheatMarket.ASYNC == null) {
+        if (WheatMarket.DATABASE == null) {
             return;
         }
 
-        CompletableFuture.runAsync(() -> {
-            PlayerInfoTable.ifNotExistsCreateRecord(WheatMarket.DATABASE.getConnection(), event.getEntity().getUUID());
-        }, WheatMarket.ASYNC);
+        WheatMarket.DATABASE.getEconomyService()
+                .ensurePlayerRecord(event.getEntity().getUUID());
     }
 }

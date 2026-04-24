@@ -52,5 +52,6 @@
     "gui.wheatmarket.operation.toggle_admin_success": "Admin shop: %1$s",
     "gui.wheatmarket.operation.toggle_infinite_success": "Infinite stock: %1$s",
     "gui.wheatmarket.operation.cooldown_set_success": "Cooldown settings updated.",
-    "gui.wheatmarket.operation.invalid_action": "Invalid action."
+    "gui.wheatmarket.operation.invalid_action": "Invalid action.",
+    "gui.wheatmarket.operation.failed": "Operation failed."
 }

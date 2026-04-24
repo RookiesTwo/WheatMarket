@@ -12,7 +12,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.CommonColors;
 import top.rookiestwo.wheatmarket.WheatMarket;
-import top.rookiestwo.wheatmarket.database.tables.PlayerInfoTable;
 
 public class AccountCommand extends BaseCommand implements CommandInterface {
 
@@ -48,75 +47,93 @@ public class AccountCommand extends BaseCommand implements CommandInterface {
     public int run(CommandContext<CommandSourceStack> commandContext) {
         CommandSourceStack source = commandContext.getSource();
         double amount = DoubleArgumentType.getDouble(commandContext, "amount");
-        try{
+        if (WheatMarket.DATABASE == null) {
+            return Command.SINGLE_SUCCESS;
+        }
+        try {
             ServerPlayer target = EntityArgument.getPlayer(commandContext, "player");
-            try{
+            try {
                 String keyWord = commandContext.getInput().split(" ")[2];
-                switch (keyWord){
-                    case "add"->{
-                        PlayerInfoTable.addPlayerBalance(WheatMarket.DATABASE.getConnection(), target.getUUID(), amount);
-                        double targetBalance = PlayerInfoTable.getPlayerBalance(WheatMarket.DATABASE.getConnection(), target.getUUID());
-                        source.sendSystemMessage(
-                                Component
-                                    .translatable("info.command.wheatmarket.admin_add_balance",String.valueOf(amount),target.getName().getString())
-                                    .append(Component.translatable("info.command.wheatmarket.balance",String.valueOf(targetBalance)))
-                                    .withColor(CommonColors.SOFT_YELLOW)
-                        );
-                        target.sendSystemMessage(
-                                Component
-                                    .translatable("info.command.wheatmarket.receive_from_admin",String.valueOf(amount))
-                                    .append(Component.translatable("info.command.wheatmarket.balance",String.valueOf(targetBalance)))
-                                    .withColor(CommonColors.SOFT_YELLOW)
-                        );
-                        return Command.SINGLE_SUCCESS;
-                    }
-                    case "set"->{
-                        PlayerInfoTable.updatePlayerBalance(WheatMarket.DATABASE.getConnection(), target.getUUID(), amount);
-                        source.sendSystemMessage(
-                                Component
-                                    .translatable("info.command.wheatmarket.admin_set_balance",target.getName().getString(),String.valueOf(amount))
-                                    .withColor(CommonColors.SOFT_YELLOW)
-                        );
-                        target.sendSystemMessage(
-                                Component
-                                    .translatable("info.command.wheatmarket.set_from_admin",String.valueOf(amount))
-                                    .withColor(CommonColors.SOFT_YELLOW)
+                switch (keyWord) {
+                    case "add" -> {
+                        WheatMarket.DATABASE.getEconomyService().addBalance(target.getUUID(), amount).thenAccept(result ->
+                                source.getServer().execute(() -> {
+                                    if (!result.isSuccess()) {
+                                        source.sendSystemMessage(Component.translatable(result.getMessageKey(), (Object[]) result.getMessageArgs()).withColor(CommonColors.SOFT_RED));
+                                        return;
+                                    }
+                                    double targetBalance = result.getValue();
+                                    source.sendSystemMessage(
+                                            Component
+                                                    .translatable("info.command.wheatmarket.admin_add_balance", formatMoney(amount), target.getName().getString())
+                                                    .append(Component.translatable("info.command.wheatmarket.balance", formatMoney(targetBalance)))
+                                                    .withColor(CommonColors.SOFT_YELLOW)
+                                    );
+                                    target.sendSystemMessage(
+                                            Component
+                                                    .translatable("info.command.wheatmarket.receive_from_admin", formatMoney(amount))
+                                                    .append(Component.translatable("info.command.wheatmarket.balance", formatMoney(targetBalance)))
+                                                    .withColor(CommonColors.SOFT_YELLOW)
+                                    );
+                                })
                         );
                         return Command.SINGLE_SUCCESS;
                     }
-                    case "remove"->{
-                        double targetBalance = PlayerInfoTable.getPlayerBalance(WheatMarket.DATABASE.getConnection(), target.getUUID());
-                        if(amount>targetBalance){
-                            source.sendSystemMessage(
-                                    Component
-                                        .translatable("error.command.wheatmarket.admin_remove_balance",target.getName().getString())
-                                        .append(Component.translatable("info.command.wheatmarket.balance",String.valueOf(targetBalance)))
-                                        .withColor(CommonColors.SOFT_RED)
-                            );
-                        }
-                        else{
-                            PlayerInfoTable.addPlayerBalance(WheatMarket.DATABASE.getConnection(), target.getUUID(), 0 - amount);
-                            source.sendSystemMessage(
-                                    Component
-                                            .translatable("info.command.wheatmarket.admin_remove_balance",String.valueOf(amount),target.getName().getString())
-                                            .append(Component.translatable("info.command.wheatmarket.balance",String.valueOf(targetBalance-amount)))
-                                            .withColor(CommonColors.SOFT_YELLOW)
-                            );
-                            target.sendSystemMessage(
-                                    Component
-                                            .translatable("info.command.wheatmarket.remove_from_admin",String.valueOf(amount))
-                                            .append(Component.translatable("info.command.wheatmarket.balance",String.valueOf(targetBalance-amount)))
-                                            .withColor(CommonColors.SOFT_YELLOW)
-                            );
-                        }
+                    case "set" -> {
+                        WheatMarket.DATABASE.getEconomyService().setBalance(target.getUUID(), amount).thenAccept(result ->
+                                source.getServer().execute(() -> {
+                                    if (!result.isSuccess()) {
+                                        source.sendSystemMessage(Component.translatable(result.getMessageKey(), (Object[]) result.getMessageArgs()).withColor(CommonColors.SOFT_RED));
+                                        return;
+                                    }
+                                    source.sendSystemMessage(
+                                            Component
+                                                    .translatable("info.command.wheatmarket.admin_set_balance", target.getName().getString(), formatMoney(amount))
+                                                    .withColor(CommonColors.SOFT_YELLOW)
+                                    );
+                                    target.sendSystemMessage(
+                                            Component
+                                                    .translatable("info.command.wheatmarket.set_from_admin", formatMoney(amount))
+                                                    .withColor(CommonColors.SOFT_YELLOW)
+                                    );
+                                })
+                        );
+                        return Command.SINGLE_SUCCESS;
+                    }
+                    case "remove" -> {
+                        WheatMarket.DATABASE.getEconomyService().removeBalance(target.getUUID(), amount).thenAccept(result ->
+                                source.getServer().execute(() -> {
+                                    if (!result.isSuccess()) {
+                                        source.sendSystemMessage(
+                                                Component
+                                                        .translatable(result.getMessageKey(), target.getName().getString())
+                                                        .withColor(CommonColors.SOFT_RED)
+                                        );
+                                        return;
+                                    }
+                                    double targetBalance = result.getValue();
+                                    source.sendSystemMessage(
+                                            Component
+                                                    .translatable("info.command.wheatmarket.admin_remove_balance", formatMoney(amount), target.getName().getString())
+                                                    .append(Component.translatable("info.command.wheatmarket.balance", formatMoney(targetBalance)))
+                                                    .withColor(CommonColors.SOFT_YELLOW)
+                                    );
+                                    target.sendSystemMessage(
+                                            Component
+                                                    .translatable("info.command.wheatmarket.remove_from_admin", formatMoney(amount))
+                                                    .append(Component.translatable("info.command.wheatmarket.balance", formatMoney(targetBalance)))
+                                                    .withColor(CommonColors.SOFT_YELLOW)
+                                    );
+                                })
+                        );
                         return Command.SINGLE_SUCCESS;
                     }
                 }
-            } catch(Exception e){
+            } catch (Exception e) {
                 WheatMarket.LOGGER.error("Account command failed.", e);
                 return Command.SINGLE_SUCCESS;
             }
-        } catch (CommandSyntaxException e){
+        } catch (CommandSyntaxException e) {
             source.sendSystemMessage(Component.translatable("error.command.wheatmarket.player_not_found_or_offline").withColor(CommonColors.SOFT_RED));
             return Command.SINGLE_SUCCESS;
         }

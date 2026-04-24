@@ -3,22 +3,17 @@ package top.rookiestwo.wheatmarket;
 import net.neoforged.bus.api.IEventBus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import top.rookiestwo.wheatmarket.command.WheatMarketCommands;
 import top.rookiestwo.wheatmarket.database.WheatMarketDatabase;
 import top.rookiestwo.wheatmarket.network.WheatMarketNetwork;
 import top.rookiestwo.wheatmarket.network.s2c.MarketListS2CPacket;
 
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 
 public final class WheatMarket {
     public static final String MOD_ID = "wheatmarket";
-    public static final WheatMarket INSTANCE = null;
     public static WheatMarketRegistry REGISTRY = null;
     public static final Logger LOGGER = LogManager.getLogger("Wheat Market");
     public static WheatMarketDatabase DATABASE = null;
-    public static WheatMarketCommands WHEAT_MARKET_COMMANDS = null;
-    public static ExecutorService ASYNC = null;
 
     public static List<MarketListS2CPacket.MarketItemSummary> CLIENT_MARKET_LIST = null;
     public static int CLIENT_TOTAL_PAGES = 0;

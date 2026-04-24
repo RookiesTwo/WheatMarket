@@ -8,7 +8,6 @@ import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import top.rookiestwo.wheatmarket.WheatMarket;
-import top.rookiestwo.wheatmarket.database.tables.PlayerInfoTable;
 
 
 public class BalanceCommand extends BaseCommand implements CommandInterface {
@@ -26,8 +25,19 @@ public class BalanceCommand extends BaseCommand implements CommandInterface {
     @Override
     public int run(CommandContext<CommandSourceStack> commandContext) {
         ServerPlayer sender = commandContext.getSource().getPlayer();
-        double balance = PlayerInfoTable.getPlayerBalance(WheatMarket.DATABASE.getConnection(), sender.getUUID());
-        sender.sendSystemMessage(Component.translatable("info.command.wheatmarket.balance", String.valueOf(balance)));
+        if (sender == null || WheatMarket.DATABASE == null) {
+            return Command.SINGLE_SUCCESS;
+        }
+
+        WheatMarket.DATABASE.getEconomyService().getBalance(sender.getUUID()).thenAccept(result ->
+                sender.server.execute(() -> {
+                    if (result.isSuccess()) {
+                        sender.sendSystemMessage(Component.translatable("info.command.wheatmarket.balance", formatMoney(result.getValue())));
+                    } else {
+                        sender.sendSystemMessage(Component.translatable(result.getMessageKey(), (Object[]) result.getMessageArgs()));
+                    }
+                })
+        );
         return Command.SINGLE_SUCCESS;
     }
 }

@@ -12,5 +12,6 @@ public class WheatMarketCommands {
         new AccountCommand().register(event.getDispatcher());
         new BalanceCommand().register(event.getDispatcher());
         new PayCommand().register(event.getDispatcher());
+        new WheatMarketTestCommand().register(event.getDispatcher());
     }
 }

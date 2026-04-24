@@ -5,12 +5,17 @@ import net.minecraft.nbt.TagParser;
 import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.database.entities.MarketItem;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class MarketItemCache extends AbstractDatabaseCache {
+public class MarketItemCache {
 
     private final Map<UUID, MarketItem> cache = new ConcurrentHashMap<>();
 
@@ -18,8 +23,20 @@ public class MarketItemCache extends AbstractDatabaseCache {
         loadAllFromDatabase(connection);
     }
 
-    public Map<UUID, MarketItem> getCache() {
-        return cache;
+    public Collection<MarketItem> values() {
+        return cache.values();
+    }
+
+    public MarketItem get(UUID marketItemID) {
+        return cache.get(marketItemID);
+    }
+
+    public void put(MarketItem item) {
+        cache.put(item.getMarketItemID(), item);
+    }
+
+    public void remove(UUID marketItemID) {
+        cache.remove(marketItemID);
     }
 
     public void loadAllFromDatabase(Connection connection) {
@@ -60,39 +77,4 @@ public class MarketItemCache extends AbstractDatabaseCache {
         }
     }
 
-    public void saveAllToDatabase(Connection connection) {
-        //todo:区分脏数据节约保存时间
-        String sql = "MERGE INTO market_item (" +
-                "MarketItemID, itemID, itemNBTCompound, sellerID, price, amount, listingTime, " +
-                "ifAdmin, ifSell, cooldownAmount, cooldownTimeInMinutes, timeToExpire, lastTradeTime) " +
-                "KEY (MarketItemID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            for (MarketItem item : cache.values()) {
-                stmt.setObject(1, item.getMarketItemID());
-                stmt.setString(2, item.getItemID());
-                stmt.setString(3, item.getItemNBTCompound().toString()); // 序列化 NBT
-                stmt.setObject(4, item.getSellerID());
-                stmt.setDouble(5, item.getPrice());
-                stmt.setInt(6, item.getAmount());
-                stmt.setTimestamp(7, item.getListingTime());
-                stmt.setBoolean(8, item.getIfAdmin());
-                stmt.setBoolean(9, item.getIfSell());
-                stmt.setInt(10, item.getCooldownAmount());
-                stmt.setInt(11, item.getCooldownTimeInMinutes());
-                stmt.setLong(12, item.getTimeToExpire());
-                stmt.setTimestamp(13, item.getLastTradeTime());
-
-                stmt.addBatch();
-            }
-            stmt.executeBatch();
-        } catch (SQLException e) {
-            WheatMarket.LOGGER.error("Failed to save market items to database", e);
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                WheatMarket.LOGGER.error("Failed to rollback transaction", ex);
-            }
-        }
-    }
 }

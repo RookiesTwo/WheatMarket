@@ -12,7 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.CommonColors;
 import top.rookiestwo.wheatmarket.WheatMarket;
-import top.rookiestwo.wheatmarket.database.tables.PlayerInfoTable;
+import top.rookiestwo.wheatmarket.service.EconomyService;
 
 public class PayCommand extends BaseCommand implements CommandInterface {
     private final String COMMAND_ROOT = "pay";
@@ -30,45 +30,40 @@ public class PayCommand extends BaseCommand implements CommandInterface {
     }
 
     @Override
-    public int run(CommandContext<CommandSourceStack> commandContext){
-        if(commandContext.getSource().getPlayer() == null){
+    public int run(CommandContext<CommandSourceStack> commandContext) {
+        if (commandContext.getSource().getPlayer() == null) {
             return Command.SINGLE_SUCCESS;
         }
 
-        ServerPlayer sender=commandContext.getSource().getPlayer();
+        if (WheatMarket.DATABASE == null) {
+            return Command.SINGLE_SUCCESS;
+        }
+
+        ServerPlayer sender = commandContext.getSource().getPlayer();
         double amount = DoubleArgumentType.getDouble(commandContext, "amount");
-        double senderBalance = PlayerInfoTable.getPlayerBalance(WheatMarket.DATABASE.getConnection(), sender.getUUID());
-
-        if(senderBalance<amount){
-            sender.sendSystemMessage(Component.translatable("info.command.wheatmarket.not_enough_money").withColor(CommonColors.SOFT_RED));
-            return Command.SINGLE_SUCCESS;
-        }
-        try{
+        try {
             ServerPlayer target = EntityArgument.getPlayer(commandContext, "player");
-            try{
-                PlayerInfoTable.addPlayerBalance(WheatMarket.DATABASE.getConnection(), sender.getUUID(), 0 - amount);
-                PlayerInfoTable.addPlayerBalance(WheatMarket.DATABASE.getConnection(), target.getUUID(), amount);
+            WheatMarket.DATABASE.getEconomyService().transfer(sender.getUUID(), target.getUUID(), amount).thenAccept(result ->
+                    sender.server.execute(() -> {
+                        if (!result.isSuccess()) {
+                            sender.sendSystemMessage(Component.translatable(result.getMessageKey(), (Object[]) result.getMessageArgs()).withColor(CommonColors.SOFT_RED));
+                            return;
+                        }
 
-                double targetBalance = PlayerInfoTable.getPlayerBalance(WheatMarket.DATABASE.getConnection(), target.getUUID());
-                senderBalance-=amount;
-
-                sender.sendSystemMessage(
-                        Component.translatable("info.command.wheatmarket.pay_success",String.valueOf(amount),sender.getName().getString())
-                                .append(Component.translatable("info.command.wheatmarket.balance",senderBalance))
-                                .withColor(CommonColors.GREEN)
-                );
-                target.sendSystemMessage(
-                        Component.translatable("info.command.wheatmarket.receive_success",String.valueOf(amount),sender.getName().getString())
-                                .append(Component.translatable("info.command.wheatmarket.balance",targetBalance))
-                                .withColor(CommonColors.GREEN));
-
-                return Command.SINGLE_SUCCESS;
-            } catch (Exception e){
-                WheatMarket.LOGGER.error("Pay command failed.", e);
-                return 0;
-            }
-        }
-        catch(CommandSyntaxException e){
+                        EconomyService.TransferResult transfer = result.getValue();
+                        sender.sendSystemMessage(
+                                Component.translatable("info.command.wheatmarket.pay_success", formatMoney(amount), target.getName().getString())
+                                        .append(Component.translatable("info.command.wheatmarket.balance", formatMoney(transfer.senderBalance())))
+                                        .withColor(CommonColors.GREEN)
+                        );
+                        target.sendSystemMessage(
+                                Component.translatable("info.command.wheatmarket.receive_success", formatMoney(amount), sender.getName().getString())
+                                        .append(Component.translatable("info.command.wheatmarket.balance", formatMoney(transfer.targetBalance())))
+                                        .withColor(CommonColors.GREEN));
+                    })
+            );
+            return Command.SINGLE_SUCCESS;
+        } catch (CommandSyntaxException e) {
             sender.sendSystemMessage(Component.translatable("error.command.wheatmarket.player_not_found_or_offline").withColor(CommonColors.SOFT_RED));
             return Command.SINGLE_SUCCESS;
         }

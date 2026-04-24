@@ -28,6 +28,6 @@ public final class WheatMarket {
     public static void init(IEventBus modBus) {
         WheatMarket.LOGGER.info("WheatMarket Initializing...");
         REGISTRY = new WheatMarketRegistry(modBus);
-        WheatMarketNetwork.init();
+        WheatMarketNetwork.init(modBus);
     }
 }

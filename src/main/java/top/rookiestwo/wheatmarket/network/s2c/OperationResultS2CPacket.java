@@ -2,12 +2,16 @@ package top.rookiestwo.wheatmarket.network.s2c;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import top.rookiestwo.wheatmarket.WheatMarket;
-import top.rookiestwo.wheatmarket.network.PacketContext;
 
-import java.util.function.Supplier;
+public class OperationResultS2CPacket implements CustomPacketPayload {
+    public static final Type<OperationResultS2CPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "operation_result"));
+    public static final StreamCodec<FriendlyByteBuf, OperationResultS2CPacket> STREAM_CODEC = CustomPacketPayload.codec(OperationResultS2CPacket::encode, OperationResultS2CPacket::new);
 
-public class OperationResultS2CPacket {
     private boolean success;
     private String messageKey;
     private String[] messageArgs;
@@ -37,14 +41,21 @@ public class OperationResultS2CPacket {
         }
     }
 
-    public void apply(Supplier<PacketContext> contextSupplier) {
-        PacketContext context = contextSupplier.get();
-        context.queue(() -> {
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
+
+    public void handle(IPayloadContext context) {
+        context.enqueueWork(() -> {
             Component message = Component.translatable(messageKey, (Object[]) messageArgs);
-            if (context.getPlayer() != null) {
-                context.getPlayer().displayClientMessage(message, false);
+            if (context.player() != null) {
+                context.player().displayClientMessage(message, false);
             }
             WheatMarket.LOGGER.debug("Operation result: success={}, key={}", success, messageKey);
+        }).exceptionally(e -> {
+            WheatMarket.LOGGER.error("Failed to handle operation result packet.", e);
+            return null;
         });
     }
 

@@ -2,16 +2,21 @@ package top.rookiestwo.wheatmarket.network.s2c;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.database.entities.MarketItem;
-import top.rookiestwo.wheatmarket.network.PacketContext;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.function.Supplier;
 
-public class MarketListS2CPacket {
+public class MarketListS2CPacket implements CustomPacketPayload {
+    public static final Type<MarketListS2CPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "market_list"));
+    public static final StreamCodec<FriendlyByteBuf, MarketListS2CPacket> STREAM_CODEC = CustomPacketPayload.codec(MarketListS2CPacket::encode, MarketListS2CPacket::new);
+
     private List<MarketItemSummary> items;
     private int totalPages;
     private int currentPage;
@@ -55,12 +60,19 @@ public class MarketListS2CPacket {
         buf.writeVarInt(currentPage);
     }
 
-    public void apply(Supplier<PacketContext> contextSupplier) {
-        PacketContext context = contextSupplier.get();
-        context.queue(() -> {
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
+
+    public void handle(IPayloadContext context) {
+        context.enqueueWork(() -> {
             WheatMarket.CLIENT_MARKET_LIST = this.items;
             WheatMarket.CLIENT_TOTAL_PAGES = this.totalPages;
             WheatMarket.CLIENT_CURRENT_PAGE = this.currentPage;
+        }).exceptionally(e -> {
+            WheatMarket.LOGGER.error("Failed to handle market list packet.", e);
+            return null;
         });
     }
 

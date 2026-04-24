@@ -1,20 +1,25 @@
 package top.rookiestwo.wheatmarket.network.c2s;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.database.caches.MarketItemCache;
 import top.rookiestwo.wheatmarket.database.entities.MarketItem;
 import top.rookiestwo.wheatmarket.database.tables.MarketItemTable;
-import top.rookiestwo.wheatmarket.network.PacketContext;
 import top.rookiestwo.wheatmarket.network.WheatMarketNetwork;
 import top.rookiestwo.wheatmarket.network.s2c.OperationResultS2CPacket;
 
 import java.util.UUID;
-import java.util.function.Supplier;
 
-public class ManageItemC2SPacket {
+public class ManageItemC2SPacket implements CustomPacketPayload {
+    public static final Type<ManageItemC2SPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "manage_item"));
+    public static final StreamCodec<FriendlyByteBuf, ManageItemC2SPacket> STREAM_CODEC = CustomPacketPayload.codec(ManageItemC2SPacket::encode, ManageItemC2SPacket::new);
+
     public static final int ACTION_RESTOCK = 0;
     public static final int ACTION_WITHDRAW = 1;
     public static final int ACTION_CHANGE_PRICE = 2;
@@ -62,10 +67,14 @@ public class ManageItemC2SPacket {
         buf.writeVarInt(cooldownTimeInMinutes);
     }
 
-    public void apply(Supplier<PacketContext> contextSupplier) {
-        PacketContext context = contextSupplier.get();
-        context.queue(() -> {
-            if (!(context.getPlayer() instanceof ServerPlayer player)) return;
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
+
+    public void handle(IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player)) return;
             if (WheatMarket.DATABASE == null) return;
 
             MarketItemCache cache = WheatMarket.DATABASE.getMarketItemCache();
@@ -73,7 +82,7 @@ public class ManageItemC2SPacket {
 
             MarketItem item = cache.getCache().get(marketItemID);
             if (item == null) {
-                WheatMarketNetwork.CHANNEL.sendToPlayer(player,
+                WheatMarketNetwork.sendToPlayer(player,
                         new OperationResultS2CPacket(false, "gui.wheatmarket.operation.item_not_found"));
                 return;
             }
@@ -81,7 +90,7 @@ public class ManageItemC2SPacket {
             boolean isOwner = item.getSellerID().equals(player.getUUID());
             boolean isOp = player.hasPermissions(2);
             if (!isOwner && !isOp) {
-                WheatMarketNetwork.CHANNEL.sendToPlayer(player,
+                WheatMarketNetwork.sendToPlayer(player,
                         new OperationResultS2CPacket(false, "gui.wheatmarket.operation.no_permission"));
                 return;
             }
@@ -94,22 +103,25 @@ public class ManageItemC2SPacket {
                 case ACTION_TOGGLE_ADMIN -> handleToggleAdmin(player, cache, item);
                 case ACTION_TOGGLE_INFINITE -> handleToggleInfinite(player, cache, item);
                 case ACTION_SET_COOLDOWN -> handleSetCooldown(player, cache, item);
-                default -> WheatMarketNetwork.CHANNEL.sendToPlayer(player,
+                default -> WheatMarketNetwork.sendToPlayer(player,
                         new OperationResultS2CPacket(false, "gui.wheatmarket.operation.invalid_action"));
             }
+        }).exceptionally(e -> {
+            WheatMarket.LOGGER.error("Failed to handle manage item packet.", e);
+            return null;
         });
     }
 
     private void handleRestock(ServerPlayer player, MarketItemCache cache, MarketItem item) {
         if (slotIndex < 0 || slotIndex >= player.getInventory().getContainerSize()) {
-            WheatMarketNetwork.CHANNEL.sendToPlayer(player,
+            WheatMarketNetwork.sendToPlayer(player,
                     new OperationResultS2CPacket(false, "gui.wheatmarket.operation.invalid_slot"));
             return;
         }
 
         ItemStack stackInSlot = player.getInventory().getItem(slotIndex);
         if (stackInSlot.isEmpty()) {
-            WheatMarketNetwork.CHANNEL.sendToPlayer(player,
+            WheatMarketNetwork.sendToPlayer(player,
                     new OperationResultS2CPacket(false, "gui.wheatmarket.operation.slot_empty"));
             return;
         }
@@ -123,14 +135,14 @@ public class ManageItemC2SPacket {
         item.setAmount(item.getAmount() + transferAmount);
         MarketItemTable.updateMarketItem(WheatMarket.DATABASE.getConnection(), item);
 
-        WheatMarketNetwork.CHANNEL.sendToPlayer(player,
+        WheatMarketNetwork.sendToPlayer(player,
                 new OperationResultS2CPacket(true, "gui.wheatmarket.operation.restock_success",
                         String.valueOf(transferAmount)));
     }
 
     private void handleWithdraw(ServerPlayer player, MarketItemCache cache, MarketItem item) {
         if (amount <= 0 || amount > item.getAmount()) {
-            WheatMarketNetwork.CHANNEL.sendToPlayer(player,
+            WheatMarketNetwork.sendToPlayer(player,
                     new OperationResultS2CPacket(false, "gui.wheatmarket.operation.invalid_amount"));
             return;
         }
@@ -140,7 +152,7 @@ public class ManageItemC2SPacket {
         itemStack.setCount(amount);
 
         if (!player.getInventory().add(itemStack)) {
-            WheatMarketNetwork.CHANNEL.sendToPlayer(player,
+            WheatMarketNetwork.sendToPlayer(player,
                     new OperationResultS2CPacket(false, "gui.wheatmarket.operation.inventory_full"));
             return;
         }
@@ -153,13 +165,13 @@ public class ManageItemC2SPacket {
             MarketItemTable.updateMarketItem(WheatMarket.DATABASE.getConnection(), item);
         }
 
-        WheatMarketNetwork.CHANNEL.sendToPlayer(player,
+        WheatMarketNetwork.sendToPlayer(player,
                 new OperationResultS2CPacket(true, "gui.wheatmarket.operation.withdraw_success"));
     }
 
     private void handleChangePrice(ServerPlayer player, MarketItemCache cache, MarketItem item) {
         if (price <= 0) {
-            WheatMarketNetwork.CHANNEL.sendToPlayer(player,
+            WheatMarketNetwork.sendToPlayer(player,
                     new OperationResultS2CPacket(false, "gui.wheatmarket.operation.invalid_price"));
             return;
         }
@@ -167,7 +179,7 @@ public class ManageItemC2SPacket {
         item.setPrice(price);
         MarketItemTable.updateMarketItem(WheatMarket.DATABASE.getConnection(), item);
 
-        WheatMarketNetwork.CHANNEL.sendToPlayer(player,
+        WheatMarketNetwork.sendToPlayer(player,
                 new OperationResultS2CPacket(true, "gui.wheatmarket.operation.price_change_success"));
     }
 
@@ -182,13 +194,13 @@ public class ManageItemC2SPacket {
         cache.getCache().remove(item.getMarketItemID());
         MarketItemTable.deleteMarketItem(WheatMarket.DATABASE.getConnection(), item.getMarketItemID());
 
-        WheatMarketNetwork.CHANNEL.sendToPlayer(player,
+        WheatMarketNetwork.sendToPlayer(player,
                 new OperationResultS2CPacket(true, "gui.wheatmarket.operation.delist_success"));
     }
 
     private void handleToggleAdmin(ServerPlayer player, MarketItemCache cache, MarketItem item) {
         if (!player.hasPermissions(2)) {
-            WheatMarketNetwork.CHANNEL.sendToPlayer(player,
+            WheatMarketNetwork.sendToPlayer(player,
                     new OperationResultS2CPacket(false, "gui.wheatmarket.operation.no_permission"));
             return;
         }
@@ -196,14 +208,14 @@ public class ManageItemC2SPacket {
         item.setIfAdmin(!item.getIfAdmin());
         MarketItemTable.updateMarketItem(WheatMarket.DATABASE.getConnection(), item);
 
-        WheatMarketNetwork.CHANNEL.sendToPlayer(player,
+        WheatMarketNetwork.sendToPlayer(player,
                 new OperationResultS2CPacket(true, "gui.wheatmarket.operation.toggle_admin_success",
                         String.valueOf(item.getIfAdmin())));
     }
 
     private void handleToggleInfinite(ServerPlayer player, MarketItemCache cache, MarketItem item) {
         if (!player.hasPermissions(2)) {
-            WheatMarketNetwork.CHANNEL.sendToPlayer(player,
+            WheatMarketNetwork.sendToPlayer(player,
                     new OperationResultS2CPacket(false, "gui.wheatmarket.operation.no_permission"));
             return;
         }
@@ -216,14 +228,14 @@ public class ManageItemC2SPacket {
         }
         MarketItemTable.updateMarketItem(WheatMarket.DATABASE.getConnection(), item);
 
-        WheatMarketNetwork.CHANNEL.sendToPlayer(player,
+        WheatMarketNetwork.sendToPlayer(player,
                 new OperationResultS2CPacket(true, "gui.wheatmarket.operation.toggle_infinite_success",
                         String.valueOf(!isInfinite)));
     }
 
     private void handleSetCooldown(ServerPlayer player, MarketItemCache cache, MarketItem item) {
         if (!player.hasPermissions(2)) {
-            WheatMarketNetwork.CHANNEL.sendToPlayer(player,
+            WheatMarketNetwork.sendToPlayer(player,
                     new OperationResultS2CPacket(false, "gui.wheatmarket.operation.no_permission"));
             return;
         }
@@ -232,7 +244,7 @@ public class ManageItemC2SPacket {
         item.setCooldownTimeInMinutes(cooldownTimeInMinutes);
         MarketItemTable.updateMarketItem(WheatMarket.DATABASE.getConnection(), item);
 
-        WheatMarketNetwork.CHANNEL.sendToPlayer(player,
+        WheatMarketNetwork.sendToPlayer(player,
                 new OperationResultS2CPacket(true, "gui.wheatmarket.operation.cooldown_set_success"));
     }
 }

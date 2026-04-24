@@ -1,20 +1,25 @@
 package top.rookiestwo.wheatmarket.network.c2s;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.database.caches.MarketItemCache;
 import top.rookiestwo.wheatmarket.database.entities.MarketItem;
-import top.rookiestwo.wheatmarket.network.PacketContext;
 import top.rookiestwo.wheatmarket.network.WheatMarketNetwork;
 import top.rookiestwo.wheatmarket.network.s2c.MarketListS2CPacket;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class RequestMarketListC2SPacket {
+public class RequestMarketListC2SPacket implements CustomPacketPayload {
+    public static final Type<RequestMarketListC2SPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "request_market_list"));
+    public static final StreamCodec<FriendlyByteBuf, RequestMarketListC2SPacket> STREAM_CODEC = CustomPacketPayload.codec(RequestMarketListC2SPacket::encode, RequestMarketListC2SPacket::new);
+
     private int tradeType;
     private int itemType;
     private int sortType;
@@ -45,10 +50,14 @@ public class RequestMarketListC2SPacket {
         buf.writeVarInt(page);
     }
 
-    public void apply(Supplier<PacketContext> contextSupplier) {
-        PacketContext context = contextSupplier.get();
-        context.queue(() -> {
-            if (!(context.getPlayer() instanceof ServerPlayer player)) return;
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
+
+    public void handle(IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player)) return;
             if (WheatMarket.DATABASE == null) return;
 
             MarketItemCache cache = WheatMarket.DATABASE.getMarketItemCache();
@@ -92,8 +101,11 @@ public class RequestMarketListC2SPacket {
             int toIndex = Math.min(fromIndex + itemsPerPage, filtered.size());
             List<MarketItem> pageItems = filtered.subList(fromIndex, toIndex);
 
-            WheatMarketNetwork.CHANNEL.sendToPlayer(player,
+            WheatMarketNetwork.sendToPlayer(player,
                     new MarketListS2CPacket(pageItems, totalPages, safePage));
+        }).exceptionally(e -> {
+            WheatMarket.LOGGER.error("Failed to handle market list request packet.", e);
+            return null;
         });
     }
 }

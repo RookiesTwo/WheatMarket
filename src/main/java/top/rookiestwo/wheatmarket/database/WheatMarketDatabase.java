@@ -31,23 +31,24 @@ public class WheatMarketDatabase {
         Path levelPath = Minecraft.getInstance().getSingleplayerServer().getWorldPath(LevelResource.ROOT);
         String levelName = levelPath.getName(levelPath.getNameCount() - 2).toString();
         clientDatabaseUrl = "jdbc:h2:file:./saves/" + levelName + "/WheatMarketDB";
-        try {
-            connection = DriverManager.getConnection(clientDatabaseUrl);
-        } catch (SQLException e) {
-            WheatMarket.LOGGER.error("Database connection failed.", e);
-        }
+        connection = openConnection(clientDatabaseUrl);
         createTables();
         WheatMarket.LOGGER.info("Database initialized.");
     }
 
     public void serverInitialize() {
-        try {
-            connection = DriverManager.getConnection(serverDatabaseUrl);
-        } catch (SQLException e) {
-            WheatMarket.LOGGER.error("Database connection failed.", e);
-        }
+        connection = openConnection(serverDatabaseUrl);
         createTables();
         WheatMarket.LOGGER.info("Database initialized.");
+    }
+
+    private Connection openConnection(String databaseUrl) {
+        try {
+            return DriverManager.getConnection(databaseUrl);
+        } catch (SQLException e) {
+            WheatMarket.LOGGER.error("Database connection failed.", e);
+            throw new IllegalStateException("Failed to connect to database: " + databaseUrl, e);
+        }
     }
 
     private void createTables() {

@@ -7,6 +7,10 @@
 
 # IntelliJ
 out/
+
+# OpenCode project-local skills and agent config
+.opencode/
+
 # mpeltonen/sbt-idea plugin
 .idea_modules/
 

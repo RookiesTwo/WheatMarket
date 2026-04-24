@@ -52,7 +52,7 @@ runs {
 
     server {
         systemProperty 'forge.enabledGameTestNamespaces', mod_id
-        programArgument '--nogui'
+        arguments '--nogui'
     }
 }
 

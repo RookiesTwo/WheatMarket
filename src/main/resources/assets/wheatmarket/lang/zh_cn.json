@@ -15,6 +15,14 @@
     "info.command.wheatmarket.set_from_admin": "你的余额被服务器管理员设置为 %1$s 。",
     "info.command.wheatmarket.admin_remove_balance": "成功从 %2$s 的账户中移除了 %1$s 。",
     "info.command.wheatmarket.remove_from_admin": "你的余额被服务器管理员减少了 %1$s 。",
+  "info.command.wheatmarket.test.data_start": "[小麦市场测试] 正在运行数据边界测试...",
+  "info.command.wheatmarket.test.database_not_initialized": "[小麦市场测试] 数据库尚未初始化。",
+  "info.command.wheatmarket.test.listings_add_start": "[小麦市场测试] 正在添加 %1$s 个随机小麦挂单...",
+  "info.command.wheatmarket.test.failed": "[小麦市场测试] 失败：%1$s",
+  "info.command.wheatmarket.test.listings_add_result": "[小麦市场测试] 已添加 %1$s 个小麦挂单，%2$s 个失败。刷新市场主页以查看。",
+  "info.command.wheatmarket.test.pass": "[小麦市场测试] 通过：%1$s 项检查。",
+  "info.command.wheatmarket.test.fail": "[小麦市场测试] 失败：%1$s 项失败，%2$s 项通过。",
+  "info.command.wheatmarket.test.failure_detail": "- %1$s",
 
     "error.command.wheatmarket.player_not_found_or_offline": "目标玩家离线或不存在！",
     "error.command.wheatmarket.admin_remove_balance": "目标玩家没有这么多钱！",
@@ -40,7 +48,7 @@
   "gui.wheatmarket.market.system_shop": "系统",
   "gui.wheatmarket.market.player_shop": "玩家",
   "gui.wheatmarket.market.sell": "出售",
-  "gui.wheatmarket.market.buy_order": "收购单",
+  "gui.wheatmarket.market.buy_order": "收购",
   "gui.wheatmarket.market.cooldown": "冷却",
   "gui.wheatmarket.market.detail": "详情",
 

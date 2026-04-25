@@ -1,9 +1,7 @@
 package top.rookiestwo.wheatmarket.client.gui;
 
 import com.lowdragmc.lowdraglib2.gui.texture.ColorRectTexture;
-import com.lowdragmc.lowdraglib2.gui.texture.GuiTextureGroup;
 import com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture;
-import com.lowdragmc.lowdraglib2.gui.texture.ItemStackTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
@@ -30,12 +28,16 @@ import java.util.Locale;
 
 public class WheatMarketHomeUI {
     private static final ResourceLocation HOME_XML = ResourceLocation.parse("wheatmarket:ui/market_home.xml");
+    private static final int PRODUCT_CARD_WIDTH = 64;
+    private static final int PRODUCT_CARD_HEIGHT = 64;
+    private static final int PRODUCT_CARD_GAP = 10;
+    private static final int MAX_PRODUCTS_PER_PAGE = 64;
 
     private Selector<TradeFilter> tradeSelector;
     private Selector<SourceFilter> sourceSelector;
     private Selector<SortFilter> sortSelector;
     private TextField searchField;
-    private UIElement productScroller;
+    private UIElement productBoard;
     private UIElement rootElement;
     private UIElement titleLogo;
     private UIElement topBar;
@@ -78,7 +80,8 @@ public class WheatMarketHomeUI {
                 sourceFilter.packetValue,
                 sortFilter.packetValue,
                 searchField.getValue(),
-                requestedPage
+                requestedPage,
+                calculateProductsPerPage()
         ));
     }
 
@@ -113,7 +116,7 @@ public class WheatMarketHomeUI {
         sourceSelector = requireSelector(ui, "source-selector");
         sortSelector = requireSelector(ui, "sort-selector");
         searchField = require(ui, "search-field", TextField.class);
-        productScroller = require(ui, "product-scroller", UIElement.class);
+        productBoard = require(ui, "product-board", UIElement.class);
     }
 
     private void applyTextures(Player player) {
@@ -193,11 +196,38 @@ public class WheatMarketHomeUI {
         requestCurrentPage();
     }
 
+    private int calculateProductsPerPage() {
+        int boardWidth = resolveProductBoardWidth();
+        int boardHeight = resolveProductBoardHeight();
+
+        int columns = Math.max(1, (boardWidth + PRODUCT_CARD_GAP) / (PRODUCT_CARD_WIDTH + PRODUCT_CARD_GAP));
+        int rows = Math.max(1, (boardHeight + PRODUCT_CARD_GAP) / (PRODUCT_CARD_HEIGHT + PRODUCT_CARD_GAP));
+        return Math.max(1, Math.min(columns * rows, MAX_PRODUCTS_PER_PAGE));
+    }
+
+    private int resolveProductBoardWidth() {
+        int boardWidth = Math.max(0, (int) productBoard.getContentWidth());
+        if (boardWidth > 0) {
+            return boardWidth;
+        }
+        int screenWidth = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+        return Math.max(PRODUCT_CARD_WIDTH, screenWidth - 112);
+    }
+
+    private int resolveProductBoardHeight() {
+        int boardHeight = Math.max(0, (int) productBoard.getContentHeight());
+        if (boardHeight > 0) {
+            return boardHeight;
+        }
+        int screenHeight = Minecraft.getInstance().getWindow().getGuiScaledHeight();
+        return Math.max(PRODUCT_CARD_HEIGHT, screenHeight - 132);
+    }
+
     private void rebuildMarketList() {
-        productScroller.clearAllChildren();
+        productBoard.clearAllChildren();
         List<MarketListS2CPacket.MarketItemSummary> items = WheatMarket.CLIENT_MARKET_LIST;
         if (items == null) {
-            productScroller.addChild(new Label()
+            productBoard.addChild(new Label()
                     .setText("gui.wheatmarket.market.loading", true)
                     .layout(layout -> layout.widthPercent(100).height(18)));
             return;
@@ -211,55 +241,15 @@ public class WheatMarketHomeUI {
         ));
 
         if (items.isEmpty()) {
-            productScroller.addChild(new Label()
+            productBoard.addChild(new Label()
                     .setText("gui.wheatmarket.market.empty", true)
                     .layout(layout -> layout.widthPercent(100).height(18)));
             return;
         }
 
         for (MarketListS2CPacket.MarketItemSummary item : items) {
-            productScroller.addChild(createProductCard(item));
+            productBoard.addChild(MarketListingCard.create(item, itemStackFromSummary(item)));
         }
-    }
-
-    private UIElement createProductCard(MarketListS2CPacket.MarketItemSummary item) {
-        ItemStack stack = itemStackFromSummary(item);
-        UIElement icon = new UIElement()
-                .layout(layout -> layout.width(28).height(28))
-                .style(style -> style.background(GuiTextureGroup.of(
-                        WheatMarketUiTextures.paperTexture(),
-                        new ItemStackTexture(stack)
-                )));
-        UIElement badges = new UIElement()
-                .lss("flex-direction", "row")
-                .layout(layout -> layout.widthPercent(100).height(14).gapAll(4))
-                .addChildren(
-                        new Label().setText(item.isIfSell() ? "gui.wheatmarket.market.sell" : "gui.wheatmarket.market.buy_order", true),
-                        new Label().setText(item.isIfAdmin() ? "gui.wheatmarket.market.system_shop" : "gui.wheatmarket.market.player_shop", true)
-                );
-
-        if (item.isHasCooldown()) {
-            badges.addChild(new Label().setText("gui.wheatmarket.market.cooldown", true));
-        }
-
-        Button detailButton = new Button().setText("gui.wheatmarket.market.detail", true);
-        detailButton.layout(layout -> layout.widthPercent(100).height(18));
-        styleButton(detailButton, WheatMarketUiTextures.EDIT_ICON_TEXTURE);
-
-        UIElement card = new UIElement()
-                .addClass("panel_bg")
-                .layout(layout -> layout.width(138).height(122).paddingAll(6).gapAll(4))
-                .addChildren(
-                        icon,
-                        new Label().setText(stack.getHoverName()).layout(layout -> layout.widthPercent(100).height(14)),
-                        new Label().setText(Component.translatable("gui.wheatmarket.market.price", formatMoney(item.getPrice()))),
-                        new Label().setText(Component.translatable("gui.wheatmarket.market.stock", formatAmount(item.getAmount()))),
-                        new Label().setText(Component.translatable("gui.wheatmarket.market.seller", shortSeller(item))),
-                        badges,
-                        detailButton
-                );
-        card.style(style -> style.background(WheatMarketUiTextures.cardTexture()));
-        return card;
     }
 
     private void styleButton(Button button, String iconTexturePath) {
@@ -283,18 +273,6 @@ public class WheatMarketHomeUI {
         );
         button.noText();
         button.addPreIcon(iconTexture);
-    }
-
-    private void styleButtonWithFixedIcon(Button button, String iconTexturePath) {
-        stylePlainButton(button);
-        button.addChildAt(new UIElement()
-                .layout(layout -> layout
-                        .widthPercent(70)
-                        .maxWidthPercent(70)
-                        .maxHeightPercent(70)
-                        .aspectRatio(1)
-                        .flexShrink(1))
-                .style(style -> style.background(WheatMarketUiTextures.iconTexture(iconTexturePath))), 0);
     }
 
     private void styleButtonWithFixedHoverIcon(Button button, String iconTexturePath, String hoveredIconTexturePath) {
@@ -339,20 +317,6 @@ public class WheatMarketHomeUI {
 
     private String formatMoney(double value) {
         return String.format(Locale.ROOT, "%.2f", value);
-    }
-
-    private String formatAmount(int amount) {
-        return amount == Integer.MAX_VALUE
-                ? Component.translatable("gui.wheatmarket.market.infinite").getString()
-                : String.valueOf(amount);
-    }
-
-    private String shortSeller(MarketListS2CPacket.MarketItemSummary item) {
-        if (item.isIfAdmin()) {
-            return Component.translatable("gui.wheatmarket.market.system_shop").getString();
-        }
-        String value = item.getSellerID().toString();
-        return value.substring(0, Math.min(8, value.length()));
     }
 
     private enum TradeFilter {

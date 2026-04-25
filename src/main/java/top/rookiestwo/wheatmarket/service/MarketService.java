@@ -18,7 +18,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class MarketService {
-    private static final int ITEMS_PER_PAGE = 10;
+    private static final int DEFAULT_ITEMS_PER_PAGE = 10;
+    private static final int MIN_ITEMS_PER_PAGE = 1;
+    private static final int MAX_ITEMS_PER_PAGE = 64;
 
     private final TransactionManager transactionManager;
     private final PlayerInfoRepository playerInfoRepository;
@@ -39,6 +41,11 @@ public class MarketService {
     }
 
     public ServiceResult<MarketListResult> requestMarketList(int tradeType, int itemType, int sortType, String searchQuery, int page) {
+        return requestMarketList(tradeType, itemType, sortType, searchQuery, page, DEFAULT_ITEMS_PER_PAGE);
+    }
+
+    public ServiceResult<MarketListResult> requestMarketList(int tradeType, int itemType, int sortType, String searchQuery, int page, int pageSize) {
+        int safePageSize = Math.max(MIN_ITEMS_PER_PAGE, Math.min(pageSize, MAX_ITEMS_PER_PAGE));
         Collection<MarketItem> allItems = marketItemCache.values();
         List<MarketItem> filtered = allItems.stream()
                 .filter(item -> !item.isExpired())
@@ -70,10 +77,10 @@ public class MarketService {
                 })
                 .collect(Collectors.toList());
 
-        int totalPages = Math.max(1, (int) Math.ceil((double) filtered.size() / ITEMS_PER_PAGE));
+        int totalPages = Math.max(1, (int) Math.ceil((double) filtered.size() / safePageSize));
         int safePage = Math.max(0, Math.min(page, totalPages - 1));
-        int fromIndex = safePage * ITEMS_PER_PAGE;
-        int toIndex = Math.min(fromIndex + ITEMS_PER_PAGE, filtered.size());
+        int fromIndex = safePage * safePageSize;
+        int toIndex = Math.min(fromIndex + safePageSize, filtered.size());
         return ServiceResult.success(new MarketListResult(filtered.subList(fromIndex, toIndex), totalPages, safePage));
     }
 

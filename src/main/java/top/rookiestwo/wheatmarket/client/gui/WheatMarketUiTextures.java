@@ -5,6 +5,8 @@ import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 
+import java.util.UUID;
+
 public final class WheatMarketUiTextures {
     public static final String SEARCH_ICON_TEXTURE = "wheatmarket:textures/gui/search_icon.png";
     public static final String SHOPPING_CART_ICON_TEXTURE = "wheatmarket:textures/gui/shopping_cart.png";
@@ -19,7 +21,9 @@ public final class WheatMarketUiTextures {
 
     private static final String PANEL_SPRITE = "wheatmarket:screen/main_menu/board";
     private static final String PAPER_SPRITE = "wheatmarket:screen/main_menu/paper";
-    private static final String WRINKLED_PAPER_TEXTURE = "wheatmarket:textures/gui/paper_with_wrinkles_0.png";
+    private static final String WRINKLED_PAPER_TEXTURE_PREFIX = "wheatmarket:textures/gui/paper_with_wrinkles_";
+    private static final String WRINKLED_PAPER_TEXTURE_SUFFIX = ".png";
+    private static final String NAIL_TEXTURE = "wheatmarket:textures/gui/nail.png";
     private static final String BUTTON_SPRITE = "wheatmarket:screen/main_menu/button";
     private static final String BUTTON_PRESSED_SPRITE = "wheatmarket:screen/main_menu/button_pressed";
     private static final String TITLE_TEXTURE = "wheatmarket:textures/gui/market_menu_title.png";
@@ -49,10 +53,21 @@ public final class WheatMarketUiTextures {
     }
 
     public static IGuiTexture cardTexture() {
+        return wrinkledPaperTexture(new UUID(0L, 0L));
+    }
+
+    public static IGuiTexture wrinkledPaperTexture(UUID marketItemId) {
+        int paperIndex = Math.floorMod(marketItemId.hashCode(), 10);
         return GuiTextureGroup.of(
-                SpriteTexture.of(WRINKLED_PAPER_TEXTURE).setBorder(WRINKLED_PAPER_BORDER).setWrapMode(SpriteTexture.WrapMode.REPEAT),
+                SpriteTexture.of(WRINKLED_PAPER_TEXTURE_PREFIX + paperIndex + WRINKLED_PAPER_TEXTURE_SUFFIX)
+                        .setBorder(WRINKLED_PAPER_BORDER)
+                        .setWrapMode(SpriteTexture.WrapMode.REPEAT),
                 new ColorBorderTexture(-1, PAPER_FRAME_COLOR)
         );
+    }
+
+    public static IGuiTexture nailTexture() {
+        return SpriteTexture.of(NAIL_TEXTURE);
     }
 
     public static IGuiTexture buttonBaseTexture() {

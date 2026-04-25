@@ -22,13 +22,15 @@ public class RequestMarketListC2SPacket implements CustomPacketPayload {
     private int sortType;
     private String searchQuery;
     private int page;
+    private int pageSize;
 
-    public RequestMarketListC2SPacket(int tradeType, int itemType, int sortType, String searchQuery, int page) {
+    public RequestMarketListC2SPacket(int tradeType, int itemType, int sortType, String searchQuery, int page, int pageSize) {
         this.tradeType = tradeType;
         this.itemType = itemType;
         this.sortType = sortType;
         this.searchQuery = searchQuery;
         this.page = page;
+        this.pageSize = pageSize;
     }
 
     public RequestMarketListC2SPacket(FriendlyByteBuf buf) {
@@ -37,6 +39,7 @@ public class RequestMarketListC2SPacket implements CustomPacketPayload {
         this.sortType = buf.readVarInt();
         this.searchQuery = buf.readUtf(256);
         this.page = buf.readVarInt();
+        this.pageSize = buf.readVarInt();
     }
 
     public void encode(FriendlyByteBuf buf) {
@@ -45,6 +48,7 @@ public class RequestMarketListC2SPacket implements CustomPacketPayload {
         buf.writeVarInt(sortType);
         buf.writeUtf(searchQuery, 256);
         buf.writeVarInt(page);
+        buf.writeVarInt(pageSize);
     }
 
     @Override
@@ -58,7 +62,7 @@ public class RequestMarketListC2SPacket implements CustomPacketPayload {
             if (WheatMarket.DATABASE == null) return;
 
             ServiceResult<MarketService.MarketListResult> result = WheatMarket.DATABASE.getMarketService()
-                    .requestMarketList(tradeType, itemType, sortType, searchQuery, page);
+                    .requestMarketList(tradeType, itemType, sortType, searchQuery, page, pageSize);
             if (!result.isSuccess()) {
                 WheatMarketNetwork.sendToPlayer(player, new OperationResultS2CPacket(false, result.getMessageKey(), result.getMessageArgs()));
                 return;

@@ -2,6 +2,7 @@ package top.rookiestwo.wheatmarket.command;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -24,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class WheatMarketTestCommand extends BaseCommand implements CommandInterface {
     private static final String COMMAND_ROOT = "wmtest";
@@ -41,6 +43,12 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
                         .then(Commands.literal("data")
                                 .executes(this::run)
                         )
+                        .then(Commands.literal("listings")
+                                .executes(context -> addRandomWheatListings(context, 10))
+                                .then(Commands.argument("count", IntegerArgumentType.integer(1, 100))
+                                        .executes(context -> addRandomWheatListings(context, IntegerArgumentType.getInteger(context, "count")))
+                                )
+                        )
         );
     }
 
@@ -51,8 +59,47 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
             return Command.SINGLE_SUCCESS;
         }
 
-        player.sendSystemMessage(Component.literal("[WheatMarket Test] Running data boundary test...").withColor(CommonColors.SOFT_YELLOW));
+        player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.data_start").withColor(CommonColors.SOFT_YELLOW));
         runDataBoundaryTest(player);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private int addRandomWheatListings(CommandContext<CommandSourceStack> commandContext, int count) {
+        ServerPlayer player = commandContext.getSource().getPlayer();
+        if (player == null) {
+            return Command.SINGLE_SUCCESS;
+        }
+        if (WheatMarket.DATABASE == null) {
+            player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.database_not_initialized").withColor(CommonColors.SOFT_RED));
+            return Command.SINGLE_SUCCESS;
+        }
+
+        player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.listings_add_start", count).withColor(CommonColors.SOFT_YELLOW));
+        MarketService marketService = WheatMarket.DATABASE.getMarketService();
+        List<CompletableFuture<ServiceResult<MarketService.ListItemResult>>> futures = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            futures.add(marketService.listItem(createRandomWheatListing(player, i)));
+        }
+
+        CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).whenComplete((ignored, throwable) -> player.server.execute(() -> {
+            if (throwable != null) {
+                WheatMarket.LOGGER.error("Failed to add random wheat listings.", throwable);
+                player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.failed", throwable.getMessage()).withColor(CommonColors.SOFT_RED));
+                return;
+            }
+
+            int added = 0;
+            int failed = 0;
+            for (CompletableFuture<ServiceResult<MarketService.ListItemResult>> future : futures) {
+                ServiceResult<MarketService.ListItemResult> result = future.join();
+                if (result.isSuccess()) {
+                    added++;
+                } else {
+                    failed++;
+                }
+            }
+            player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.listings_add_result", added, failed).withColor(failed == 0 ? CommonColors.GREEN : CommonColors.SOFT_YELLOW));
+        }));
         return Command.SINGLE_SUCCESS;
     }
 
@@ -136,6 +183,29 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
         return item;
     }
 
+    private MarketItem createRandomWheatListing(ServerPlayer player, int index) {
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+        ItemStack stack = new ItemStack(Items.WHEAT);
+        CompoundTag nbt = (CompoundTag) stack.save(player.server.registryAccess());
+        double price = Math.round(random.nextDouble(0.01, 100.0) * 100.0) / 100.0;
+
+        MarketItem item = new MarketItem();
+        item.setMarketItemID(UUID.randomUUID());
+        item.setItemID(BuiltInRegistries.ITEM.getKey(Items.WHEAT).toString());
+        item.setItemNBTCompound(nbt);
+        item.setSellerID(player.getUUID());
+        item.setPrice(price);
+        item.setAmount(1);
+        item.setListingTime(new Timestamp(System.currentTimeMillis() - index));
+        item.setIfAdmin(false);
+        item.setIfSell(random.nextBoolean());
+        item.setCooldownAmount(0);
+        item.setCooldownTimeInMinutes(0);
+        item.setTimeToExpire(0);
+        item.setLastTradeTime(null);
+        return item;
+    }
+
     private static UUID testUuid(String name) {
         return UUID.nameUUIDFromBytes((WheatMarket.MOD_ID + ":test:" + name).getBytes(StandardCharsets.UTF_8));
     }
@@ -192,13 +262,13 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
 
         void sendTo(ServerPlayer player) {
             if (failures.isEmpty()) {
-                player.sendSystemMessage(Component.literal("[WheatMarket Test] PASS: " + passed + " checks.").withColor(CommonColors.GREEN));
+                player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.pass", passed).withColor(CommonColors.GREEN));
                 return;
             }
 
-            player.sendSystemMessage(Component.literal("[WheatMarket Test] FAIL: " + failures.size() + " failed, " + passed + " passed.").withColor(CommonColors.SOFT_RED));
+            player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.fail", failures.size(), passed).withColor(CommonColors.SOFT_RED));
             for (String failure : failures) {
-                player.sendSystemMessage(Component.literal("- " + failure).withColor(CommonColors.SOFT_RED));
+                player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.failure_detail", failure).withColor(CommonColors.SOFT_RED));
             }
         }
     }

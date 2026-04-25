@@ -1,13 +1,16 @@
 package top.rookiestwo.wheatmarket.client.gui;
 
-import com.lowdragmc.lowdraglib2.gui.texture.ItemStackTexture;
+import com.lowdragmc.lowdraglib2.gui.texture.ColorRectTexture;
 import com.lowdragmc.lowdraglib2.gui.texture.GuiTextureGroup;
+import com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture;
+import com.lowdragmc.lowdraglib2.gui.texture.ItemStackTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
+import com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap;
+import com.lowdragmc.lowdraglib2.gui.ui.data.Vertical;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
-import com.lowdragmc.lowdraglib2.gui.ui.elements.ScrollerView;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Selector;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.TextField;
 import com.lowdragmc.lowdraglib2.utils.XmlUtils;
@@ -16,11 +19,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import org.w3c.dom.Document;
 import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.network.WheatMarketNetwork;
 import top.rookiestwo.wheatmarket.network.c2s.RequestMarketListC2SPacket;
 import top.rookiestwo.wheatmarket.network.s2c.MarketListS2CPacket;
-import org.w3c.dom.Document;
 
 import java.util.List;
 import java.util.Locale;
@@ -32,23 +35,22 @@ public class WheatMarketHomeUI {
     private Selector<SourceFilter> sourceSelector;
     private Selector<SortFilter> sortSelector;
     private TextField searchField;
-    private ScrollerView productScroller;
+    private UIElement productScroller;
     private UIElement rootElement;
+    private UIElement titleLogo;
     private UIElement topBar;
-    private UIElement navigationBar;
+    private UIElement sideBar;
     private UIElement actionBar;
     private UIElement marketPanel;
     private UIElement paginationBar;
-    private Button marketButton;
     private Button listingButton;
+    private Button sortButton;
     private Button myItemsButton;
     private Button searchButton;
     private Button refreshButton;
     private Button previousButton;
     private Button nextButton;
     private Label pageLabel;
-    private Label statusLabel;
-    private Label titleLabel;
     private Label balanceLabel;
     private int requestedPage;
     private int seenListVersion = -1;
@@ -89,19 +91,18 @@ public class WheatMarketHomeUI {
 
     private void bindStaticElements(UI ui) {
         rootElement = require(ui, "market-root", UIElement.class);
+        titleLogo = require(ui, "title-logo", UIElement.class);
         topBar = require(ui, "top-bar", UIElement.class);
-        navigationBar = require(ui, "navigation-bar", UIElement.class);
+        sideBar = require(ui, "side-bar", UIElement.class);
         actionBar = require(ui, "action-bar", UIElement.class);
         marketPanel = require(ui, "market-panel", UIElement.class);
         paginationBar = require(ui, "pagination-bar", UIElement.class);
 
-        titleLabel = require(ui, "title-label", Label.class);
         balanceLabel = require(ui, "balance-label", Label.class);
-        statusLabel = require(ui, "status-label", Label.class);
         pageLabel = require(ui, "page-label", Label.class);
 
-        marketButton = require(ui, "market-button", Button.class);
         listingButton = require(ui, "listing-button", Button.class);
+        sortButton = require(ui, "sort-button", Button.class);
         myItemsButton = require(ui, "my-items-button", Button.class);
         searchButton = require(ui, "search-button", Button.class);
         refreshButton = require(ui, "refresh-button", Button.class);
@@ -112,21 +113,21 @@ public class WheatMarketHomeUI {
         sourceSelector = requireSelector(ui, "source-selector");
         sortSelector = requireSelector(ui, "sort-selector");
         searchField = require(ui, "search-field", TextField.class);
-        productScroller = require(ui, "product-scroller", ScrollerView.class);
+        productScroller = require(ui, "product-scroller", UIElement.class);
     }
 
     private void applyTextures() {
         rootElement.style(style -> style.background(WheatMarketUiTextures.rootBackground()));
+        titleLogo.style(style -> style.background(WheatMarketUiTextures.titleTexture()));
         topBar.style(style -> style.background(WheatMarketUiTextures.panelTexture()));
-        navigationBar.style(style -> style.background(WheatMarketUiTextures.panelTexture()));
+        sideBar.style(style -> style.background(WheatMarketUiTextures.panelTexture()));
         actionBar.style(style -> style.background(WheatMarketUiTextures.panelTexture()));
         marketPanel.style(style -> style.background(WheatMarketUiTextures.panelTexture()));
         paginationBar.style(style -> style.background(WheatMarketUiTextures.panelTexture()));
-        productScroller.viewPort(viewPort -> viewPort.style(style -> style.background(WheatMarketUiTextures.panelTexture())));
 
-        styleButton(marketButton, WheatMarketUiTextures.SHOPPING_CART_ICON_TEXTURE);
-        styleButton(listingButton, WheatMarketUiTextures.SELL_ICON_TEXTURE);
-        styleButton(myItemsButton, WheatMarketUiTextures.FAVORITE_ICON_TEXTURE);
+        styleButtonWithFixedIcon(listingButton, WheatMarketUiTextures.SELL_ICON_TEXTURE);
+        styleButton(sortButton, WheatMarketUiTextures.FILTER_ICON_TEXTURE);
+        styleIconButton(myItemsButton, WheatMarketUiTextures.avatarPlaceholderTexture());
         styleButton(searchButton, WheatMarketUiTextures.SEARCH_ICON_TEXTURE);
         styleButton(refreshButton, WheatMarketUiTextures.SETTINGS_ICON_TEXTURE);
         styleButton(previousButton, WheatMarketUiTextures.SUBTRACT_ICON_TEXTURE);
@@ -139,9 +140,12 @@ public class WheatMarketHomeUI {
     }
 
     private void applyLogic() {
-        titleLabel.setText("gui.wheatmarket.main_title", true);
         balanceLabel.setText(Component.translatable("gui.wheatmarket.balance", formatMoney(WheatMarket.CLIENT_BALANCE)));
-        statusLabel.setText("gui.wheatmarket.market.loading", true);
+        balanceLabel.textStyle(style -> style
+                .textAlignVertical(Vertical.CENTER)
+                .textWrap(TextWrap.HIDE)
+                .textColor(0x2B2116)
+                .textShadow(false));
         pageLabel.setText(Component.translatable("gui.wheatmarket.market.page", 1, 1));
 
         tradeSelector.setCandidates(List.of(TradeFilter.ALL, TradeFilter.SELL, TradeFilter.BUY))
@@ -155,9 +159,16 @@ public class WheatMarketHomeUI {
                 .setOnValueChanged(value -> resetAndRequest());
 
         searchField.setText("");
-        searchField.textFieldStyle(style -> style.placeholder(Component.translatable("gui.wheatmarket.searchbar")));
+        searchField.textFieldStyle(style -> style
+                .placeholder(Component.translatable("gui.wheatmarket.searchbar"))
+                .textColor(0x2B2116)
+                .cursorColor(0xFF000000)
+                .errorColor(0x8C1D18)
+                .focusOverlay(WheatMarketUiTextures.searchFieldFocusTexture())
+                .textShadow(false));
 
         searchButton.setOnClick(event -> resetAndRequest());
+        sortButton.setOnClick(event -> resetAndRequest());
         refreshButton.setOnClick(event -> requestCurrentPage());
         previousButton.setOnClick(event -> {
             if (requestedPage > 0) {
@@ -179,14 +190,15 @@ public class WheatMarketHomeUI {
     }
 
     private void rebuildMarketList() {
-        productScroller.clearAllScrollViewChildren();
+        productScroller.clearAllChildren();
         List<MarketListS2CPacket.MarketItemSummary> items = WheatMarket.CLIENT_MARKET_LIST;
         if (items == null) {
-            statusLabel.setText("gui.wheatmarket.market.loading", true);
+            productScroller.addChild(new Label()
+                    .setText("gui.wheatmarket.market.loading", true)
+                    .layout(layout -> layout.widthPercent(100).height(18)));
             return;
         }
 
-        statusLabel.setText(Component.translatable("gui.wheatmarket.market.result_count", items.size()));
         requestedPage = WheatMarket.CLIENT_CURRENT_PAGE;
         pageLabel.setText(Component.translatable(
                 "gui.wheatmarket.market.page",
@@ -195,20 +207,15 @@ public class WheatMarketHomeUI {
         ));
 
         if (items.isEmpty()) {
-            productScroller.addScrollViewChild(new Label()
+            productScroller.addChild(new Label()
                     .setText("gui.wheatmarket.market.empty", true)
                     .layout(layout -> layout.widthPercent(100).height(18)));
             return;
         }
 
-        UIElement grid = new UIElement()
-                .lss("flex-direction", "row")
-                .lss("flex-wrap", "wrap")
-                .layout(layout -> layout.widthPercent(100).gapAll(8));
         for (MarketListS2CPacket.MarketItemSummary item : items) {
-            grid.addChild(createProductCard(item));
+            productScroller.addChild(createProductCard(item));
         }
-        productScroller.addScrollViewChild(grid);
     }
 
     private UIElement createProductCard(MarketListS2CPacket.MarketItemSummary item) {
@@ -252,12 +259,38 @@ public class WheatMarketHomeUI {
     }
 
     private void styleButton(Button button, String iconTexturePath) {
+        stylePlainButton(button);
+        button.addPreIcon(WheatMarketUiTextures.iconTexture(iconTexturePath));
+    }
+
+    private void stylePlainButton(Button button) {
         button.buttonStyle(style -> style
                 .baseTexture(WheatMarketUiTextures.buttonBaseTexture())
                 .hoverTexture(WheatMarketUiTextures.buttonPressedTexture())
                 .pressedTexture(WheatMarketUiTextures.buttonPressedTexture())
         );
-        button.addPreIcon(WheatMarketUiTextures.iconTexture(iconTexturePath));
+    }
+
+    private void styleIconButton(Button button, IGuiTexture iconTexture) {
+        button.buttonStyle(style -> style
+                .baseTexture(new ColorRectTexture(0x00000000))
+                .hoverTexture(new ColorRectTexture(0x00000000))
+                .pressedTexture(new ColorRectTexture(0x00000000))
+        );
+        button.noText();
+        button.addPreIcon(iconTexture);
+    }
+
+    private void styleButtonWithFixedIcon(Button button, String iconTexturePath) {
+        stylePlainButton(button);
+        button.addChildAt(new UIElement()
+                .layout(layout -> layout
+                        .widthPercent(70)
+                        .maxWidthPercent(70)
+                        .maxHeightPercent(70)
+                        .aspectRatio(1)
+                        .flexShrink(1))
+                .style(style -> style.background(WheatMarketUiTextures.iconTexture(iconTexturePath))), 0);
     }
 
     private void styleField(UIElement element) {

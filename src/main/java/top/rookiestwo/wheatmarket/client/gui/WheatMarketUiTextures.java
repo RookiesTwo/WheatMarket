@@ -1,10 +1,6 @@
 package top.rookiestwo.wheatmarket.client.gui;
 
-import com.lowdragmc.lowdraglib2.gui.texture.ColorBorderTexture;
-import com.lowdragmc.lowdraglib2.gui.texture.GuiTextureGroup;
-import com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture;
-import com.lowdragmc.lowdraglib2.gui.texture.SpriteTexture;
-import com.lowdragmc.lowdraglib2.gui.texture.VanillaSpriteTexture;
+import com.lowdragmc.lowdraglib2.gui.texture.*;
 
 public final class WheatMarketUiTextures {
     public static final String SEARCH_ICON_TEXTURE = "wheatmarket:textures/gui/search_icon.png";
@@ -15,31 +11,30 @@ public final class WheatMarketUiTextures {
     public static final String SETTINGS_ICON_TEXTURE = "wheatmarket:textures/gui/settings.png";
     public static final String ADD_ICON_TEXTURE = "wheatmarket:textures/gui/add.png";
     public static final String SUBTRACT_ICON_TEXTURE = "wheatmarket:textures/gui/subtract.png";
+    public static final String FILTER_ICON_TEXTURE = "wheatmarket:textures/gui/filter_icon.png";
 
-    private static final String ROOT_BG_SPRITE = "wheatmarket:screen/main_menu/widget_bg";
     private static final String PANEL_SPRITE = "wheatmarket:screen/main_menu/board";
-    private static final String FRAME_SPRITE = "wheatmarket:screen/main_menu/frame";
     private static final String PAPER_SPRITE = "wheatmarket:screen/main_menu/paper";
     private static final String WRINKLED_PAPER_TEXTURE = "wheatmarket:textures/gui/paper_with_wrinkles_0.png";
     private static final String BUTTON_SPRITE = "wheatmarket:screen/main_menu/button";
     private static final String BUTTON_PRESSED_SPRITE = "wheatmarket:screen/main_menu/button_pressed";
+    private static final String TITLE_TEXTURE = "wheatmarket:textures/gui/market_menu_title.png";
+    private static final String AVATAR_PLACEHOLDER_TEXTURE = "minecraft:textures/block/grass_block_top.png";
 
     private static final int PAPER_FRAME_COLOR = 0x7F5C4024;
-
+    private static final int ROOT_BG_COLOR = 0xFFA25A1F;
     private static final int WRINKLED_PAPER_BORDER = 4;
+    private static final int SEARCH_FOCUS_BORDER_COLOR = 0x995A4024;
 
     private WheatMarketUiTextures() {
     }
 
     public static IGuiTexture rootBackground() {
-        return VanillaSpriteTexture.of(ROOT_BG_SPRITE);
+        return new ColorRectTexture(ROOT_BG_COLOR);
     }
 
     public static IGuiTexture panelTexture() {
-        return GuiTextureGroup.of(
-                VanillaSpriteTexture.of(PANEL_SPRITE),
-                VanillaSpriteTexture.of(FRAME_SPRITE)
-        );
+        return VanillaSpriteTexture.of(PANEL_SPRITE);
     }
 
     public static IGuiTexture paperTexture() {
@@ -64,7 +59,19 @@ public final class WheatMarketUiTextures {
         return VanillaSpriteTexture.of(BUTTON_PRESSED_SPRITE);
     }
 
+    public static IGuiTexture searchFieldFocusTexture() {
+        return new ColorBorderTexture(1, SEARCH_FOCUS_BORDER_COLOR);
+    }
+
     public static IGuiTexture iconTexture(String texturePath) {
         return SpriteTexture.of(texturePath);
+    }
+
+    public static IGuiTexture avatarPlaceholderTexture() {
+        return SpriteTexture.of(AVATAR_PLACEHOLDER_TEXTURE);
+    }
+
+    public static IGuiTexture titleTexture() {
+        return SpriteTexture.of(TITLE_TEXTURE).setSprite(0, 0, 256, 32);
     }
 }

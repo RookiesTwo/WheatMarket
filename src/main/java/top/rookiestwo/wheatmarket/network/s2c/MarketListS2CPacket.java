@@ -70,6 +70,7 @@ public class MarketListS2CPacket implements CustomPacketPayload {
             WheatMarket.CLIENT_MARKET_LIST = this.items;
             WheatMarket.CLIENT_TOTAL_PAGES = this.totalPages;
             WheatMarket.CLIENT_CURRENT_PAGE = this.currentPage;
+            WheatMarket.CLIENT_MARKET_LIST_VERSION++;
         }).exceptionally(e -> {
             WheatMarket.LOGGER.error("Failed to handle market list packet.", e);
             return null;

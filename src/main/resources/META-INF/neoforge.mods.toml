@@ -33,6 +33,3 @@ type = "required"
 versionRange = "[${ldlib2_version},)"
 ordering = "AFTER"
 side = "BOTH"
-
-[[mixins]]
-config = "wheatmarket.mixins.json"

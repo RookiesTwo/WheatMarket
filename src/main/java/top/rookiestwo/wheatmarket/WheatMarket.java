@@ -18,6 +18,7 @@ public final class WheatMarket {
     public static List<MarketListS2CPacket.MarketItemSummary> CLIENT_MARKET_LIST = null;
     public static int CLIENT_TOTAL_PAGES = 0;
     public static int CLIENT_CURRENT_PAGE = 0;
+    public static int CLIENT_MARKET_LIST_VERSION = 0;
     public static double CLIENT_BALANCE = 0.0;
 
     public static void init(IEventBus modBus) {

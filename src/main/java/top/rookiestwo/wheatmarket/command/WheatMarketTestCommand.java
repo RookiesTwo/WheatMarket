@@ -6,13 +6,17 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.CommonColors;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.Enchantments;
 import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.database.entities.MarketItem;
 import top.rookiestwo.wheatmarket.service.EconomyService;
@@ -49,6 +53,9 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
                                         .executes(context -> addRandomWheatListings(context, IntegerArgumentType.getInteger(context, "count")))
                                 )
                         )
+                        .then(Commands.literal("enchanted_wheat")
+                                .executes(this::addEnchantedWheatListing)
+                        )
         );
     }
 
@@ -61,6 +68,32 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
 
         player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.data_start").withColor(CommonColors.SOFT_YELLOW));
         runDataBoundaryTest(player);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private int addEnchantedWheatListing(CommandContext<CommandSourceStack> commandContext) {
+        ServerPlayer player = commandContext.getSource().getPlayer();
+        if (player == null) {
+            return Command.SINGLE_SUCCESS;
+        }
+        if (WheatMarket.DATABASE == null) {
+            player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.database_not_initialized").withColor(CommonColors.SOFT_RED));
+            return Command.SINGLE_SUCCESS;
+        }
+
+        MarketService marketService = WheatMarket.DATABASE.getMarketService();
+        marketService.listItem(createEnchantedWheatListing(player)).whenComplete((result, throwable) -> player.server.execute(() -> {
+            if (throwable != null) {
+                WheatMarket.LOGGER.error("Failed to add enchanted wheat listing.", throwable);
+                player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.failed", throwable.getMessage()).withColor(CommonColors.SOFT_RED));
+                return;
+            }
+            if (result.isSuccess()) {
+                player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.enchanted_wheat_add_success").withColor(CommonColors.GREEN));
+            } else {
+                player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.failed", result.getMessageKey()).withColor(CommonColors.SOFT_RED));
+            }
+        }));
         return Command.SINGLE_SUCCESS;
     }
 
@@ -199,6 +232,35 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
         item.setListingTime(new Timestamp(System.currentTimeMillis() - index));
         item.setIfAdmin(false);
         item.setIfSell(random.nextBoolean());
+        item.setCooldownAmount(0);
+        item.setCooldownTimeInMinutes(0);
+        item.setTimeToExpire(0);
+        item.setLastTradeTime(null);
+        return item;
+    }
+
+    private MarketItem createEnchantedWheatListing(ServerPlayer player) {
+        ItemStack stack = new ItemStack(Items.WHEAT);
+        Holder<Enchantment> unbreaking = player.server.registryAccess()
+                .lookupOrThrow(Registries.ENCHANTMENT)
+                .getOrThrow(Enchantments.UNBREAKING);
+        stack.enchant(unbreaking, 1);
+        return createWheatListingFromStack(player, stack, 71.18, true, 0);
+    }
+
+    private MarketItem createWheatListingFromStack(ServerPlayer player, ItemStack stack, double price, boolean ifSell, int listingOffset) {
+        CompoundTag nbt = (CompoundTag) stack.save(player.server.registryAccess());
+
+        MarketItem item = new MarketItem();
+        item.setMarketItemID(UUID.randomUUID());
+        item.setItemID(BuiltInRegistries.ITEM.getKey(Items.WHEAT).toString());
+        item.setItemNBTCompound(nbt);
+        item.setSellerID(player.getUUID());
+        item.setPrice(price);
+        item.setAmount(1);
+        item.setListingTime(new Timestamp(System.currentTimeMillis() - listingOffset));
+        item.setIfAdmin(false);
+        item.setIfSell(ifSell);
         item.setCooldownAmount(0);
         item.setCooldownTimeInMinutes(0);
         item.setTimeToExpire(0);

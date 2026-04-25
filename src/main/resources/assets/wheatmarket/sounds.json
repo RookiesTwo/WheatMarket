@@ -1,4 +1,17 @@
 {
+  "paper_flipping": {
+    "subtitle": "sound.wheatmarket.paper_flipping",
+    "sounds": [
+      "wheatmarket:paper_flipping_01",
+      "wheatmarket:paper_flipping_02",
+      "wheatmarket:paper_flipping_03",
+      "wheatmarket:paper_flipping_04",
+      "wheatmarket:paper_flipping_05",
+      "wheatmarket:paper_flipping_06",
+      "wheatmarket:paper_flipping_07",
+      "wheatmarket:paper_flipping_08"
+    ]
+  },
   "laptop_open": {
     "subtitle": "sound.wheatmarket.laptop_open",
     "sounds": [

@@ -168,8 +168,8 @@
         height: 20;
         padding-left: 8;
         padding-right: 8;
-        text-color: #2B2116;
-        cursor-color: #000000;
+        text-color: #151515;
+        cursor-color: #151515;
         error-color: #8C1D18;
         text-shadow: false;
         }

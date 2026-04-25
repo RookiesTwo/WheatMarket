@@ -4,6 +4,7 @@
 
     "sound.wheatmarket.laptop_open": "Laptop: Open",
     "sound.wheatmarket.laptop_close": "Laptop: Close",
+  "sound.wheatmarket.paper_flipping": "Paper: Flipping",
 
     "info.command.wheatmarket.not_enough_money": "Not enough money.",
     "info.command.wheatmarket.pay_success": "Successfully paid %1$s to %2$s.",
@@ -20,6 +21,7 @@
   "info.command.wheatmarket.test.listings_add_start": "[WheatMarket Test] Adding %1$s random wheat listings...",
   "info.command.wheatmarket.test.failed": "[WheatMarket Test] Failed: %1$s",
   "info.command.wheatmarket.test.listings_add_result": "[WheatMarket Test] Added %1$s wheat listings, %2$s failed. Refresh market home to view them.",
+  "info.command.wheatmarket.test.enchanted_wheat_add_success": "[WheatMarket Test] Added enchanted Unbreaking I wheat listing. Refresh market home to view it.",
   "info.command.wheatmarket.test.pass": "[WheatMarket Test] PASS: %1$s checks.",
   "info.command.wheatmarket.test.fail": "[WheatMarket Test] FAIL: %1$s failed, %2$s passed.",
   "info.command.wheatmarket.test.failure_detail": "- %1$s",

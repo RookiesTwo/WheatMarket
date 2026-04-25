@@ -168,8 +168,8 @@ public class WheatMarketHomeUI {
         searchField.setText("");
         searchField.textFieldStyle(style -> style
                 .placeholder(Component.translatable("gui.wheatmarket.searchbar"))
-                .textColor(0x2B2116)
-                .cursorColor(0xFF000000)
+                .textColor(0x151515)
+                .cursorColor(0xFF151515)
                 .errorColor(0x8C1D18)
                 .focusOverlay(WheatMarketUiTextures.searchFieldFocusTexture())
                 .textShadow(false));

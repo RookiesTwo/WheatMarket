@@ -31,6 +31,7 @@ public class WheatMarketRegistry {
     private static final DeferredRegister<SoundEvent> SOUND_EVENTS = DeferredRegister.create(Registries.SOUND_EVENT, WheatMarket.MOD_ID);
     private static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, WheatMarket.MOD_ID);
     public static DeferredHolder<MenuType<?>, MenuType<WheatMarketMenu>> WHEAT_MARKET_MENU = null;
+    public static DeferredHolder<SoundEvent, SoundEvent> PAPER_FLIPPING = null;
     private static DeferredHolder<Block, Block> LAPTOP_BLOCK = null;
 
     public WheatMarketRegistry(IEventBus modBus) {
@@ -46,15 +47,16 @@ public class WheatMarketRegistry {
         WheatMarketCommands.registerCommands();
     }
 
-    private static void registerBlocks(){
+    private static void registerBlocks() {
         LAPTOP_BLOCK = BLOCKS.register("laptop", () -> new LaptopBlock(BlockBehaviour.Properties.of().sound(SoundType.METAL)));
     }
 
-    private static void registerItems(){
+    private static void registerItems() {
         ITEMS.register("laptop", () -> new BlockItem(LAPTOP_BLOCK.get(), new Item.Properties()));
     }
 
-    private static void registerSounds(){
+    private static void registerSounds() {
+        PAPER_FLIPPING = SOUND_EVENTS.register("paper_flipping", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "paper_flipping")));
         SOUND_EVENTS.register("laptop_open", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "laptop_open")));
         SOUND_EVENTS.register("laptop_close", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "laptop_close")));
     }
@@ -75,7 +77,7 @@ public class WheatMarketRegistry {
         event.register(WHEAT_MARKET_MENU.get(), WheatMarketMainScreen::new);
     }
 
-    public static void registerEvents(){
+    public static void registerEvents() {
         NeoForge.EVENT_BUS.addListener(WheatMarketRegistry::onServerStarting);
         NeoForge.EVENT_BUS.addListener(WheatMarketRegistry::onServerStopping);
         NeoForge.EVENT_BUS.addListener(WheatMarketRegistry::onPlayerLoggedIn);

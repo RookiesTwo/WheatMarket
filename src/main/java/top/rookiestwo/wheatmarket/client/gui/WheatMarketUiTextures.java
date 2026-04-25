@@ -1,11 +1,15 @@
 package top.rookiestwo.wheatmarket.client.gui;
 
 import com.lowdragmc.lowdraglib2.gui.texture.*;
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
 
 public final class WheatMarketUiTextures {
     public static final String SEARCH_ICON_TEXTURE = "wheatmarket:textures/gui/search_icon.png";
     public static final String SHOPPING_CART_ICON_TEXTURE = "wheatmarket:textures/gui/shopping_cart.png";
     public static final String SELL_ICON_TEXTURE = "wheatmarket:textures/gui/sell.png";
+    public static final String SELL_HOVERED_ICON_TEXTURE = "wheatmarket:textures/gui/sell_hovered.png";
     public static final String FAVORITE_ICON_TEXTURE = "wheatmarket:textures/gui/favorite.png";
     public static final String EDIT_ICON_TEXTURE = "wheatmarket:textures/gui/edit.png";
     public static final String SETTINGS_ICON_TEXTURE = "wheatmarket:textures/gui/settings.png";
@@ -69,6 +73,19 @@ public final class WheatMarketUiTextures {
 
     public static IGuiTexture avatarPlaceholderTexture() {
         return SpriteTexture.of(AVATAR_PLACEHOLDER_TEXTURE);
+    }
+
+    public static IGuiTexture playerAvatarTexture(Player player) {
+        if (player instanceof AbstractClientPlayer clientPlayer) {
+            return IGuiTexture.dynamic(() -> {
+                ResourceLocation skinTexture = clientPlayer.getSkin().texture();
+                return GuiTextureGroup.of(
+                        SpriteTexture.of(skinTexture).setSprite(8, 8, 8, 8),
+                        SpriteTexture.of(skinTexture).setSprite(40, 8, 8, 8)
+                );
+            });
+        }
+        return avatarPlaceholderTexture();
     }
 
     public static IGuiTexture titleTexture() {

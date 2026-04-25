@@ -64,7 +64,7 @@ public class WheatMarketHomeUI {
         UI loadedUi = UI.of(xml);
         UI ui = UI.of(loadedUi.getRootElement(), loadedUi.getStylesheets(), availableSize -> availableSize);
         bindStaticElements(ui);
-        applyTextures();
+        applyTextures(player);
         applyLogic();
         return ModularUI.of(ui, player);
     }
@@ -116,7 +116,7 @@ public class WheatMarketHomeUI {
         productScroller = require(ui, "product-scroller", UIElement.class);
     }
 
-    private void applyTextures() {
+    private void applyTextures(Player player) {
         rootElement.style(style -> style.background(WheatMarketUiTextures.rootBackground()));
         titleLogo.style(style -> style.background(WheatMarketUiTextures.titleTexture()));
         topBar.style(style -> style.background(WheatMarketUiTextures.panelTexture()));
@@ -125,13 +125,17 @@ public class WheatMarketHomeUI {
         marketPanel.style(style -> style.background(WheatMarketUiTextures.panelTexture()));
         paginationBar.style(style -> style.background(WheatMarketUiTextures.panelTexture()));
 
-        styleButtonWithFixedIcon(listingButton, WheatMarketUiTextures.SELL_ICON_TEXTURE);
+        styleButtonWithFixedHoverIcon(
+                listingButton,
+                WheatMarketUiTextures.SELL_ICON_TEXTURE,
+                WheatMarketUiTextures.SELL_HOVERED_ICON_TEXTURE
+        );
         styleButton(sortButton, WheatMarketUiTextures.FILTER_ICON_TEXTURE);
-        styleIconButton(myItemsButton, WheatMarketUiTextures.avatarPlaceholderTexture());
-        styleButton(searchButton, WheatMarketUiTextures.SEARCH_ICON_TEXTURE);
-        styleButton(refreshButton, WheatMarketUiTextures.SETTINGS_ICON_TEXTURE);
-        styleButton(previousButton, WheatMarketUiTextures.SUBTRACT_ICON_TEXTURE);
-        styleButton(nextButton, WheatMarketUiTextures.ADD_ICON_TEXTURE);
+        styleIconButton(myItemsButton, WheatMarketUiTextures.playerAvatarTexture(player));
+        stylePlainButton(searchButton);
+        stylePlainButton(refreshButton);
+        stylePlainButton(previousButton);
+        stylePlainButton(nextButton);
 
         styleField(tradeSelector);
         styleField(sourceSelector);
@@ -291,6 +295,21 @@ public class WheatMarketHomeUI {
                         .aspectRatio(1)
                         .flexShrink(1))
                 .style(style -> style.background(WheatMarketUiTextures.iconTexture(iconTexturePath))), 0);
+    }
+
+    private void styleButtonWithFixedHoverIcon(Button button, String iconTexturePath, String hoveredIconTexturePath) {
+        stylePlainButton(button);
+        button.addChildAt(new UIElement()
+                .layout(layout -> layout
+                        .widthPercent(70)
+                        .maxWidthPercent(70)
+                        .maxHeightPercent(70)
+                        .aspectRatio(1)
+                        .flexShrink(1))
+                .style(style -> style.background(IGuiTexture.dynamic(() -> switch (button.getState()) {
+                    case HOVERED, PRESSED -> WheatMarketUiTextures.iconTexture(hoveredIconTexturePath);
+                    default -> WheatMarketUiTextures.iconTexture(iconTexturePath);
+                }))), 0);
     }
 
     private void styleField(UIElement element) {

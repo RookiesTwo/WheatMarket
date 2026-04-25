@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ldlib2-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/Low-Drag-MC/LDLib2/refs/heads/1.21/ldlib2-ui.xsd">
+    <stylesheet location="ldlib2:lss/mc.lss"/>
+    <style>
+        #market-root {
+            width-percent: 100;
+            height-percent: 100;
+            flex-direction: column;
+            padding-all: 8;
+            gap-all: 6;
+            overflow: hidden;
+        }
+
+        .row-bar {
+            width-percent: 100;
+            flex-direction: row;
+            gap-all: 6;
+            align-items: center;
+        }
+
+        #top-bar {
+            height: 26;
+            gap-all: 8;
+            padding-left: 8;
+            padding-right: 8;
+        }
+
+        #title-label {
+            flex: 1;
+            height: 18;
+        }
+
+        #balance-label {
+            height: 18;
+        }
+
+        #content-shell {
+            width-percent: 100;
+            flex: 1;
+            flex-direction: row;
+            gap-all: 6;
+            overflow: hidden;
+        }
+
+        #navigation-bar {
+            width: 116;
+            height-percent: 100;
+            flex-direction: column;
+            padding-all: 7;
+            gap-all: 6;
+            flex-shrink: 0;
+        }
+
+        .nav-button {
+            width-percent: 100;
+            height: 20;
+        }
+
+        #my-items-button {
+            width-percent: 100;
+        }
+
+        #main-column {
+            flex: 1;
+            height-percent: 100;
+            flex-direction: column;
+            gap-all: 6;
+            overflow: hidden;
+        }
+
+        #action-bar {
+            height: 26;
+            padding-left: 6;
+            padding-right: 6;
+        }
+
+        .filter-selector {
+            width: 82;
+            height: 20;
+        }
+
+        #sort-selector {
+            width: 108;
+        }
+
+        #search-field {
+            flex: 1;
+            height: 20;
+        }
+
+        .action-button {
+            width: 54;
+            height: 20;
+        }
+
+        #market-panel {
+            width-percent: 100;
+            flex: 1;
+            padding-all: 7;
+            gap-all: 6;
+            overflow: hidden;
+        }
+
+        #status-label {
+            width-percent: 100;
+            height: 14;
+        }
+
+        #product-scroller {
+            width-percent: 100;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #pagination-bar {
+            width-percent: 100;
+            height: 24;
+            flex-direction: row;
+            gap-all: 8;
+            align-items: center;
+            padding-left: 8;
+            padding-right: 8;
+        }
+
+        .page-button {
+            width: 68;
+            height: 20;
+        }
+
+        #page-label {
+            flex: 1;
+            height: 16;
+        }
+    </style>
+    <root id="market-root" class="panel_bg">
+        <element id="top-bar" class="row-bar">
+            <label id="title-label"/>
+            <label id="balance-label"/>
+        </element>
+        <element id="content-shell">
+            <element id="navigation-bar">
+                <button id="market-button" class="nav-button" text="gui.wheatmarket.nav.market"/>
+                <button id="listing-button" class="nav-button" text="gui.wheatmarket.nav.listing"/>
+                <button id="my-items-button" class="nav-button" text="gui.wheatmarket.nav.my_items"/>
+            </element>
+            <element id="main-column">
+                <element id="action-bar" class="row-bar">
+                    <selector id="trade-selector" class="filter-selector"/>
+                    <selector id="source-selector" class="filter-selector"/>
+                    <selector id="sort-selector" class="filter-selector"/>
+                    <text-field id="search-field" value=""/>
+                    <button id="search-button" class="action-button" text="gui.wheatmarket.action.search"/>
+                    <button id="refresh-button" class="action-button" text="gui.wheatmarket.action.refresh"/>
+                </element>
+                <element id="market-panel">
+                    <label id="status-label"/>
+                    <scroller-view id="product-scroller"/>
+                </element>
+            </element>
+        </element>
+        <element id="pagination-bar">
+            <button id="previous-button" class="page-button" text="gui.wheatmarket.action.previous"/>
+            <label id="page-label"/>
+            <button id="next-button" class="page-button" text="gui.wheatmarket.action.next"/>
+        </element>
+    </root>
+</ldlib2-ui>

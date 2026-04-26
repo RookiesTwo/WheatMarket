@@ -5,18 +5,15 @@ import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.data.Horizontal;
 import com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap;
 import com.lowdragmc.lowdraglib2.gui.ui.data.Vertical;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
-import com.lowdragmc.lowdraglib2.gui.ui.event.HoverTooltips;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
 import top.rookiestwo.wheatmarket.network.s2c.MarketListS2CPacket;
 
-import java.util.List;
 import java.util.Locale;
+import java.util.function.BiConsumer;
 
 public final class MarketListingCard {
     private static final int CARD_WIDTH = 64;
@@ -28,11 +25,17 @@ public final class MarketListingCard {
     private static final int ITEM_FRAME_BORDER_COLOR = 0xFF7A5532;
     private static final int ITEM_FRAME_BORDER_WIDTH = 1;
     private static final int ITEM_ICON_SIZE = 16;
+    private static final int TRANSPARENT = 0x00000000;
 
     private MarketListingCard() {
     }
 
     public static UIElement create(MarketListS2CPacket.MarketItemSummary item, ItemStack stack) {
+        return create(item, stack, null);
+    }
+
+    public static UIElement create(MarketListS2CPacket.MarketItemSummary item, ItemStack stack,
+                                   BiConsumer<MarketListS2CPacket.MarketItemSummary, ItemStack> onClick) {
         Label tradeLabel = label(item.isIfSell() ? "gui.wheatmarket.market.sell" : "gui.wheatmarket.market.buy_order");
         tradeLabel.lss("align-self", "center");
         tradeLabel.layout(layout -> layout.width(32).height(9).flexShrink(0));
@@ -52,7 +55,7 @@ public final class MarketListingCard {
                 .addChild(new UIElement()
                         .layout(layout -> layout.width(ITEM_ICON_SIZE).height(ITEM_ICON_SIZE).flexShrink(0))
                         .style(style -> style.background(new ItemStackTexture(stack))));
-        itemFrame.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = itemTooltips(stack));
+        itemFrame.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = WheatMarketItemTooltips.forStack(stack));
 
         UIElement[] cardRootRef = new UIElement[1];
 
@@ -84,9 +87,16 @@ public final class MarketListingCard {
                         priceLabel
                 );
 
-        UIElement cardRoot = new UIElement()
-                .layout(layout -> layout.width(CARD_WIDTH).height(CARD_HEIGHT).flexShrink(0))
-                .addChildren(cardContent);
+        Button cardRoot = new Button().noText();
+        cardRoot.buttonStyle(style -> style
+                .baseTexture(new ColorRectTexture(TRANSPARENT))
+                .hoverTexture(new ColorRectTexture(TRANSPARENT))
+                .pressedTexture(new ColorRectTexture(TRANSPARENT)));
+        cardRoot.layout(layout -> layout.width(CARD_WIDTH).height(CARD_HEIGHT).flexShrink(0));
+        cardRoot.addChildren(cardContent);
+        if (onClick != null) {
+            cardRoot.setOnClick(event -> onClick.accept(item, stack.copy()));
+        }
         cardRootRef[0] = cardRoot;
 
         return cardRoot;
@@ -112,15 +122,4 @@ public final class MarketListingCard {
         return String.format(Locale.ROOT, "%.2f", value);
     }
 
-    private static HoverTooltips itemTooltips(ItemStack stack) {
-        Minecraft minecraft = Minecraft.getInstance();
-        Item.TooltipContext tooltipContext = minecraft.level == null
-                ? Item.TooltipContext.EMPTY
-                : Item.TooltipContext.of(minecraft.level);
-        List<Component> tooltipLines = stack.getTooltipLines(tooltipContext, minecraft.player, TooltipFlag.NORMAL);
-        return HoverTooltips.empty()
-                .append(tooltipLines.toArray(Component[]::new))
-                .tooltipComponent(stack.getTooltipImage().orElse(null))
-                .stack(stack);
-    }
 }

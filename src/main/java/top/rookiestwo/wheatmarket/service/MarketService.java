@@ -10,10 +10,9 @@ import top.rookiestwo.wheatmarket.database.repository.PurchaseRecordRepository;
 import top.rookiestwo.wheatmarket.database.transaction.TransactionManager;
 import top.rookiestwo.wheatmarket.service.result.ServiceResult;
 
+import java.sql.Connection;
 import java.sql.Timestamp;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -41,11 +40,26 @@ public class MarketService {
     }
 
     public ServiceResult<MarketListResult> requestMarketList(int tradeType, int itemType, int sortType, String searchQuery, int page) {
-        return requestMarketList(tradeType, itemType, sortType, searchQuery, page, DEFAULT_ITEMS_PER_PAGE);
+        return requestMarketList(null, tradeType, itemType, sortType, searchQuery, page, DEFAULT_ITEMS_PER_PAGE);
     }
 
     public ServiceResult<MarketListResult> requestMarketList(int tradeType, int itemType, int sortType, String searchQuery, int page, int pageSize) {
+        return requestMarketList(null, tradeType, itemType, sortType, searchQuery, page, pageSize);
+    }
+
+    public ServiceResult<MarketListResult> requestMarketList(UUID buyerId, int tradeType, int itemType, int sortType,
+                                                             String searchQuery, int page, int pageSize) {
+        return requestMarketList(buyerId, tradeType, itemType, sortType, searchQuery, List.of(), page, pageSize);
+    }
+
+    public ServiceResult<MarketListResult> requestMarketList(UUID buyerId, int tradeType, int itemType, int sortType,
+                                                             String searchQuery, Collection<String> localizedSearchItemIds,
+                                                             int page, int pageSize) {
         int safePageSize = Math.max(MIN_ITEMS_PER_PAGE, Math.min(pageSize, MAX_ITEMS_PER_PAGE));
+        String normalizedSearchQuery = normalizeSearchQuery(searchQuery);
+        Set<String> normalizedSearchItemIds = normalizedSearchQuery.isEmpty()
+                ? Set.of()
+                : normalizeSearchItemIds(localizedSearchItemIds);
         Collection<MarketItem> allItems = marketItemCache.values();
         List<MarketItem> filtered = allItems.stream()
                 .filter(item -> !item.isExpired())
@@ -60,8 +74,8 @@ public class MarketService {
                     return true;
                 })
                 .filter(item -> {
-                    if (searchQuery == null || searchQuery.isEmpty()) return true;
-                    return item.getItemID().toLowerCase().contains(searchQuery.toLowerCase());
+                    if (normalizedSearchQuery.isEmpty()) return true;
+                    return matchesSearchQuery(item, normalizedSearchQuery, normalizedSearchItemIds);
                 })
                 .sorted((a, b) -> {
                     switch (sortType) {
@@ -81,7 +95,16 @@ public class MarketService {
         int safePage = Math.max(0, Math.min(page, totalPages - 1));
         int fromIndex = safePage * safePageSize;
         int toIndex = Math.min(fromIndex + safePageSize, filtered.size());
-        return ServiceResult.success(new MarketListResult(filtered.subList(fromIndex, toIndex), totalPages, safePage));
+        List<MarketItem> pageItems = filtered.subList(fromIndex, toIndex);
+        try {
+            List<MarketListEntry> entries = transactionManager.executeSync(connection -> pageItems.stream()
+                    .map(item -> new MarketListEntry(item, resolveRemainingCooldownAmount(connection, item, buyerId)))
+                    .toList());
+            return ServiceResult.success(new MarketListResult(entries, totalPages, safePage));
+        } catch (Exception e) {
+            WheatMarket.LOGGER.error("Failed to build market list.", e);
+            return ServiceResult.failure("gui.wheatmarket.operation.failed");
+        }
     }
 
     public CompletableFuture<ServiceResult<PurchaseResult>> buyItem(UUID buyerId, UUID marketItemID, int amount) {
@@ -118,14 +141,9 @@ public class MarketService {
             }
 
             if (item.hasCooldownRestriction()) {
-                Timestamp lastPurchase = purchaseRecordRepository.getLastPurchaseTime(connection, marketItemID, buyerId);
-                if (lastPurchase != null) {
-                    long cooldownMs = (long) item.getCooldownTimeInMinutes() * 60 * 1000;
-                    long elapsed = System.currentTimeMillis() - lastPurchase.getTime();
-                    if (elapsed < cooldownMs) {
-                        long remainingMin = (cooldownMs - elapsed) / 60000 + 1;
-                        return ServiceResult.<PurchaseResult>failure("gui.wheatmarket.operation.cooldown_active", String.valueOf(remainingMin));
-                    }
+                ServiceResult<Void> cooldownCheck = validateCooldownRestriction(connection, item, buyerId, amount);
+                if (!cooldownCheck.isSuccess()) {
+                    return ServiceResult.<PurchaseResult>failure(cooldownCheck.getMessageKey(), cooldownCheck.getMessageArgs());
                 }
             }
 
@@ -309,6 +327,85 @@ public class MarketService {
         );
     }
 
+    private ServiceResult<Void> validateCooldownRestriction(Connection connection, MarketItem item, UUID buyerId, int amount) throws Exception {
+        if (item.getCooldownTimeInMinutes() <= 0) {
+            if (item.getCooldownAmount() > 0 && amount > item.getCooldownAmount()) {
+                return ServiceResult.failure("gui.wheatmarket.operation.invalid_amount");
+            }
+            return ServiceResult.success(null);
+        }
+
+        long cooldownMs = (long) item.getCooldownTimeInMinutes() * 60 * 1000;
+        Timestamp windowStart = new Timestamp(System.currentTimeMillis() - cooldownMs);
+
+        if (item.getCooldownAmount() > 0) {
+            int remainingAmount = resolveRemainingCooldownAmount(connection, item, buyerId);
+            if (amount > remainingAmount) {
+                return ServiceResult.failure(
+                        "gui.wheatmarket.operation.cooldown_active",
+                        String.valueOf(resolveCooldownRemainingMinutes(connection, item, buyerId, windowStart, cooldownMs))
+                );
+            }
+            return ServiceResult.success(null);
+        }
+
+        Timestamp lastPurchase = purchaseRecordRepository.getLastPurchaseTime(connection, item.getMarketItemID(), buyerId);
+        if (lastPurchase == null) {
+            return ServiceResult.success(null);
+        }
+
+        long elapsed = System.currentTimeMillis() - lastPurchase.getTime();
+        if (elapsed < cooldownMs) {
+            long remainingMin = (cooldownMs - elapsed) / 60000 + 1;
+            return ServiceResult.failure("gui.wheatmarket.operation.cooldown_active", String.valueOf(remainingMin));
+        }
+        return ServiceResult.success(null);
+    }
+
+    private int resolveRemainingCooldownAmount(Connection connection, MarketItem item, UUID buyerId) {
+        if (buyerId == null || item.getCooldownAmount() <= 0 || item.getCooldownTimeInMinutes() <= 0) {
+            return Math.max(0, item.getCooldownAmount());
+        }
+        try {
+            long cooldownMs = (long) item.getCooldownTimeInMinutes() * 60 * 1000;
+            Timestamp windowStart = new Timestamp(System.currentTimeMillis() - cooldownMs);
+            int purchasedAmount = purchaseRecordRepository.getPurchasedAmountSince(connection, item.getMarketItemID(), buyerId, windowStart);
+            return Math.max(0, item.getCooldownAmount() - purchasedAmount);
+        } catch (Exception e) {
+            WheatMarket.LOGGER.error("Failed to resolve remaining cooldown amount for market item {}.", item.getMarketItemID(), e);
+            return Math.max(0, item.getCooldownAmount());
+        }
+    }
+
+    private long resolveCooldownRemainingMinutes(Connection connection, MarketItem item, UUID buyerId,
+                                                 Timestamp windowStart, long cooldownMs) throws Exception {
+        Timestamp earliestPurchase = purchaseRecordRepository.getEarliestPurchaseTimeSince(connection, item.getMarketItemID(), buyerId, windowStart);
+        if (earliestPurchase == null) {
+            return Math.max(1L, item.getCooldownTimeInMinutes());
+        }
+        long remainingMs = earliestPurchase.getTime() + cooldownMs - System.currentTimeMillis();
+        return Math.max(1L, remainingMs / 60000 + 1);
+    }
+
+    private boolean matchesSearchQuery(MarketItem item, String normalizedSearchQuery, Set<String> localizedSearchItemIds) {
+        String itemId = item.getItemID() == null ? "" : item.getItemID().toLowerCase(Locale.ROOT);
+        return itemId.contains(normalizedSearchQuery) || localizedSearchItemIds.contains(itemId);
+    }
+
+    private Set<String> normalizeSearchItemIds(Collection<String> itemIds) {
+        if (itemIds == null || itemIds.isEmpty()) {
+            return Set.of();
+        }
+        return itemIds.stream()
+                .filter(itemId -> itemId != null && !itemId.isBlank())
+                .map(this::normalizeSearchQuery)
+                .collect(Collectors.toSet());
+    }
+
+    private String normalizeSearchQuery(String searchQuery) {
+        return searchQuery == null ? "" : searchQuery.trim().toLowerCase(Locale.ROOT);
+    }
+
     private CompoundTag copyTag(CompoundTag tag) {
         return tag == null ? null : tag.copy();
     }
@@ -326,7 +423,10 @@ public class MarketService {
         ServiceResult<T> apply(MarketItem item);
     }
 
-    public record MarketListResult(List<MarketItem> items, int totalPages, int currentPage) {
+    public record MarketListResult(List<MarketListEntry> items, int totalPages, int currentPage) {
+    }
+
+    public record MarketListEntry(MarketItem item, int remainingCooldownAmount) {
     }
 
     public record PurchaseResult(CompoundTag itemNbt, int amount, double newBalance,

@@ -26,6 +26,7 @@ public final class WheatMarketUiTextures {
     private static final String BUTTON_SPRITE = "wheatmarket:screen/main_menu/button";
     private static final String BUTTON_PRESSED_SPRITE = "wheatmarket:screen/main_menu/button_pressed";
     private static final String TITLE_TEXTURE = "wheatmarket:textures/gui/market_menu_title.png";
+    private static final String COMPLETED_STAMP_TEXTURE = "wheatmarket:textures/gui/completed_stamp.png";
     private static final String AVATAR_PLACEHOLDER_TEXTURE = "minecraft:textures/block/grass_block_top.png";
 
     private static final int PAPER_FRAME_COLOR = 0x7F5C4024;
@@ -102,5 +103,12 @@ public final class WheatMarketUiTextures {
 
     public static IGuiTexture titleTexture() {
         return SpriteTexture.of(TITLE_TEXTURE).setSprite(0, 0, 256, 32);
+    }
+
+    public static IGuiTexture completedStampTexture(int alpha, float scale, float rotation) {
+        return SpriteTexture.of(COMPLETED_STAMP_TEXTURE)
+                .setColor((alpha << 24) | 0x00FFFFFF)
+                .scale(scale)
+                .rotate(rotation);
     }
 }

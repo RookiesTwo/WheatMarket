@@ -8,6 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.database.entities.MarketItem;
+import top.rookiestwo.wheatmarket.service.MarketService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,9 +22,10 @@ public class MarketListS2CPacket implements CustomPacketPayload {
     private int totalPages;
     private int currentPage;
 
-    public MarketListS2CPacket(List<MarketItem> marketItems, int totalPages, int currentPage) {
+    public MarketListS2CPacket(List<MarketService.MarketListEntry> marketItems, int totalPages, int currentPage) {
         this.items = new ArrayList<>();
-        for (MarketItem item : marketItems) {
+        for (MarketService.MarketListEntry entry : marketItems) {
+            MarketItem item = entry.item();
             this.items.add(new MarketItemSummary(
                     item.getMarketItemID(),
                     item.getItemNBTCompound(),
@@ -34,7 +36,9 @@ public class MarketListS2CPacket implements CustomPacketPayload {
                     item.getIfSell(),
                     item.getListingTime() != null ? item.getListingTime().getTime() : 0,
                     item.getLastTradeTime() != null ? item.getLastTradeTime().getTime() : -1,
-                    item.hasCooldownRestriction()
+                    item.hasCooldownRestriction(),
+                    entry.remainingCooldownAmount(),
+                    item.getCooldownTimeInMinutes()
             ));
         }
         this.totalPages = totalPages;
@@ -100,10 +104,20 @@ public class MarketListS2CPacket implements CustomPacketPayload {
         private final long listingTime;
         private final long lastTradeTime;
         private final boolean hasCooldown;
+        private final int cooldownAmount;
+        private final int cooldownTimeInMinutes;
 
         public MarketItemSummary(UUID marketItemID, CompoundTag itemNBT, double price, int amount,
                                  UUID sellerID, boolean ifAdmin, boolean ifSell,
                                  long listingTime, long lastTradeTime, boolean hasCooldown) {
+            this(marketItemID, itemNBT, price, amount, sellerID, ifAdmin, ifSell, listingTime, lastTradeTime,
+                    hasCooldown, 0, 0);
+        }
+
+        public MarketItemSummary(UUID marketItemID, CompoundTag itemNBT, double price, int amount,
+                                 UUID sellerID, boolean ifAdmin, boolean ifSell,
+                                 long listingTime, long lastTradeTime, boolean hasCooldown,
+                                 int cooldownAmount, int cooldownTimeInMinutes) {
             this.marketItemID = marketItemID;
             this.itemNBT = itemNBT;
             this.price = price;
@@ -114,6 +128,8 @@ public class MarketListS2CPacket implements CustomPacketPayload {
             this.listingTime = listingTime;
             this.lastTradeTime = lastTradeTime;
             this.hasCooldown = hasCooldown;
+            this.cooldownAmount = cooldownAmount;
+            this.cooldownTimeInMinutes = cooldownTimeInMinutes;
         }
 
         public static MarketItemSummary read(FriendlyByteBuf buf) {
@@ -127,7 +143,10 @@ public class MarketListS2CPacket implements CustomPacketPayload {
             long listingTime = buf.readLong();
             long lastTradeTime = buf.readLong();
             boolean hasCooldown = buf.readBoolean();
-            return new MarketItemSummary(id, nbt, price, amount, sellerID, ifAdmin, ifSell, listingTime, lastTradeTime, hasCooldown);
+            int cooldownAmount = buf.readVarInt();
+            int cooldownTimeInMinutes = buf.readVarInt();
+            return new MarketItemSummary(id, nbt, price, amount, sellerID, ifAdmin, ifSell, listingTime, lastTradeTime,
+                    hasCooldown, cooldownAmount, cooldownTimeInMinutes);
         }
 
         public void write(FriendlyByteBuf buf) {
@@ -141,6 +160,8 @@ public class MarketListS2CPacket implements CustomPacketPayload {
             buf.writeLong(listingTime);
             buf.writeLong(lastTradeTime);
             buf.writeBoolean(hasCooldown);
+            buf.writeVarInt(cooldownAmount);
+            buf.writeVarInt(cooldownTimeInMinutes);
         }
 
         public UUID getMarketItemID() { return marketItemID; }
@@ -153,5 +174,13 @@ public class MarketListS2CPacket implements CustomPacketPayload {
         public long getListingTime() { return listingTime; }
         public long getLastTradeTime() { return lastTradeTime; }
         public boolean isHasCooldown() { return hasCooldown; }
+
+        public int getCooldownAmount() {
+            return cooldownAmount;
+        }
+
+        public int getCooldownTimeInMinutes() {
+            return cooldownTimeInMinutes;
+        }
     }
 }

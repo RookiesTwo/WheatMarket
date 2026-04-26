@@ -13,9 +13,11 @@ import com.lowdragmc.lowdraglib2.gui.ui.elements.Selector;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.TextField;
 import com.lowdragmc.lowdraglib2.utils.XmlUtils;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.w3c.dom.Document;
 import top.rookiestwo.wheatmarket.WheatMarket;
@@ -25,6 +27,7 @@ import top.rookiestwo.wheatmarket.network.s2c.MarketListS2CPacket;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.function.BiConsumer;
 
 public class WheatMarketHomeUI {
     private static final ResourceLocation HOME_XML = ResourceLocation.parse("wheatmarket:ui/market_home.xml");
@@ -32,6 +35,9 @@ public class WheatMarketHomeUI {
     private static final int PRODUCT_CARD_HEIGHT = 64;
     private static final int PRODUCT_CARD_GAP = 10;
     private static final int MAX_PRODUCTS_PER_PAGE = 64;
+    private static final int MAX_LOCALIZED_SEARCH_IDS = 2048;
+
+    private final BiConsumer<MarketListS2CPacket.MarketItemSummary, ItemStack> orderRequestHandler;
 
     private Selector<TradeFilter> tradeSelector;
     private Selector<SourceFilter> sourceSelector;
@@ -57,6 +63,14 @@ public class WheatMarketHomeUI {
     private int requestedPage;
     private int seenListVersion = -1;
 
+    public WheatMarketHomeUI() {
+        this(null);
+    }
+
+    public WheatMarketHomeUI(BiConsumer<MarketListS2CPacket.MarketItemSummary, ItemStack> orderRequestHandler) {
+        this.orderRequestHandler = orderRequestHandler;
+    }
+
     public ModularUI create(Player player) {
         Document xml = XmlUtils.loadXml(HOME_XML);
         if (xml == null) {
@@ -80,9 +94,18 @@ public class WheatMarketHomeUI {
                 sourceFilter.packetValue,
                 sortFilter.packetValue,
                 searchField.getValue(),
+                resolveLocalizedSearchItemIds(searchField.getValue()),
                 requestedPage,
                 calculateProductsPerPage()
         ));
+    }
+
+    public boolean submitSearchIfSearchFieldFocused() {
+        if (searchField == null || !searchField.isFocused()) {
+            return false;
+        }
+        resetAndRequest();
+        return true;
     }
 
     public void tick() {
@@ -248,7 +271,8 @@ public class WheatMarketHomeUI {
         }
 
         for (MarketListS2CPacket.MarketItemSummary item : items) {
-            productBoard.addChild(MarketListingCard.create(item, itemStackFromSummary(item)));
+            ItemStack stack = itemStackFromSummary(item);
+            productBoard.addChild(MarketListingCard.create(item, stack, orderRequestHandler));
         }
     }
 
@@ -313,6 +337,27 @@ public class WheatMarketHomeUI {
         ItemStack stack = ItemStack.parseOptional(minecraft.level.registryAccess(), item.getItemNBT());
         stack.setCount(1);
         return stack;
+    }
+
+    private List<String> resolveLocalizedSearchItemIds(String searchQuery) {
+        String normalizedQuery = normalizeSearchQuery(searchQuery);
+        if (normalizedQuery.isEmpty()) {
+            return List.of();
+        }
+        return BuiltInRegistries.ITEM.stream()
+                .filter(item -> localizedItemNameMatches(item, normalizedQuery))
+                .map(item -> BuiltInRegistries.ITEM.getKey(item).toString())
+                .limit(MAX_LOCALIZED_SEARCH_IDS)
+                .toList();
+    }
+
+    private boolean localizedItemNameMatches(Item item, String normalizedQuery) {
+        String localizedName = item.getDefaultInstance().getHoverName().getString();
+        return normalizeSearchQuery(localizedName).contains(normalizedQuery);
+    }
+
+    private String normalizeSearchQuery(String value) {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
     }
 
     private String formatMoney(double value) {

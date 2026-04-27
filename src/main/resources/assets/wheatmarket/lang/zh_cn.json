@@ -175,5 +175,7 @@
   "gui.wheatmarket.operation.invalid_action": "无效的操作。",
   "gui.wheatmarket.operation.failed": "操作失败。",
   "gui.wheatmarket.operation.stock_edit_success": "库存已更新为 %1$s。",
-  "gui.wheatmarket.operation.stock_edit_no_change": "库存未变化。"
+  "gui.wheatmarket.operation.stock_edit_no_change": "库存未变化。",
+  "gui.wheatmarket.operation.item_locked": "该商品正在被编辑。",
+  "gui.wheatmarket.operation.edit_lock_acquired": "商品已锁定，可编辑。"
 }

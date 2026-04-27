@@ -14,6 +14,7 @@ import java.sql.Connection;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class MarketService {
@@ -26,6 +27,7 @@ public class MarketService {
     private final MarketItemRepository marketItemRepository;
     private final PurchaseRecordRepository purchaseRecordRepository;
     private final MarketItemCache marketItemCache;
+    private final Map<UUID, UUID> editLocks = new ConcurrentHashMap<>();
 
     public MarketService(TransactionManager transactionManager,
                          PlayerInfoRepository playerInfoRepository,
@@ -73,6 +75,7 @@ public class MarketService {
         List<MarketItem> filtered = allItems.stream()
                 .filter(item -> !item.isExpired())
                 .filter(item -> item.isInfinite() || item.getAmount() > 0)
+                .filter(item -> !isEditLockedByOther(item.getMarketItemID(), buyerId))
                 .filter(item -> {
                     if (tradeType == 1) return item.getIfSell();
                     if (tradeType == 2) return !item.getIfSell();
@@ -120,6 +123,9 @@ public class MarketService {
             MarketItem item = marketItemCache.get(marketItemID);
             if (item == null) {
                 return ServiceResult.<PurchaseResult>failure("gui.wheatmarket.operation.item_not_found");
+            }
+            if (isEditLocked(marketItemID)) {
+                return ServiceResult.<PurchaseResult>failure("gui.wheatmarket.operation.item_locked");
             }
             if (item.isExpired()) {
                 return ServiceResult.<PurchaseResult>failure("gui.wheatmarket.operation.item_expired");
@@ -247,17 +253,28 @@ public class MarketService {
     public CompletableFuture<ServiceResult<StockEditStartResult>> beginStockEdit(UUID actorId, boolean isOp,
                                                                                  UUID marketItemID,
                                                                                  int maxStockAmount) {
-        return updateExistingItem(actorId, isOp, marketItemID, item -> {
+        return transactionManager.executeAsync(connection -> {
+            MarketItem item = marketItemCache.get(marketItemID);
+            if (item == null) {
+                return ServiceResult.<StockEditStartResult>failure("gui.wheatmarket.operation.item_not_found");
+            }
+            if (!item.getSellerID().equals(actorId) && !isOp) {
+                return ServiceResult.<StockEditStartResult>failure("gui.wheatmarket.operation.no_permission");
+            }
+            if (!isEditLockedBy(marketItemID, actorId)) {
+                return ServiceResult.<StockEditStartResult>failure("gui.wheatmarket.operation.item_locked");
+            }
             if (!Boolean.TRUE.equals(item.getIfSell()) || item.isInfinite()) {
-                return ServiceResult.failure("gui.wheatmarket.operation.invalid_amount");
+                return ServiceResult.<StockEditStartResult>failure("gui.wheatmarket.operation.invalid_amount");
             }
             int currentAmount = item.getAmount();
-            if (currentAmount <= 0 || currentAmount > maxStockAmount) {
-                return ServiceResult.failure("gui.wheatmarket.operation.invalid_amount");
+            if (currentAmount < 0 || currentAmount > maxStockAmount) {
+                return ServiceResult.<StockEditStartResult>failure("gui.wheatmarket.operation.invalid_amount");
             }
-            MarketItem updated = copyOf(item);
-            updated.setAmount(0);
-            return ServiceResult.success(new StockEditStartResult(copyTag(item.getItemNBTCompound()), currentAmount, updated));
+            return ServiceResult.success(new StockEditStartResult(copyTag(item.getItemNBTCompound()), currentAmount, copyOf(item)));
+        }).exceptionally(e -> {
+            WheatMarket.LOGGER.error("Failed to begin stock edit.", e);
+            return ServiceResult.<StockEditStartResult>failure("gui.wheatmarket.operation.failed");
         });
     }
 
@@ -267,6 +284,9 @@ public class MarketService {
                                                                                    int finalAmount,
                                                                                    int maxStockAmount) {
         return updateExistingItem(actorId, isOp, marketItemID, item -> {
+            if (!isEditLockedBy(marketItemID, actorId)) {
+                return ServiceResult.failure("gui.wheatmarket.operation.item_locked");
+            }
             if (!Boolean.TRUE.equals(item.getIfSell()) || item.isInfinite()) {
                 return ServiceResult.failure("gui.wheatmarket.operation.invalid_amount");
             }
@@ -347,6 +367,9 @@ public class MarketService {
             if (!item.getSellerID().equals(actorId) && !isOp) {
                 return ServiceResult.<T>failure("gui.wheatmarket.operation.no_permission");
             }
+            if (isEditLockedByOther(marketItemID, actorId)) {
+                return ServiceResult.<T>failure("gui.wheatmarket.operation.item_locked");
+            }
 
             ServiceResult<T> mutationResult = mutation.apply(item);
             if (!mutationResult.isSuccess()) {
@@ -365,6 +388,7 @@ public class MarketService {
             if (result.isSuccess()) {
                 if (result.getValue().removeFromCache()) {
                     marketItemCache.remove(marketItemID);
+                    editLocks.remove(marketItemID);
                 } else {
                     marketItemCache.put(result.getValue().updatedItem());
                 }
@@ -393,6 +417,52 @@ public class MarketService {
                 item.getTimeToExpire(),
                 item.getLastTradeTime()
         );
+    }
+
+    public ServiceResult<Void> acquireItemEditLock(UUID actorId, boolean isOp, UUID marketItemID) {
+        MarketItem item = marketItemCache.get(marketItemID);
+        if (item == null) {
+            return ServiceResult.failure("gui.wheatmarket.operation.item_not_found");
+        }
+        if (item.isExpired()) {
+            return ServiceResult.failure("gui.wheatmarket.operation.item_expired");
+        }
+        if (!item.getSellerID().equals(actorId) && !isOp) {
+            return ServiceResult.failure("gui.wheatmarket.operation.no_permission");
+        }
+
+        UUID existing = editLocks.putIfAbsent(marketItemID, actorId);
+        if (existing != null && !existing.equals(actorId)) {
+            return ServiceResult.failure("gui.wheatmarket.operation.item_locked");
+        }
+        return ServiceResult.success(null);
+    }
+
+    public void releaseItemEditLock(UUID actorId, UUID marketItemID) {
+        if (marketItemID != null && actorId != null) {
+            editLocks.remove(marketItemID, actorId);
+        }
+    }
+
+    public void releaseItemEditLocks(UUID actorId) {
+        if (actorId == null) {
+            return;
+        }
+        editLocks.entrySet().removeIf(entry -> actorId.equals(entry.getValue()));
+    }
+
+    private boolean isEditLocked(UUID marketItemID) {
+        return editLocks.containsKey(marketItemID);
+    }
+
+    private boolean isEditLockedBy(UUID marketItemID, UUID actorId) {
+        UUID editingPlayerId = editLocks.get(marketItemID);
+        return editingPlayerId != null && editingPlayerId.equals(actorId);
+    }
+
+    private boolean isEditLockedByOther(UUID marketItemID, UUID actorId) {
+        UUID editingPlayerId = editLocks.get(marketItemID);
+        return editingPlayerId != null && (actorId == null || !editingPlayerId.equals(actorId));
     }
 
     private ServiceResult<Void> validateCooldownRestriction(Connection connection, MarketItem item, UUID buyerId, int amount) throws Exception {

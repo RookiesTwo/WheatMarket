@@ -29,7 +29,7 @@ public class FinalizeStockEditC2SPacket implements CustomPacketPayload {
             return;
         }
 
-        WheatMarketMenu.StockEditSnapshot snapshot = wheatMarketMenu.beginStockEditFinalization();
+        WheatMarketMenu.StockEditSnapshot snapshot = wheatMarketMenu.beginStockEditFinalization(player);
         if (snapshot == null) {
             sendFailure(player, notify, "gui.wheatmarket.operation.failed");
             return;
@@ -37,6 +37,9 @@ public class FinalizeStockEditC2SPacket implements CustomPacketPayload {
 
         if (!isValidFinalStack(snapshot)) {
             wheatMarketMenu.completeStockEditFinalization(false);
+            if (!notify) {
+                WheatMarket.DATABASE.getMarketService().releaseItemEditLock(player.getUUID(), snapshot.marketItemId());
+            }
             sendFailure(player, notify, "gui.wheatmarket.operation.invalid_amount");
             return;
         }
@@ -49,6 +52,9 @@ public class FinalizeStockEditC2SPacket implements CustomPacketPayload {
                 .thenAccept(result -> player.server.execute(() -> {
                     if (!result.isSuccess()) {
                         wheatMarketMenu.completeStockEditFinalization(false);
+                        if (!notify) {
+                            WheatMarket.DATABASE.getMarketService().releaseItemEditLock(player.getUUID(), snapshot.marketItemId());
+                        }
                         if (notify) {
                             WheatMarketNetwork.sendToPlayer(player,
                                     new OperationResultS2CPacket(false, result.getMessageKey(), result.getMessageArgs()));
@@ -57,6 +63,9 @@ public class FinalizeStockEditC2SPacket implements CustomPacketPayload {
                     }
 
                     wheatMarketMenu.completeStockEditFinalization(true);
+                    if (!notify || snapshot.finalAmount() <= 0) {
+                        WheatMarket.DATABASE.getMarketService().releaseItemEditLock(player.getUUID(), snapshot.marketItemId());
+                    }
                     if (notify) {
                         String messageKey = snapshot.finalAmount() == snapshot.originalAmount()
                                 ? "gui.wheatmarket.operation.stock_edit_no_change"

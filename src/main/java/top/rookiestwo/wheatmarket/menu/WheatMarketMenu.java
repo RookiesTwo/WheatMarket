@@ -9,6 +9,7 @@ import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.WheatMarketRegistry;
 import top.rookiestwo.wheatmarket.network.c2s.FinalizeStockEditC2SPacket;
 
@@ -35,6 +36,7 @@ public class WheatMarketMenu extends AbstractContainerMenu {
     private UUID stockEditMarketItemId;
     private int stockEditOriginalAmount;
     private ItemStack stockEditTemplate = ItemStack.EMPTY;
+    private UUID editingMarketItemId;
     private Player player = null;
 
     public WheatMarketMenu(int containerId, Inventory inventory) {
@@ -65,6 +67,20 @@ public class WheatMarketMenu extends AbstractContainerMenu {
             if (!slot.mayPickup(player)) {
                 return ItemStack.EMPTY;
             }
+            if (stockEditActive) {
+                int moveAmount = Math.min(stack.getCount(), normalMaxStackSize(stack));
+                ItemStack movingStack = stack.copy();
+                movingStack.setCount(moveAmount);
+                if (moveItemStackTo(movingStack, PLAYER_INVENTORY_SLOT_START, PLAYER_INVENTORY_SLOT_END, true)) {
+                    int moved = moveAmount - movingStack.getCount();
+                    if (moved <= 0) {
+                        return ItemStack.EMPTY;
+                    }
+                    shrinkStockEdit(moved);
+                    return originalStack;
+                }
+                return ItemStack.EMPTY;
+            }
             if (moveItemStackTo(stack, PLAYER_INVENTORY_SLOT_START, PLAYER_INVENTORY_SLOT_END, true)) {
                 if (stack.isEmpty()) {
                     slot.set(ItemStack.EMPTY);
@@ -77,6 +93,18 @@ public class WheatMarketMenu extends AbstractContainerMenu {
                 return originalStack;
             }
             return ItemStack.EMPTY;
+        }
+
+        if (stockEditActive) {
+            if (!moveItemStackTo(stack, ITEM_SELECTION_SLOT_INDEX, ITEM_SELECTION_SLOT_INDEX + 1, false)) {
+                return ItemStack.EMPTY;
+            }
+            if (stack.isEmpty()) {
+                slot.set(ItemStack.EMPTY);
+            } else {
+                slot.setChanged();
+            }
+            return originalStack;
         }
 
         if (itemSelectionMode == ItemSelectionMode.SAMPLE) {
@@ -99,6 +127,14 @@ public class WheatMarketMenu extends AbstractContainerMenu {
 
     @Override
     public void clicked(int slotId, int button, ClickType clickType, Player player) {
+        if (stockEditActive) {
+            if (slotId == ITEM_SELECTION_SLOT_INDEX && clickType == ClickType.PICKUP) {
+                handleStockEditSlotClick(button);
+                return;
+            }
+            super.clicked(slotId, button, clickType, player);
+            return;
+        }
         if (isSlotInterfaceActive()) {
             if (clickType == ClickType.QUICK_CRAFT || clickType == ClickType.PICKUP_ALL) {
                 return;
@@ -124,7 +160,7 @@ public class WheatMarketMenu extends AbstractContainerMenu {
 
     @Override
     public boolean canDragTo(Slot slot) {
-        if (isSlotInterfaceActive() && slot.index == ITEM_SELECTION_SLOT_INDEX) {
+        if (isItemSelectionActive() && slot.index == ITEM_SELECTION_SLOT_INDEX) {
             return false;
         }
         return super.canDragTo(slot);
@@ -132,7 +168,7 @@ public class WheatMarketMenu extends AbstractContainerMenu {
 
     @Override
     public boolean canTakeItemForPickAll(ItemStack stack, Slot slot) {
-        if (isSlotInterfaceActive() && slot.index == ITEM_SELECTION_SLOT_INDEX) {
+        if (isItemSelectionActive() && slot.index == ITEM_SELECTION_SLOT_INDEX) {
             return false;
         }
         return super.canTakeItemForPickAll(stack, slot);
@@ -183,6 +219,10 @@ public class WheatMarketMenu extends AbstractContainerMenu {
             returnOrClearSelection(player);
         }
         lockedItemSelectionTemplate = ItemStack.EMPTY;
+        if (!hadStockEditSession && player instanceof ServerPlayer serverPlayer && WheatMarket.DATABASE != null) {
+            WheatMarket.DATABASE.getMarketService().releaseItemEditLocks(serverPlayer.getUUID());
+        }
+        editingMarketItemId = null;
         super.removed(player);
     }
 
@@ -276,7 +316,21 @@ public class WheatMarketMenu extends AbstractContainerMenu {
         return player;
     }
 
+    public void setEditingMarketItemId(UUID marketItemId) {
+        this.editingMarketItemId = marketItemId;
+    }
+
+    public void clearEditingMarketItemId(UUID marketItemId) {
+        if (marketItemId == null || marketItemId.equals(this.editingMarketItemId)) {
+            this.editingMarketItemId = null;
+        }
+    }
+
     public void prepareClientStockEdit(UUID marketItemId, ItemStack lockedTemplate, Player player) {
+        prepareClientStockEdit(marketItemId, lockedTemplate, 0, player);
+    }
+
+    public void prepareClientStockEdit(UUID marketItemId, ItemStack lockedTemplate, int initialAmount, Player player) {
         returnCarriedItem(player);
         returnOrClearSelection(player);
         itemSelectionMode = ItemSelectionMode.DISABLED;
@@ -284,9 +338,15 @@ public class WheatMarketMenu extends AbstractContainerMenu {
         stockEditActive = true;
         stockEditFinalizing = false;
         stockEditMarketItemId = marketItemId;
-        stockEditOriginalAmount = 0;
+        stockEditOriginalAmount = Math.max(0, initialAmount);
         stockEditTemplate = templateCopy(lockedTemplate);
-        itemSelectionContainer.setItem(0, ItemStack.EMPTY);
+        ItemStack stockStack = stockEditTemplate.copy();
+        if (!stockStack.isEmpty() && stockEditOriginalAmount > 0) {
+            stockStack.setCount(Math.min(stockEditOriginalAmount, ITEM_SELECTION_MAX_AMOUNT));
+        } else {
+            stockStack = ItemStack.EMPTY;
+        }
+        itemSelectionContainer.setItem(0, stockStack);
         broadcastChanges();
     }
 
@@ -318,10 +378,11 @@ public class WheatMarketMenu extends AbstractContainerMenu {
         return stockEditActive ? getSelectedAmount() : 0;
     }
 
-    public StockEditSnapshot beginStockEditFinalization() {
+    public StockEditSnapshot beginStockEditFinalization(Player player) {
         if (!stockEditActive || stockEditFinalizing || stockEditMarketItemId == null) {
             return null;
         }
+        returnCarriedItem(player);
         stockEditFinalizing = true;
         ItemStack finalStack = itemSelectionContainer.getItem(0).copy();
         int finalAmount = finalStack.isEmpty() ? 0 : finalStack.getCount();
@@ -402,6 +463,9 @@ public class WheatMarketMenu extends AbstractContainerMenu {
             int requestedPickupAmount = button == 1
                     ? Math.max(1, (selected.getCount() + 1) / 2)
                     : selected.getCount();
+            if (stockEdit) {
+                requestedPickupAmount = Math.min(requestedPickupAmount, normalMaxStackSize(selected));
+            }
             int pickupAmount = Math.min(requestedPickupAmount, selected.getCount());
             if (pickupAmount <= 0) {
                 return;
@@ -645,6 +709,10 @@ public class WheatMarketMenu extends AbstractContainerMenu {
         } else {
             itemSelectionContainer.setChanged();
         }
+    }
+
+    private int normalMaxStackSize(ItemStack stack) {
+        return Math.max(1, Math.min(stack.getMaxStackSize(), ITEM_SELECTION_MAX_AMOUNT));
     }
 
     private void returnOrClearSelection(Player player) {

@@ -58,14 +58,6 @@ public class BeginStockEditC2SPacket implements CustomPacketPayload {
                         }
 
                         if (player.containerMenu != wheatMarketMenu) {
-                            WheatMarket.DATABASE.getMarketService().finishStockEdit(
-                                    player.getUUID(),
-                                    isOp,
-                                    marketItemID,
-                                    result.getValue().itemNbt(),
-                                    result.getValue().originalAmount(),
-                                    WheatMarketMenu.ITEM_SELECTION_MAX_AMOUNT
-                            );
                             return;
                         }
 

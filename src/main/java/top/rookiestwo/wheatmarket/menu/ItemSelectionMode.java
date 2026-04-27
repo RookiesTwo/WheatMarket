@@ -3,7 +3,8 @@ package top.rookiestwo.wheatmarket.menu;
 public enum ItemSelectionMode {
     DISABLED(0, false),
     TRANSFER(1, true),
-    SAMPLE(2, false);
+    SAMPLE(2, false),
+    STOCK_EDIT(3, true);
 
     private final int networkId;
     private final boolean consumesItems;

@@ -9,6 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import top.rookiestwo.wheatmarket.menu.ItemSelectionMode;
 import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
 import top.rookiestwo.wheatmarket.network.WheatMarketNetwork;
+import top.rookiestwo.wheatmarket.network.c2s.AcquireItemEditLockC2SPacket;
 import top.rookiestwo.wheatmarket.network.c2s.SetItemSelectionModeC2SPacket;
 import top.rookiestwo.wheatmarket.network.s2c.MarketListS2CPacket;
 
@@ -20,6 +21,7 @@ public class WheatMarketOrderConfirmationScreen extends AbstractContainerScreen<
     private ModularUI modularUI;
     private int selectedQuantity = 1;
     private boolean initializedOnce;
+    private boolean openingManagement;
 
     public WheatMarketOrderConfirmationScreen(WheatMarketMenu menu, Inventory inventory, Component title,
                                               MarketListS2CPacket.MarketItemSummary item, ItemStack stack) {
@@ -63,6 +65,14 @@ public class WheatMarketOrderConfirmationScreen extends AbstractContainerScreen<
     }
 
     public boolean handleOperationResult(boolean success, Component message) {
+        if (openingManagement) {
+            openingManagement = false;
+            if (success) {
+                openManagementScreen();
+                return true;
+            }
+            return false;
+        }
         return this.orderConfirmationUI != null && this.orderConfirmationUI.handleOperationResult(success, message);
     }
 
@@ -73,6 +83,14 @@ public class WheatMarketOrderConfirmationScreen extends AbstractContainerScreen<
     }
 
     private void openManagementEntry() {
+        if (openingManagement) {
+            return;
+        }
+        openingManagement = true;
+        WheatMarketNetwork.sendToServer(new AcquireItemEditLockC2SPacket(this.item.getMarketItemID()));
+    }
+
+    private void openManagementScreen() {
         if (this.minecraft != null) {
             this.minecraft.setScreen(new WheatMarketItemEditScreen(this.menu, this.inventory, this.title, this.item, this.stack));
         }

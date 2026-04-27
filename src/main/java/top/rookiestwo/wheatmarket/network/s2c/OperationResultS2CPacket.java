@@ -62,14 +62,14 @@ public class OperationResultS2CPacket implements CustomPacketPayload {
                 WheatMarket.LOGGER.debug("Operation result consumed by listing screen: success={}, key={}", success, messageKey);
                 return;
             }
+            if (minecraft.screen instanceof WheatMarketItemSelectionScreen itemSelectionScreen
+                    && itemSelectionScreen.handleOperationResult(success, message)) {
+                WheatMarket.LOGGER.debug("Operation result consumed by item selection screen: success={}, key={}", success, messageKey);
+                return;
+            }
             if (minecraft.screen instanceof WheatMarketItemEditScreen itemEditScreen
                     && itemEditScreen.handleOperationResult(success, message)) {
                 WheatMarket.LOGGER.debug("Operation result consumed by item edit screen: success={}, key={}", success, messageKey);
-                return;
-            }
-            if (minecraft.screen instanceof WheatMarketStockEditScreen stockEditScreen
-                    && stockEditScreen.handleOperationResult(success, message)) {
-                WheatMarket.LOGGER.debug("Operation result consumed by stock edit screen: success={}, key={}", success, messageKey);
                 return;
             }
             if (context.player() != null) {

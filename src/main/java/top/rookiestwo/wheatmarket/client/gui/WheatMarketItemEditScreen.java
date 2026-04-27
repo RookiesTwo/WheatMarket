@@ -10,6 +10,7 @@ import top.rookiestwo.wheatmarket.menu.ItemSelectionMode;
 import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
 import top.rookiestwo.wheatmarket.network.WheatMarketNetwork;
 import top.rookiestwo.wheatmarket.network.c2s.ManageItemC2SPacket;
+import top.rookiestwo.wheatmarket.network.c2s.ReleaseItemEditLockC2SPacket;
 import top.rookiestwo.wheatmarket.network.c2s.SetItemSelectionModeC2SPacket;
 import top.rookiestwo.wheatmarket.network.s2c.MarketListS2CPacket;
 
@@ -21,6 +22,8 @@ public class WheatMarketItemEditScreen extends AbstractContainerScreen<WheatMark
     private WheatMarketItemEditUI itemEditUI;
     private ModularUI modularUI;
     private boolean selectionReleased;
+    private boolean editLockReleased;
+    private boolean openingStockSelection;
 
     public WheatMarketItemEditScreen(WheatMarketMenu menu, Inventory inventory, Component title,
                                      MarketListS2CPacket.MarketItemSummary item, ItemStack stack) {
@@ -70,15 +73,35 @@ public class WheatMarketItemEditScreen extends AbstractContainerScreen<WheatMark
         }
 
         WheatMarketItemEditUI.Draft currentDraft = this.itemEditUI.createDraft();
+        int[] finalStock = {currentDraft.currentStock()};
+        ItemSelectionRequest request = ItemSelectionRequest.stockEdit(
+                this.item.getMarketItemID(),
+                this.stack,
+                currentDraft.currentStock(),
+                result -> finalStock[0] = result.totalAmount()
+        );
+        openingStockSelection = true;
 
-        this.minecraft.setScreen(new WheatMarketStockEditScreen(
+        this.minecraft.setScreen(new WheatMarketItemSelectionScreen(
                 this.menu,
                 this.inventory,
                 this.title,
-                this.item,
-                this.stack,
-                currentDraft,
-                this.modularUI
+                request,
+                this.modularUI,
+                (menu, inventory, title) -> {
+                    if (finalStock[0] <= 0) {
+                        releaseEditLock();
+                        return new WheatMarketMainScreen(menu, inventory, title);
+                    }
+                    return new WheatMarketItemEditScreen(
+                            menu,
+                            inventory,
+                            title,
+                            this.item,
+                            this.stack,
+                            currentDraft.withStock(finalStock[0])
+                    );
+                }
         ));
     }
 
@@ -152,6 +175,7 @@ public class WheatMarketItemEditScreen extends AbstractContainerScreen<WheatMark
 
     private void returnToMain() {
         releaseSelection();
+        releaseEditLock();
         if (this.minecraft != null) {
             this.minecraft.setScreen(new WheatMarketMainScreen(this.menu, this.inventory, this.title));
         }
@@ -166,15 +190,27 @@ public class WheatMarketItemEditScreen extends AbstractContainerScreen<WheatMark
         WheatMarketNetwork.sendToServer(new SetItemSelectionModeC2SPacket(ItemSelectionMode.DISABLED));
     }
 
+    private void releaseEditLock() {
+        if (editLockReleased) {
+            return;
+        }
+        editLockReleased = true;
+        WheatMarketNetwork.sendToServer(new ReleaseItemEditLockC2SPacket(this.item.getMarketItemID()));
+    }
+
     @Override
     public void onClose() {
         releaseSelection();
+        releaseEditLock();
         super.onClose();
     }
 
     @Override
     public void removed() {
         releaseSelection();
+        if (!openingStockSelection) {
+            releaseEditLock();
+        }
         super.removed();
     }
 

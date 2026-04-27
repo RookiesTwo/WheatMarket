@@ -175,5 +175,7 @@
   "gui.wheatmarket.operation.invalid_action": "Invalid action.",
   "gui.wheatmarket.operation.failed": "Operation failed.",
   "gui.wheatmarket.operation.stock_edit_success": "Stock updated to %1$s.",
-  "gui.wheatmarket.operation.stock_edit_no_change": "Stock was unchanged."
+  "gui.wheatmarket.operation.stock_edit_no_change": "Stock was unchanged.",
+  "gui.wheatmarket.operation.item_locked": "This listing is currently being edited.",
+  "gui.wheatmarket.operation.edit_lock_acquired": "Listing locked for editing."
 }

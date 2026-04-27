@@ -25,7 +25,8 @@ public class WheatMarketMenu extends AbstractContainerMenu {
 
     private final ItemSelectionContainer itemSelectionContainer = new ItemSelectionContainer();
     private ItemSelectionMode itemSelectionMode = ItemSelectionMode.DISABLED;
-    private boolean selectionContainsPlayerItems;
+    private ItemStack lockedItemSelectionTemplate = ItemStack.EMPTY;
+    private int playerOwnedSelectionAmount;
     private Player player = null;
 
     public WheatMarketMenu(int containerId, Inventory inventory) {
@@ -56,13 +57,15 @@ public class WheatMarketMenu extends AbstractContainerMenu {
             if (!itemSelectionMode.consumesItems()) {
                 return ItemStack.EMPTY;
             }
-            if (moveItemStackTo(stack, PLAYER_INVENTORY_SLOT_START, PLAYER_INVENTORY_SLOT_END, true)) {
-                if (stack.isEmpty()) {
-                    slot.set(ItemStack.EMPTY);
-                    selectionContainsPlayerItems = false;
-                } else {
-                    slot.setChanged();
-                }
+            int movableAmount = Math.min(stack.getCount(), playerOwnedSelectionAmount);
+            if (movableAmount <= 0) {
+                return ItemStack.EMPTY;
+            }
+            ItemStack moving = stack.copy();
+            moving.setCount(movableAmount);
+            if (moveItemStackTo(moving, PLAYER_INVENTORY_SLOT_START, PLAYER_INVENTORY_SLOT_END, true)) {
+                int movedAmount = movableAmount - moving.getCount();
+                shrinkSelection(movedAmount, movedAmount);
                 return originalStack;
             }
             return ItemStack.EMPTY;
@@ -104,14 +107,27 @@ public class WheatMarketMenu extends AbstractContainerMenu {
     @Override
     public void removed(Player player) {
         itemSelectionMode = ItemSelectionMode.DISABLED;
+        lockedItemSelectionTemplate = ItemStack.EMPTY;
         returnOrClearSelection(player);
         super.removed(player);
+    }
+
+    public void configureItemSelection(ItemSelectionMode mode, ItemStack initialSelection, ItemStack lockedTemplate, Player player) {
+        ItemSelectionMode newMode = mode == null ? ItemSelectionMode.DISABLED : mode;
+        returnOrClearSelection(player);
+        this.itemSelectionMode = newMode;
+        this.lockedItemSelectionTemplate = newMode == ItemSelectionMode.DISABLED
+                ? ItemStack.EMPTY
+                : templateCopy(lockedTemplate);
+        setInitialSelection(initialSelection);
+        broadcastChanges();
     }
 
     public void setItemSelectionMode(ItemSelectionMode mode, Player player) {
         ItemSelectionMode newMode = mode == null ? ItemSelectionMode.DISABLED : mode;
         if (this.itemSelectionMode == newMode) {
             if (newMode == ItemSelectionMode.DISABLED) {
+                lockedItemSelectionTemplate = ItemStack.EMPTY;
                 returnOrClearSelection(player);
                 broadcastChanges();
             }
@@ -119,7 +135,18 @@ public class WheatMarketMenu extends AbstractContainerMenu {
         }
 
         this.itemSelectionMode = newMode;
+        if (newMode == ItemSelectionMode.DISABLED) {
+            lockedItemSelectionTemplate = ItemStack.EMPTY;
+        }
         returnOrClearSelection(player);
+        broadcastChanges();
+    }
+
+    public void preserveItemSelectionForDraft(Player player) {
+        itemSelectionMode = ItemSelectionMode.DISABLED;
+        lockedItemSelectionTemplate = ItemStack.EMPTY;
+        returnCarriedItem(player);
+        clampPlayerOwnedSelectionAmount();
         broadcastChanges();
     }
 
@@ -180,7 +207,7 @@ public class WheatMarketMenu extends AbstractContainerMenu {
             return;
         }
         if (button == 1) {
-            selectionContainsPlayerItems = false;
+            playerOwnedSelectionAmount = 0;
             itemSelectionContainer.setItem(0, ItemStack.EMPTY);
             broadcastChanges();
         }
@@ -197,16 +224,16 @@ public class WheatMarketMenu extends AbstractContainerMenu {
             int requestedPickupAmount = button == 1
                     ? Math.max(1, (selected.getCount() + 1) / 2)
                     : selected.getCount();
-            int pickupAmount = Math.min(requestedPickupAmount, selected.getMaxStackSize());
+            int pickupAmount = Math.min(Math.min(requestedPickupAmount, selected.getMaxStackSize()), playerOwnedSelectionAmount);
+            if (pickupAmount <= 0) {
+                // Non-player-owned prefill is an editable field value; clearing it must not mint an item.
+                shrinkSelection(requestedPickupAmount, 0);
+                broadcastChanges();
+                return;
+            }
             ItemStack pickedUp = selected.copy();
             pickedUp.setCount(pickupAmount);
-            selected.shrink(pickupAmount);
-            if (selected.isEmpty()) {
-                itemSelectionContainer.setItem(0, ItemStack.EMPTY);
-                selectionContainsPlayerItems = false;
-            } else {
-                itemSelectionContainer.setChanged();
-            }
+            shrinkSelection(pickupAmount, pickupAmount);
             setCarried(pickedUp);
             broadcastChanges();
             return;
@@ -224,18 +251,18 @@ public class WheatMarketMenu extends AbstractContainerMenu {
     }
 
     private void setSample(ItemStack stack) {
-        if (stack.isEmpty()) {
+        if (stack.isEmpty() || !matchesLockedTemplate(stack)) {
             return;
         }
         ItemStack sample = stack.copy();
         sample.setCount(1);
-        selectionContainsPlayerItems = false;
+        playerOwnedSelectionAmount = 0;
         itemSelectionContainer.setItem(0, sample);
         broadcastChanges();
     }
 
     private int addToSelection(ItemStack source, int requestedAmount) {
-        if (source.isEmpty() || requestedAmount <= 0) {
+        if (source.isEmpty() || requestedAmount <= 0 || !matchesLockedTemplate(source)) {
             return 0;
         }
 
@@ -244,7 +271,7 @@ public class WheatMarketMenu extends AbstractContainerMenu {
             int moved = Math.min(requestedAmount, ITEM_SELECTION_MAX_AMOUNT);
             ItemStack copy = source.copy();
             copy.setCount(moved);
-            selectionContainsPlayerItems = true;
+            playerOwnedSelectionAmount = moved;
             itemSelectionContainer.setItem(0, copy);
             return moved;
         }
@@ -259,7 +286,8 @@ public class WheatMarketMenu extends AbstractContainerMenu {
         }
         int moved = Math.min(requestedAmount, space);
         selected.grow(moved);
-        selectionContainsPlayerItems = true;
+        playerOwnedSelectionAmount += moved;
+        clampPlayerOwnedSelectionAmount();
         itemSelectionContainer.setChanged();
         return moved;
     }
@@ -268,21 +296,81 @@ public class WheatMarketMenu extends AbstractContainerMenu {
         if (stack.isEmpty() || itemSelectionMode != ItemSelectionMode.TRANSFER) {
             return false;
         }
+        if (!matchesLockedTemplate(stack)) {
+            return false;
+        }
         ItemStack selected = itemSelectionContainer.getItem(0);
         return selected.isEmpty() || ItemStack.isSameItemSameComponents(selected, stack);
+    }
+
+    private void setInitialSelection(ItemStack initialSelection) {
+        playerOwnedSelectionAmount = 0;
+        if (itemSelectionMode == ItemSelectionMode.DISABLED || initialSelection == null || initialSelection.isEmpty()) {
+            itemSelectionContainer.setItem(0, ItemStack.EMPTY);
+            return;
+        }
+        if (!matchesLockedTemplate(initialSelection)) {
+            itemSelectionContainer.setItem(0, ItemStack.EMPTY);
+            return;
+        }
+        ItemStack initial = initialSelection.copy();
+        if (initial.getCount() > ITEM_SELECTION_MAX_AMOUNT) {
+            initial.setCount(ITEM_SELECTION_MAX_AMOUNT);
+        }
+        itemSelectionContainer.setItem(0, initial);
+    }
+
+    private boolean matchesLockedTemplate(ItemStack stack) {
+        return lockedItemSelectionTemplate.isEmpty() || ItemStack.isSameItemSameComponents(lockedItemSelectionTemplate, stack);
+    }
+
+    private ItemStack templateCopy(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack copy = stack.copy();
+        copy.setCount(1);
+        return copy;
+    }
+
+    private void shrinkSelection(int amount, int playerOwnedAmount) {
+        if (amount <= 0) {
+            return;
+        }
+        ItemStack selected = itemSelectionContainer.getItem(0);
+        if (selected.isEmpty()) {
+            playerOwnedSelectionAmount = 0;
+            return;
+        }
+        selected.shrink(Math.min(amount, selected.getCount()));
+        playerOwnedSelectionAmount = Math.max(0, playerOwnedSelectionAmount - Math.max(0, playerOwnedAmount));
+        if (selected.isEmpty()) {
+            itemSelectionContainer.setItem(0, ItemStack.EMPTY);
+            playerOwnedSelectionAmount = 0;
+        } else {
+            clampPlayerOwnedSelectionAmount();
+            itemSelectionContainer.setChanged();
+        }
+    }
+
+    private void clampPlayerOwnedSelectionAmount() {
+        playerOwnedSelectionAmount = Math.max(0, Math.min(playerOwnedSelectionAmount, getSelectedAmount()));
     }
 
     private void returnOrClearSelection(Player player) {
         returnCarriedItem(player);
         ItemStack selected = itemSelectionContainer.removeItemNoUpdate(0);
         if (selected.isEmpty()) {
-            selectionContainsPlayerItems = false;
+            playerOwnedSelectionAmount = 0;
             return;
         }
-        if (selectionContainsPlayerItems && player instanceof ServerPlayer serverPlayer) {
-            serverPlayer.getInventory().placeItemBackInInventory(selected);
+        int returnAmount = Math.min(selected.getCount(), playerOwnedSelectionAmount);
+        if (returnAmount > 0 && player instanceof ServerPlayer serverPlayer) {
+            ItemStack returned = selected.copy();
+            returned.setCount(returnAmount);
+            serverPlayer.getInventory().placeItemBackInInventory(returned);
         }
-        selectionContainsPlayerItems = false;
+        playerOwnedSelectionAmount = 0;
     }
 
     private void returnCarriedItem(Player player) {
@@ -395,7 +483,7 @@ public class WheatMarketMenu extends AbstractContainerMenu {
 
         @Override
         public boolean mayPickup(Player player) {
-            return itemSelectionMode.consumesItems();
+            return itemSelectionMode.consumesItems() && playerOwnedSelectionAmount > 0;
         }
 
         @Override

@@ -1,0 +1,521 @@
+package top.rookiestwo.wheatmarket.client.gui;
+
+import com.lowdragmc.lowdraglib2.gui.texture.*;
+import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
+import com.lowdragmc.lowdraglib2.gui.ui.UI;
+import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
+import com.lowdragmc.lowdraglib2.gui.ui.data.Horizontal;
+import com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap;
+import com.lowdragmc.lowdraglib2.gui.ui.data.Vertical;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.Selector;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.TextField;
+import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
+import com.lowdragmc.lowdraglib2.utils.XmlUtils;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import org.w3c.dom.Document;
+import top.rookiestwo.wheatmarket.WheatMarket;
+
+import java.util.List;
+import java.util.Locale;
+
+public class WheatMarketListingUI {
+    private static final ResourceLocation LISTING_XML = ResourceLocation.parse("wheatmarket:ui/listing.xml");
+    private static final int MAX_LISTING_QUANTITY = 999;
+    private static final int DEFAULT_LISTING_DURATION_DAYS = 7;
+    private static final int TEXT_COLOR = 0x19140D;
+    private static final int NOTICE_TEXT_COLOR = 0x665A4D;
+    private static final int FAILURE_TEXT_COLOR = 0xA33629;
+    private static final int BUTTON_BORDER = 0xFF3A332C;
+    private static final int ITEM_PREVIEW_BORDER = 0xFF3A332C;
+    private static final int BLUE_BUTTON = 0xFF78C6EA;
+    private static final int BLUE_BUTTON_HOVER = 0xFF8CD3F2;
+    private static final int BLUE_BUTTON_PRESSED = 0xFF5BAFD6;
+    private static final int RED_BUTTON = 0xFFE86276;
+    private static final int RED_BUTTON_HOVER = 0xFFF07688;
+    private static final int RED_BUTTON_PRESSED = 0xFFD84B61;
+    private static final IGuiTexture FIELD_TEXTURE = new ColorBorderTexture(-1, BUTTON_BORDER);
+    private static final IGuiTexture EMPTY_OVERLAY = new ColorRectTexture(0x00000000);
+
+    private final ItemStack stack;
+    private final int selectedAmount;
+    private final ListingType initialListingType;
+    private final String initialPriceText;
+    private final int initialBuyQuantity;
+    private final Runnable onSelectItem;
+    private final Runnable onCancel;
+
+    private Selector<ListingType> listingTypeSelector;
+    private TextField priceField;
+    private TextField quantityField;
+    private Label listingTitle;
+    private Label selectedItemLabel;
+    private Label quantityCaption;
+    private Label playerBalanceLabel;
+    private Label totalLabel;
+    private Label feedbackLabel;
+    private UIElement quantityRow;
+    private UIElement itemIcon;
+    private Button chooseItemButton;
+    private Button decreaseButton;
+    private Button increaseButton;
+    private Button confirmButton;
+    private Button cancelButton;
+    private int quantity = 1;
+    private int buyQuantity = 1;
+    private double unitPrice = 1.0D;
+    private double seenBalance = Double.NaN;
+    private boolean syncingQuantityField;
+    private boolean syncingPriceField;
+
+    public WheatMarketListingUI(ItemStack stack, int selectedAmount, ListingType initialListingType,
+                                String initialPriceText, int initialBuyQuantity,
+                                Runnable onSelectItem, Runnable onCancel) {
+        this.stack = templateCopy(stack);
+        this.selectedAmount = this.stack.isEmpty() ? 0 : Math.max(1, selectedAmount);
+        this.initialListingType = initialListingType == null ? ListingType.SELL : initialListingType;
+        this.initialPriceText = initialPriceText == null || initialPriceText.isBlank() ? "1.00" : initialPriceText;
+        this.initialBuyQuantity = Mth.clamp(initialBuyQuantity, 1, MAX_LISTING_QUANTITY);
+        this.onSelectItem = onSelectItem;
+        this.onCancel = onCancel;
+    }
+
+    public ModularUI create(Player player) {
+        Document xml = XmlUtils.loadXml(LISTING_XML);
+        if (xml == null) {
+            throw new IllegalStateException("Failed to load UI xml: " + LISTING_XML);
+        }
+
+        UI loadedUi = UI.of(xml);
+        UI ui = UI.of(loadedUi.getRootElement(), loadedUi.getStylesheets(), availableSize -> availableSize);
+        bindAndPopulate(ui, player);
+        return ModularUI.of(ui, player);
+    }
+
+    public void tick() {
+        updateBalanceLabel();
+        normalizeQuantityFieldIfBlurred();
+        normalizePriceFieldIfBlurred();
+    }
+
+    public Draft createDraft() {
+        String priceText = priceField == null ? initialPriceText : priceField.getRawText();
+        return new Draft(stack, selectedAmount, selectedListingType(), priceText, Math.max(1, buyQuantity));
+    }
+
+    private void bindAndPopulate(UI ui, Player player) {
+        UIElement root = require(ui, "listing-root", UIElement.class);
+        UIElement listingPaper = require(ui, "listing-paper", UIElement.class);
+        UIElement playerAvatar = require(ui, "player-avatar", UIElement.class);
+        UIElement itemPreview = require(ui, "item-preview", UIElement.class);
+        itemIcon = require(ui, "listing-item-icon", UIElement.class);
+
+        listingTitle = require(ui, "listing-title", Label.class);
+        Label ownerLabel = require(ui, "owner-label", Label.class);
+        selectedItemLabel = require(ui, "selected-item-label", Label.class);
+        Label typeCaption = require(ui, "type-caption", Label.class);
+        Label priceCaption = require(ui, "price-caption", Label.class);
+        quantityCaption = require(ui, "quantity-caption", Label.class);
+        Label expiryLabel = require(ui, "expiry-label", Label.class);
+        playerBalanceLabel = require(ui, "player-balance", Label.class);
+        totalLabel = require(ui, "total-label", Label.class);
+        feedbackLabel = require(ui, "feedback-label", Label.class);
+
+        quantityRow = require(ui, "quantity-row", UIElement.class);
+        listingTypeSelector = requireSelector(ui, "listing-type-selector");
+        priceField = require(ui, "price-field", TextField.class);
+        quantityField = require(ui, "quantity-field", TextField.class);
+        chooseItemButton = require(ui, "choose-item-button", Button.class);
+        decreaseButton = require(ui, "decrease-button", Button.class);
+        increaseButton = require(ui, "increase-button", Button.class);
+        confirmButton = require(ui, "confirm-button", Button.class);
+        cancelButton = require(ui, "cancel-button", Button.class);
+
+        root.style(style -> style.background(WheatMarketUiTextures.rootBackground()));
+        root.addEventListener(UIEvents.MOUSE_DOWN, event -> onRootMouseDown(event.x, event.y), true);
+        listingPaper.style(style -> style.background(WheatMarketUiTextures.paperTexture()));
+        playerAvatar.style(style -> style.background(WheatMarketUiTextures.playerAvatarTexture(player)));
+        playerBalanceLabel.style(style -> style.background(WheatMarketUiTextures.paperTexture()));
+        itemPreview.style(style -> style.background(new ColorBorderTexture(1, ITEM_PREVIEW_BORDER)));
+        itemIcon.style(style -> style.background(new ItemStackTexture(stack)));
+        itemPreview.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = WheatMarketItemTooltips.forStack(stack));
+        listingTypeSelector.style(style -> style.background(WheatMarketUiTextures.paperTexture()));
+        priceField.style(style -> style.background(FIELD_TEXTURE));
+        quantityField.style(style -> style.background(FIELD_TEXTURE));
+
+        styleLabel(listingTitle, TEXT_COLOR, Horizontal.CENTER);
+        styleLabel(ownerLabel, TEXT_COLOR, Horizontal.CENTER);
+        styleLabel(selectedItemLabel, TEXT_COLOR, Horizontal.CENTER);
+        styleLabel(typeCaption, TEXT_COLOR, Horizontal.RIGHT);
+        styleLabel(priceCaption, TEXT_COLOR, Horizontal.RIGHT);
+        styleLabel(quantityCaption, TEXT_COLOR, Horizontal.RIGHT);
+        styleLabel(expiryLabel, NOTICE_TEXT_COLOR, Horizontal.CENTER);
+        styleLabel(playerBalanceLabel, TEXT_COLOR, Horizontal.CENTER);
+        styleLabel(totalLabel, TEXT_COLOR, Horizontal.CENTER);
+        styleLabel(feedbackLabel, NOTICE_TEXT_COLOR, Horizontal.CENTER);
+        styleActionButton(chooseItemButton, BLUE_BUTTON, BLUE_BUTTON_HOVER, BLUE_BUTTON_PRESSED);
+        styleActionButton(decreaseButton, BLUE_BUTTON, BLUE_BUTTON_HOVER, BLUE_BUTTON_PRESSED, -1);
+        styleActionButton(increaseButton, BLUE_BUTTON, BLUE_BUTTON_HOVER, BLUE_BUTTON_PRESSED, -1);
+        styleActionButton(confirmButton, BLUE_BUTTON, BLUE_BUTTON_HOVER, BLUE_BUTTON_PRESSED);
+        styleActionButton(cancelButton, RED_BUTTON, RED_BUTTON_HOVER, RED_BUTTON_PRESSED);
+        chooseItemButton.enableText();
+        confirmButton.enableText();
+
+        ownerLabel.setText(Component.translatable("gui.wheatmarket.listing.owner", player.getName()));
+        typeCaption.setText(Component.translatable("gui.wheatmarket.listing.type_label"));
+        priceCaption.setText(Component.translatable("gui.wheatmarket.listing.price_label"));
+        quantityCaption.setText(Component.translatable("gui.wheatmarket.listing.buy_quantity_label"));
+        expiryLabel.setText(Component.translatable("gui.wheatmarket.listing.expiry", DEFAULT_LISTING_DURATION_DAYS));
+        chooseItemButton.setText(Component.translatable("gui.wheatmarket.listing.select_item"));
+        feedbackLabel.setText(Component.empty());
+
+        configureTypeSelector();
+        configurePriceField();
+        configureQuantityField();
+
+        chooseItemButton.setOnClick(event -> onSelectItem.run());
+        decreaseButton.setOnClick(event -> updateBuyQuantity(quantity - 1));
+        increaseButton.setOnClick(event -> updateBuyQuantity(quantity + 1));
+        confirmButton.setOnClick(event -> showUiOnlyNotice());
+        cancelButton.setOnClick(event -> onCancel.run());
+
+        unitPrice = parsePrice(initialPriceText);
+        syncPriceFieldText(initialPriceText);
+        buyQuantity = initialBuyQuantity;
+        updateQuantityForSelectedType();
+        updateBalanceLabel();
+        updateListingTypeText();
+        updateSelectedItemLabel();
+        updateFormState();
+    }
+
+    private void configureTypeSelector() {
+        listingTypeSelector.setCandidates(List.of(ListingType.SELL, ListingType.BUY))
+                .setSelected(initialListingType)
+                .setOnValueChanged(value -> {
+                    updateQuantityForSelectedType();
+                    updateListingTypeText();
+                    updateSelectedItemLabel();
+                    hideFeedback();
+                });
+    }
+
+    private void configurePriceField() {
+        priceField.setAnyString();
+        priceField.setCharValidator(character -> Character.isDigit(character) || character == '.');
+        priceField.setTextValidator(this::isPriceInputValid);
+        priceField.textFieldStyle(style -> style
+                .placeholder(Component.translatable("gui.wheatmarket.listing.price_placeholder"))
+                .textColor(TEXT_COLOR)
+                .cursorColor(0xFF19140D)
+                .errorColor(FAILURE_TEXT_COLOR)
+                .textShadow(false)
+                .focusOverlay(EMPTY_OVERLAY));
+        priceField.registerValueListener(this::onPriceFieldChanged);
+        priceField.addEventListener(UIEvents.BLUR, event -> normalizePriceFieldIfBlurred());
+    }
+
+    private void configureQuantityField() {
+        quantityField.setAnyString();
+        quantityField.setCharValidator(Character::isDigit);
+        quantityField.setTextValidator(text -> text.isBlank() || text.chars().allMatch(Character::isDigit));
+        quantityField.textFieldStyle(style -> style
+                .placeholder(Component.translatable("gui.wheatmarket.confirm.empty"))
+                .textColor(TEXT_COLOR)
+                .cursorColor(0xFF19140D)
+                .errorColor(FAILURE_TEXT_COLOR)
+                .textShadow(false)
+                .focusOverlay(EMPTY_OVERLAY));
+        quantityField.registerValueListener(this::onQuantityFieldChanged);
+        quantityField.addEventListener(UIEvents.BLUR, event -> normalizeQuantityFieldIfBlurred());
+    }
+
+    private void onPriceFieldChanged(String rawValue) {
+        if (syncingPriceField) {
+            return;
+        }
+        unitPrice = parsePrice(rawValue);
+        hideFeedback();
+        updateFormState();
+    }
+
+    private void onQuantityFieldChanged(String rawValue) {
+        if (syncingQuantityField || selectedListingType() != ListingType.BUY) {
+            return;
+        }
+        if (rawValue == null || rawValue.isBlank()) {
+            quantity = 0;
+            hideFeedback();
+            updateFormState();
+            return;
+        }
+        updateBuyQuantity(parseQuantityValue(rawValue));
+        hideFeedback();
+    }
+
+    private void updateQuantityForSelectedType() {
+        if (selectedListingType() == ListingType.BUY) {
+            updateBuyQuantity(buyQuantity);
+        } else {
+            quantity = selectedAmount;
+            updateFormState();
+        }
+    }
+
+    private void updateBuyQuantity(int newQuantity) {
+        buyQuantity = Mth.clamp(newQuantity, 1, MAX_LISTING_QUANTITY);
+        quantity = buyQuantity;
+        syncQuantityFieldText();
+        updateFormState();
+    }
+
+    private int activeQuantity() {
+        return selectedListingType() == ListingType.BUY ? quantity : selectedAmount;
+    }
+
+    private void updateFormState() {
+        boolean buyOrder = selectedListingType() == ListingType.BUY;
+        setShown(quantityRow, buyOrder);
+
+        boolean hasValidItem = !stack.isEmpty();
+        boolean hasValidPrice = unitPrice > 0.0D && Double.isFinite(unitPrice);
+        boolean hasValidQuantity = activeQuantity() > 0;
+        double total = hasValidPrice && hasValidQuantity ? unitPrice * activeQuantity() : 0.0D;
+        totalLabel.setText(Component.translatable("gui.wheatmarket.listing.total", formatMoney(total)));
+        confirmButton.setActive(hasValidItem && hasValidPrice && hasValidQuantity);
+        decreaseButton.setActive(buyOrder && quantity > 1);
+        increaseButton.setActive(buyOrder && quantity < MAX_LISTING_QUANTITY);
+        decreaseButton.setVisible(buyOrder && quantity > 1);
+        increaseButton.setVisible(buyOrder && quantity < MAX_LISTING_QUANTITY);
+    }
+
+    private void updateListingTypeText() {
+        ListingType type = selectedListingType();
+        listingTitle.setText(Component.translatable(type == ListingType.SELL
+                ? "gui.wheatmarket.listing.sell_title"
+                : "gui.wheatmarket.listing.buy_title"));
+    }
+
+    private void updateSelectedItemLabel() {
+        if (stack.isEmpty()) {
+            selectedItemLabel.setText(Component.translatable("gui.wheatmarket.listing.no_selected_item"));
+            return;
+        }
+        if (selectedListingType() == ListingType.BUY) {
+            selectedItemLabel.setText(Component.translatable("gui.wheatmarket.listing.selected_buy_item", stack.getHoverName()));
+        } else {
+            selectedItemLabel.setText(Component.translatable("gui.wheatmarket.listing.selected_sell_item", stack.getHoverName(), selectedAmount));
+        }
+    }
+
+    private void showUiOnlyNotice() {
+        feedbackLabel.setText(Component.translatable("gui.wheatmarket.listing.ui_only_notice"));
+        feedbackLabel.setDisplay(true);
+        feedbackLabel.setVisible(true);
+    }
+
+    private void hideFeedback() {
+        feedbackLabel.setText(Component.empty());
+    }
+
+    private void normalizeQuantityFieldIfBlurred() {
+        if (selectedListingType() != ListingType.BUY) {
+            return;
+        }
+        if (quantityField != null && !quantityField.isFocused() && quantityField.getRawText().isBlank()) {
+            updateBuyQuantity(1);
+        }
+    }
+
+    private void normalizePriceFieldIfBlurred() {
+        if (priceField == null || priceField.isFocused()) {
+            return;
+        }
+        if (unitPrice <= 0.0D || !Double.isFinite(unitPrice)) {
+            unitPrice = 1.0D;
+        }
+        syncPriceFieldText(formatMoney(unitPrice));
+        updateFormState();
+    }
+
+    private void onRootMouseDown(float mouseX, float mouseY) {
+        if (priceField != null && !priceField.isMouseOver(mouseX, mouseY)) {
+            priceField.blur();
+        }
+        if (quantityField != null && !quantityField.isMouseOver(mouseX, mouseY)) {
+            quantityField.blur();
+        }
+    }
+
+    private boolean isPriceInputValid(String text) {
+        if (text == null || text.isBlank() || ".".equals(text)) {
+            return true;
+        }
+        int dotIndex = text.indexOf('.');
+        if (dotIndex != text.lastIndexOf('.')) {
+            return false;
+        }
+        if (dotIndex >= 0 && text.length() - dotIndex - 1 > 2) {
+            return false;
+        }
+        try {
+            double value = Double.parseDouble(text);
+            return Double.isFinite(value) && value <= 999_999.99D;
+        } catch (NumberFormatException ignored) {
+            return false;
+        }
+    }
+
+    private double parsePrice(String rawValue) {
+        if (rawValue == null || rawValue.isBlank() || ".".equals(rawValue)) {
+            return 0.0D;
+        }
+        try {
+            return Double.parseDouble(rawValue);
+        } catch (NumberFormatException ignored) {
+            return 0.0D;
+        }
+    }
+
+    private int parseQuantityValue(String rawValue) {
+        if (rawValue == null || rawValue.isBlank()) {
+            return 1;
+        }
+        try {
+            return Integer.parseInt(rawValue);
+        } catch (NumberFormatException ignored) {
+            return 1;
+        }
+    }
+
+    private void syncQuantityFieldText() {
+        String quantityText = String.valueOf(quantity);
+        if (!quantityText.equals(quantityField.getRawText())) {
+            syncingQuantityField = true;
+            quantityField.setValue(quantityText, false);
+            syncingQuantityField = false;
+        }
+    }
+
+    private void syncPriceFieldText(String priceText) {
+        if (!priceText.equals(priceField.getRawText())) {
+            syncingPriceField = true;
+            priceField.setValue(priceText, false);
+            syncingPriceField = false;
+        }
+    }
+
+    private ListingType selectedListingType() {
+        ListingType selected = listingTypeSelector.getValue();
+        return selected == null ? initialListingType : selected;
+    }
+
+    private void updateBalanceLabel() {
+        if (Double.compare(seenBalance, WheatMarket.CLIENT_BALANCE) == 0) {
+            return;
+        }
+        seenBalance = WheatMarket.CLIENT_BALANCE;
+        playerBalanceLabel.setText(Component.translatable("gui.wheatmarket.balance", formatMoney(seenBalance)));
+    }
+
+    private void styleLabel(Label label, int color, Horizontal horizontal) {
+        label.textStyle(style -> style
+                .textAlignHorizontal(horizontal)
+                .textAlignVertical(Vertical.CENTER)
+                .textWrap(TextWrap.HIDE)
+                .textColor(color)
+                .textShadow(false));
+    }
+
+    private void styleActionButton(Button button, int baseColor, int hoverColor, int pressedColor) {
+        styleActionButton(button, baseColor, hoverColor, pressedColor, 1);
+    }
+
+    private void styleActionButton(Button button, int baseColor, int hoverColor, int pressedColor, int borderSize) {
+        button.buttonStyle(style -> style
+                .baseTexture(buttonTexture(baseColor, borderSize))
+                .hoverTexture(buttonTexture(hoverColor, borderSize))
+                .pressedTexture(buttonTexture(pressedColor, borderSize)));
+        button.textStyle(style -> style
+                .textAlignHorizontal(Horizontal.CENTER)
+                .textAlignVertical(Vertical.CENTER)
+                .textWrap(TextWrap.HIDE)
+                .textColor(TEXT_COLOR)
+                .textShadow(false));
+    }
+
+    private IGuiTexture buttonTexture(int color) {
+        return buttonTexture(color, 1);
+    }
+
+    private IGuiTexture buttonTexture(int color, int borderSize) {
+        return GuiTextureGroup.of(
+                new ColorRectTexture(color),
+                new ColorBorderTexture(borderSize, BUTTON_BORDER)
+        );
+    }
+
+    private void setShown(UIElement element, boolean shown) {
+        element.setDisplay(shown);
+        element.setVisible(shown);
+    }
+
+    private ItemStack templateCopy(ItemStack source) {
+        if (source == null || source.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack copy = source.copy();
+        copy.setCount(1);
+        return copy;
+    }
+
+    private <T> T require(UI ui, String id, Class<T> type) {
+        return ui.selectId(id, type)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Missing UI element: " + id));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> Selector<T> requireSelector(UI ui, String id) {
+        return (Selector<T>) require(ui, id, Selector.class);
+    }
+
+    private String formatMoney(double value) {
+        return String.format(Locale.ROOT, "%.2f", value);
+    }
+
+    public enum ListingType {
+        SELL("gui.wheatmarket.filter.sell"),
+        BUY("gui.wheatmarket.filter.buy");
+
+        private final String translationKey;
+
+        ListingType(String translationKey) {
+            this.translationKey = translationKey;
+        }
+
+        @Override
+        public String toString() {
+            return Component.translatable(translationKey).getString();
+        }
+    }
+
+    public record Draft(ItemStack selectedStack, int selectedAmount, ListingType listingType,
+                        String priceText, int buyQuantity) {
+        public Draft {
+            selectedStack = selectedStack == null || selectedStack.isEmpty() ? ItemStack.EMPTY : selectedStack.copy();
+            if (!selectedStack.isEmpty()) {
+                selectedStack.setCount(1);
+            }
+            selectedAmount = selectedStack.isEmpty() ? 0 : Math.max(1, selectedAmount);
+            listingType = listingType == null ? ListingType.SELL : listingType;
+            priceText = priceText == null || priceText.isBlank() ? "1.00" : priceText;
+            buyQuantity = Mth.clamp(buyQuantity, 1, MAX_LISTING_QUANTITY);
+        }
+    }
+}

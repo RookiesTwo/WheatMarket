@@ -52,8 +52,7 @@ public class WheatMarketMainScreen extends AbstractContainerScreen<WheatMarketMe
 
     private void showItemSelection() {
         if (this.minecraft != null) {
-            this.minecraft.setScreen(new WheatMarketItemSelectionScreen(this.menu, this.inventory, this.title,
-                    ItemSelectionMode.TRANSFER));
+            this.minecraft.setScreen(new WheatMarketListingScreen(this.menu, this.inventory, this.title));
         }
     }
 

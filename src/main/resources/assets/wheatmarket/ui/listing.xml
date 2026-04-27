@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ldlib2-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/Low-Drag-MC/LDLib2/refs/heads/1.21/ldlib2-ui.xsd">
+    <stylesheet location="ldlib2:lss/mc.lss"/>
+    <style>
+        #listing-root {
+        width: 100%;
+        height: 100%;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap-all: 6;
+        padding-all: 6;
+        overflow: hidden;
+        }
+
+        #player-column {
+        width: 18%;
+        min-width: 56;
+        max-width: 82;
+        height: 100%;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap-all: 10;
+        flex-shrink: 0;
+        overflow: hidden;
+        }
+
+        #player-avatar {
+        width: 54;
+        height: 54;
+        max-width: 100%;
+        flex-shrink: 0;
+        }
+
+        #player-balance {
+        width: 100%;
+        height: 22;
+        min-height: 18;
+        flex-shrink: 0;
+        horizontal-align: CENTER;
+        vertical-align: CENTER;
+        text-wrap: HIDE;
+        text-shadow: false;
+        }
+
+        #listing-paper {
+        width: 0;
+        flex: 1;
+        min-width: 200;
+        max-width: 340;
+        height: 100%;
+        min-height: 208;
+        max-height: 274;
+        flex-direction: column;
+        align-items: center;
+        gap-all: 5;
+        padding-left: 12;
+        padding-right: 12;
+        padding-top: 8;
+        padding-bottom: 9;
+        overflow: hidden;
+        }
+
+        #listing-title {
+        width: 68%;
+        min-width: 130;
+        max-width: 210;
+        height: 24;
+        horizontal-align: CENTER;
+        vertical-align: CENTER;
+        text-wrap: HIDE;
+        text-shadow: false;
+        flex-shrink: 0;
+        }
+
+        #listing-main {
+        width: 100%;
+        flex: 1;
+        min-height: 0;
+        flex-direction: row;
+        gap-all: 6;
+        overflow: hidden;
+        }
+
+        #listing-left {
+        width: 45%;
+        min-width: 50;
+        max-width: 150;
+        height: 100%;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap-all: 5;
+        padding-right: 2;
+        flex-shrink: 1;
+        overflow: hidden;
+        }
+
+        #owner-label {
+        width: 100%;
+        height: 22;
+        horizontal-align: CENTER;
+        vertical-align: CENTER;
+        text-wrap: HIDE;
+        text-shadow: false;
+        flex-shrink: 0;
+        }
+
+        #item-preview {
+        width: 46;
+        height: 46;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        flex-shrink: 0;
+        }
+
+        #listing-item-icon {
+        width: 34;
+        height: 34;
+        flex-shrink: 0;
+        }
+
+        #selected-item-label {
+        width: 100%;
+        height: 24;
+        horizontal-align: CENTER;
+        vertical-align: CENTER;
+        text-wrap: HIDE;
+        text-shadow: false;
+        flex-shrink: 0;
+        }
+
+        #choose-item-button {
+        width: 88%;
+        max-width: 100%;
+        height: 22;
+        flex-shrink: 0;
+        }
+
+        #listing-right {
+        width: 0;
+        flex: 1;
+        min-width: 0;
+        height: 100%;
+        min-height: 0;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap-all: 4;
+        padding-left: 2;
+        padding-right: 8;
+        flex-shrink: 1;
+        overflow: hidden;
+        }
+
+        .form-row {
+        width: 100%;
+        max-width: 100%;
+        height: 22;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap-all: 4;
+        flex-shrink: 0;
+        overflow: hidden;
+        }
+
+        .form-caption {
+        width: 34%;
+        min-width: 34;
+        max-width: 50;
+        height: 22;
+        horizontal-align: RIGHT;
+        vertical-align: CENTER;
+        text-wrap: HIDE;
+        text-shadow: false;
+        flex-shrink: 0;
+        }
+
+        #listing-type-selector {
+        width: 0;
+        flex: 1;
+        min-width: 46;
+        max-width: 76;
+        height: 22;
+        text-color: #19140D;
+        text-shadow: false;
+        flex-shrink: 1;
+        }
+
+        #price-field {
+        width: 0;
+        flex: 1;
+        min-width: 46;
+        max-width: 76;
+        height: 22;
+        padding-left: 6;
+        padding-right: 6;
+        text-color: #19140D;
+        cursor-color: #19140D;
+        error-color: #A33629;
+        text-shadow: false;
+        flex-shrink: 1;
+        }
+
+        #quantity-controls {
+        width: 0;
+        flex: 1;
+        min-width: 54;
+        max-width: 76;
+        height: 22;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap-all: 2;
+        flex-shrink: 1;
+        }
+
+        .quantity-button {
+        width: 18;
+        height: 22;
+        flex-shrink: 0;
+        }
+
+        #quantity-field {
+        width: 0;
+        flex: 1;
+        min-width: 18;
+        max-width: 54;
+        height: 22;
+        padding-left: 7;
+        padding-right: 7;
+        text-color: #19140D;
+        cursor-color: #19140D;
+        error-color: #A33629;
+        text-shadow: false;
+        flex-shrink: 0;
+        }
+
+        #expiry-label {
+        width: 100%;
+        max-width: 100%;
+        height: 20;
+        horizontal-align: CENTER;
+        vertical-align: CENTER;
+        text-wrap: HIDE;
+        text-shadow: false;
+        flex-shrink: 0;
+        }
+
+        #total-label {
+        width: 100%;
+        max-width: 100%;
+        height: 22;
+        horizontal-align: CENTER;
+        vertical-align: CENTER;
+        text-wrap: HIDE;
+        text-shadow: false;
+        flex-shrink: 0;
+        }
+
+        #confirm-area {
+        width: 62%;
+        min-width: 130;
+        max-width: 220;
+        height: 46;
+        flex-direction: column;
+        align-items: center;
+        gap-all: 2;
+        padding-bottom: 2;
+        flex-shrink: 0;
+        }
+
+        #confirm-button {
+        width: 100%;
+        height: 28;
+        flex-shrink: 0;
+        }
+
+        #feedback-label {
+        width: 100%;
+        height: 16;
+        horizontal-align: CENTER;
+        vertical-align: CENTER;
+        text-wrap: HIDE;
+        text-shadow: false;
+        flex-shrink: 0;
+        }
+
+        #cancel-button {
+        width: 22%;
+        min-width: 64;
+        max-width: 96;
+        height: 76;
+        flex-shrink: 0;
+        }
+    </style>
+    <root id="listing-root">
+        <element id="player-column">
+            <element id="player-avatar"/>
+            <label id="player-balance"/>
+        </element>
+        <element id="listing-paper">
+            <label id="listing-title"/>
+            <element id="listing-main">
+                <element id="listing-left">
+                    <label id="owner-label"/>
+                    <element id="item-preview">
+                        <element id="listing-item-icon"/>
+                    </element>
+                    <label id="selected-item-label"/>
+                    <button id="choose-item-button" text="gui.wheatmarket.listing.select_item"/>
+                </element>
+                <element id="listing-right">
+                    <element id="type-row" class="form-row">
+                        <label id="type-caption" class="form-caption"/>
+                        <selector id="listing-type-selector"/>
+                    </element>
+                    <element id="price-row" class="form-row">
+                        <label id="price-caption" class="form-caption"/>
+                        <text-field id="price-field" value="1.00"/>
+                    </element>
+                    <element id="quantity-row" class="form-row">
+                        <label id="quantity-caption" class="form-caption"/>
+                        <element id="quantity-controls">
+                            <button id="decrease-button" class="quantity-button" text="-"/>
+                            <text-field id="quantity-field" value="1"/>
+                            <button id="increase-button" class="quantity-button" text="+"/>
+                        </element>
+                    </element>
+                    <label id="expiry-label"/>
+                    <label id="total-label"/>
+                </element>
+            </element>
+            <element id="confirm-area">
+                <button id="confirm-button" text="gui.wheatmarket.listing.submit"/>
+                <label id="feedback-label"/>
+            </element>
+        </element>
+        <button id="cancel-button" text="gui.wheatmarket.confirm.cancel"/>
+    </root>
+</ldlib2-ui>

@@ -151,8 +151,8 @@ public class WheatMarketItemSelectionScreen extends AbstractContainerScreen<Whea
     }
 
     private boolean shouldPreserveConfirmedSelection() {
-        return this.request.purpose() == ItemSelectionPurpose.LIST_SELL
-                && this.selectedMode == ItemSelectionMode.TRANSFER
+        return (this.request.purpose() == ItemSelectionPurpose.LIST_SELL
+                || this.request.purpose() == ItemSelectionPurpose.LIST_BUY)
                 && this.menu.hasSelectedItem();
     }
 

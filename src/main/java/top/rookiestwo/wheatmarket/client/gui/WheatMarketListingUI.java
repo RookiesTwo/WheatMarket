@@ -23,6 +23,7 @@ import top.rookiestwo.wheatmarket.WheatMarket;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 public class WheatMarketListingUI {
     private static final ResourceLocation LISTING_XML = ResourceLocation.parse("wheatmarket:ui/listing.xml");
@@ -48,6 +49,7 @@ public class WheatMarketListingUI {
     private final String initialPriceText;
     private final int initialBuyQuantity;
     private final Runnable onSelectItem;
+    private final Consumer<Submission> onSubmit;
     private final Runnable onCancel;
 
     private Selector<ListingType> listingTypeSelector;
@@ -72,16 +74,19 @@ public class WheatMarketListingUI {
     private double seenBalance = Double.NaN;
     private boolean syncingQuantityField;
     private boolean syncingPriceField;
+    private boolean submitting;
 
     public WheatMarketListingUI(ItemStack stack, int selectedAmount, ListingType initialListingType,
                                 String initialPriceText, int initialBuyQuantity,
-                                Runnable onSelectItem, Runnable onCancel) {
+                                Runnable onSelectItem, Consumer<Submission> onSubmit, Runnable onCancel) {
         this.stack = templateCopy(stack);
         this.selectedAmount = this.stack.isEmpty() ? 0 : Math.max(1, selectedAmount);
         this.initialListingType = initialListingType == null ? ListingType.SELL : initialListingType;
         this.initialPriceText = initialPriceText == null || initialPriceText.isBlank() ? "1.00" : initialPriceText;
         this.initialBuyQuantity = Mth.clamp(initialBuyQuantity, 1, MAX_LISTING_QUANTITY);
         this.onSelectItem = onSelectItem;
+        this.onSubmit = onSubmit == null ? submission -> {
+        } : onSubmit;
         this.onCancel = onCancel;
     }
 
@@ -106,6 +111,16 @@ public class WheatMarketListingUI {
     public Draft createDraft() {
         String priceText = priceField == null ? initialPriceText : priceField.getRawText();
         return new Draft(stack, selectedAmount, selectedListingType(), priceText, Math.max(1, buyQuantity));
+    }
+
+    public boolean handleOperationResult(boolean success, Component message) {
+        if (!submitting) {
+            return false;
+        }
+        submitting = false;
+        showFeedback(message, success ? NOTICE_TEXT_COLOR : FAILURE_TEXT_COLOR);
+        updateFormState();
+        return true;
     }
 
     private void bindAndPopulate(UI ui, Player player) {
@@ -181,7 +196,7 @@ public class WheatMarketListingUI {
         chooseItemButton.setOnClick(event -> onSelectItem.run());
         decreaseButton.setOnClick(event -> updateBuyQuantity(quantity - 1));
         increaseButton.setOnClick(event -> updateBuyQuantity(quantity + 1));
-        confirmButton.setOnClick(event -> showUiOnlyNotice());
+        confirmButton.setOnClick(event -> submitListing());
         cancelButton.setOnClick(event -> onCancel.run());
 
         unitPrice = parsePrice(initialPriceText);
@@ -287,7 +302,11 @@ public class WheatMarketListingUI {
         boolean hasValidQuantity = activeQuantity() > 0;
         double total = hasValidPrice && hasValidQuantity ? unitPrice * activeQuantity() : 0.0D;
         totalLabel.setText(Component.translatable("gui.wheatmarket.listing.total", formatMoney(total)));
-        confirmButton.setActive(hasValidItem && hasValidPrice && hasValidQuantity);
+        confirmButton.setActive(!submitting && hasValidItem && hasValidPrice && hasValidQuantity);
+        chooseItemButton.setActive(!submitting);
+        listingTypeSelector.setActive(!submitting);
+        priceField.setActive(!submitting);
+        quantityField.setActive(!submitting);
         decreaseButton.setActive(buyOrder && quantity > 1);
         increaseButton.setActive(buyOrder && quantity < MAX_LISTING_QUANTITY);
         decreaseButton.setVisible(buyOrder && quantity > 1);
@@ -313,8 +332,35 @@ public class WheatMarketListingUI {
         }
     }
 
-    private void showUiOnlyNotice() {
-        feedbackLabel.setText(Component.translatable("gui.wheatmarket.listing.ui_only_notice"));
+    private void submitListing() {
+        if (submitting) {
+            return;
+        }
+
+        ListingType listingType = selectedListingType();
+        int listingAmount = activeQuantity();
+        if (stack.isEmpty()) {
+            showFeedback(Component.translatable("gui.wheatmarket.operation.no_selected_item"), FAILURE_TEXT_COLOR);
+            return;
+        }
+        if (unitPrice <= 0.0D || !Double.isFinite(unitPrice)) {
+            showFeedback(Component.translatable("gui.wheatmarket.operation.invalid_price"), FAILURE_TEXT_COLOR);
+            return;
+        }
+        if (listingAmount <= 0) {
+            showFeedback(Component.translatable("gui.wheatmarket.operation.invalid_amount"), FAILURE_TEXT_COLOR);
+            return;
+        }
+
+        submitting = true;
+        showFeedback(Component.translatable("gui.wheatmarket.listing.submitting"), NOTICE_TEXT_COLOR);
+        updateFormState();
+        onSubmit.accept(new Submission(listingType, unitPrice, listingAmount));
+    }
+
+    private void showFeedback(Component message, int color) {
+        styleLabel(feedbackLabel, color, Horizontal.CENTER);
+        feedbackLabel.setText(message);
         feedbackLabel.setDisplay(true);
         feedbackLabel.setVisible(true);
     }
@@ -516,6 +562,13 @@ public class WheatMarketListingUI {
             listingType = listingType == null ? ListingType.SELL : listingType;
             priceText = priceText == null || priceText.isBlank() ? "1.00" : priceText;
             buyQuantity = Mth.clamp(buyQuantity, 1, MAX_LISTING_QUANTITY);
+        }
+    }
+
+    public record Submission(ListingType listingType, double price, int amount) {
+        public Submission {
+            listingType = listingType == null ? ListingType.SELL : listingType;
+            amount = Math.max(1, amount);
         }
     }
 }

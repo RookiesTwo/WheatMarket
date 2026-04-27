@@ -172,6 +172,39 @@ public class WheatMarketMenu extends AbstractContainerMenu {
         return !getSelectedItem().isEmpty();
     }
 
+    public boolean consumeSelectedItemsForListing(ItemStack expectedTemplate, int amount) {
+        if (expectedTemplate == null || expectedTemplate.isEmpty() || amount <= 0) {
+            return false;
+        }
+
+        ItemStack selected = itemSelectionContainer.getItem(0);
+        if (selected.isEmpty()
+                || !ItemStack.isSameItemSameComponents(selected, expectedTemplate)
+                || selected.getCount() < amount
+                || playerOwnedSelectionAmount < amount) {
+            return false;
+        }
+
+        shrinkSelection(amount, amount);
+        broadcastChanges();
+        return true;
+    }
+
+    public void clearPreservedSampleSelection(ItemStack expectedTemplate) {
+        ItemStack selected = itemSelectionContainer.getItem(0);
+        if (selected.isEmpty()
+                || expectedTemplate == null
+                || expectedTemplate.isEmpty()
+                || playerOwnedSelectionAmount > 0
+                || !ItemStack.isSameItemSameComponents(selected, expectedTemplate)) {
+            return;
+        }
+
+        itemSelectionContainer.setItem(0, ItemStack.EMPTY);
+        playerOwnedSelectionAmount = 0;
+        broadcastChanges();
+    }
+
     public Player getPlayer() {
         return player;
     }

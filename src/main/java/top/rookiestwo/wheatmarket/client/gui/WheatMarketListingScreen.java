@@ -9,6 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import top.rookiestwo.wheatmarket.menu.ItemSelectionMode;
 import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
 import top.rookiestwo.wheatmarket.network.WheatMarketNetwork;
+import top.rookiestwo.wheatmarket.network.c2s.ListItemC2SPacket;
 import top.rookiestwo.wheatmarket.network.c2s.SetItemSelectionModeC2SPacket;
 
 public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarketMenu> {
@@ -58,6 +59,7 @@ public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarke
                 this.priceText,
                 this.buyQuantity,
                 this::openItemSelection,
+                this::submitListing,
                 this::returnToMain
         );
         installModularUI(this.listingUI.create(this.inventory.player));
@@ -134,6 +136,28 @@ public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarke
         if (this.minecraft != null) {
             this.minecraft.setScreen(new WheatMarketMainScreen(this.menu, this.inventory, this.title));
         }
+    }
+
+    private void submitListing(WheatMarketListingUI.Submission submission) {
+        WheatMarketNetwork.sendToServer(new ListItemC2SPacket(
+                submission.amount(),
+                submission.price(),
+                submission.listingType() == WheatMarketListingUI.ListingType.SELL,
+                false,
+                false,
+                0,
+                0
+        ));
+    }
+
+    public boolean handleOperationResult(boolean success, Component message) {
+        if (this.listingUI == null || !this.listingUI.handleOperationResult(success, message)) {
+            return false;
+        }
+        if (success) {
+            returnToMain();
+        }
+        return true;
     }
 
     private void releaseSelection() {

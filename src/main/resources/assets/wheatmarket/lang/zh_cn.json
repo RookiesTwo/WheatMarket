@@ -77,7 +77,7 @@
   "gui.wheatmarket.listing.buy_title": "创建收购单",
   "gui.wheatmarket.listing.owner": "发布者：%1$s",
   "gui.wheatmarket.listing.selected_item": "%1$s x %2$s",
-  "gui.wheatmarket.listing.no_selected_item": "尚未选择物品。",
+  "gui.wheatmarket.listing.no_selected_item": "尚未选择物品",
   "gui.wheatmarket.listing.selected_sell_item": "%1$s x %2$s",
   "gui.wheatmarket.listing.selected_buy_item": "收购物品：%1$s",
   "gui.wheatmarket.listing.select_item": "选择物品",

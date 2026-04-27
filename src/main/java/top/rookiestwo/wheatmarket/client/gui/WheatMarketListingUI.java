@@ -43,13 +43,14 @@ public class WheatMarketListingUI {
     private static final IGuiTexture FIELD_TEXTURE = new ColorBorderTexture(-1, BUTTON_BORDER);
     private static final IGuiTexture EMPTY_OVERLAY = new ColorRectTexture(0x00000000);
 
-    private final ItemStack stack;
-    private final int selectedAmount;
+    private final Consumer<Draft> onListingTypeChanged;
+    private ItemStack stack;
     private final ListingType initialListingType;
     private final String initialPriceText;
     private final int initialBuyQuantity;
     private final Runnable onSelectItem;
     private final Consumer<Submission> onSubmit;
+    private int selectedAmount;
     private final Runnable onCancel;
 
     private Selector<ListingType> listingTypeSelector;
@@ -75,18 +76,23 @@ public class WheatMarketListingUI {
     private boolean syncingQuantityField;
     private boolean syncingPriceField;
     private boolean submitting;
+    private ListingType currentListingType;
 
     public WheatMarketListingUI(ItemStack stack, int selectedAmount, ListingType initialListingType,
                                 String initialPriceText, int initialBuyQuantity,
-                                Runnable onSelectItem, Consumer<Submission> onSubmit, Runnable onCancel) {
+                                Runnable onSelectItem, Consumer<Submission> onSubmit,
+                                Consumer<Draft> onListingTypeChanged, Runnable onCancel) {
         this.stack = templateCopy(stack);
         this.selectedAmount = this.stack.isEmpty() ? 0 : Math.max(1, selectedAmount);
         this.initialListingType = initialListingType == null ? ListingType.SELL : initialListingType;
+        this.currentListingType = this.initialListingType;
         this.initialPriceText = initialPriceText == null || initialPriceText.isBlank() ? "1.00" : initialPriceText;
         this.initialBuyQuantity = Mth.clamp(initialBuyQuantity, 1, MAX_LISTING_QUANTITY);
         this.onSelectItem = onSelectItem;
         this.onSubmit = onSubmit == null ? submission -> {
         } : onSubmit;
+        this.onListingTypeChanged = onListingTypeChanged == null ? draft -> {
+        } : onListingTypeChanged;
         this.onCancel = onCancel;
     }
 
@@ -213,6 +219,12 @@ public class WheatMarketListingUI {
         listingTypeSelector.setCandidates(List.of(ListingType.SELL, ListingType.BUY))
                 .setSelected(initialListingType)
                 .setOnValueChanged(value -> {
+                    ListingType nextListingType = value == null ? initialListingType : value;
+                    if (nextListingType != currentListingType) {
+                        currentListingType = nextListingType;
+                        clearSelectedItem();
+                        onListingTypeChanged.accept(createDraft());
+                    }
                     updateQuantityForSelectedType();
                     updateListingTypeText();
                     updateSelectedItemLabel();
@@ -329,6 +341,14 @@ public class WheatMarketListingUI {
             selectedItemLabel.setText(Component.translatable("gui.wheatmarket.listing.selected_buy_item", stack.getHoverName()));
         } else {
             selectedItemLabel.setText(Component.translatable("gui.wheatmarket.listing.selected_sell_item", stack.getHoverName(), selectedAmount));
+        }
+    }
+
+    private void clearSelectedItem() {
+        stack = ItemStack.EMPTY;
+        selectedAmount = 0;
+        if (itemIcon != null) {
+            itemIcon.style(style -> style.background(new ItemStackTexture(stack)));
         }
     }
 

@@ -14,11 +14,11 @@ import top.rookiestwo.wheatmarket.network.c2s.SetItemSelectionModeC2SPacket;
 
 public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarketMenu> {
     private final Inventory inventory;
-    private final ItemStack stack;
-    private final int amount;
-    private final WheatMarketListingUI.ListingType listingType;
-    private final String priceText;
-    private final int buyQuantity;
+    private ItemStack stack;
+    private int amount;
+    private WheatMarketListingUI.ListingType listingType;
+    private String priceText;
+    private int buyQuantity;
     private WheatMarketListingUI listingUI;
     private ModularUI modularUI;
     private boolean selectionReleased;
@@ -60,6 +60,7 @@ public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarke
                 this.buyQuantity,
                 this::openItemSelection,
                 this::submitListing,
+                this::handleListingTypeChanged,
                 this::returnToMain
         );
         installModularUI(this.listingUI.create(this.inventory.player));
@@ -148,6 +149,15 @@ public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarke
                 0,
                 0
         ));
+    }
+
+    private void handleListingTypeChanged(WheatMarketListingUI.Draft draft) {
+        this.stack = draft.selectedStack();
+        this.amount = draft.selectedAmount();
+        this.listingType = draft.listingType();
+        this.priceText = draft.priceText();
+        this.buyQuantity = draft.buyQuantity();
+        WheatMarketNetwork.sendToServer(new SetItemSelectionModeC2SPacket(ItemSelectionMode.DISABLED));
     }
 
     public boolean handleOperationResult(boolean success, Component message) {

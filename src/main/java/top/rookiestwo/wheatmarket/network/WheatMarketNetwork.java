@@ -28,6 +28,8 @@ public class WheatMarketNetwork {
         registrar.playToServer(ListItemC2SPacket.TYPE, ListItemC2SPacket.STREAM_CODEC, ListItemC2SPacket::handle);
         registrar.playToServer(ManageItemC2SPacket.TYPE, ManageItemC2SPacket.STREAM_CODEC, ManageItemC2SPacket::handle);
         registrar.playToServer(SetItemSelectionModeC2SPacket.TYPE, SetItemSelectionModeC2SPacket.STREAM_CODEC, SetItemSelectionModeC2SPacket::handle);
+        registrar.playToServer(BeginStockEditC2SPacket.TYPE, BeginStockEditC2SPacket.STREAM_CODEC, BeginStockEditC2SPacket::handle);
+        registrar.playToServer(FinalizeStockEditC2SPacket.TYPE, FinalizeStockEditC2SPacket.STREAM_CODEC, FinalizeStockEditC2SPacket::handle);
 
         registrar.playToClient(MarketListS2CPacket.TYPE, MarketListS2CPacket.STREAM_CODEC, MarketListS2CPacket::handle);
         registrar.playToClient(OperationResultS2CPacket.TYPE, OperationResultS2CPacket.STREAM_CODEC, OperationResultS2CPacket::handle);

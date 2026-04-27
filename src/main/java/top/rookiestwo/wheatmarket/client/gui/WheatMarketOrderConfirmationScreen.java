@@ -46,6 +46,7 @@ public class WheatMarketOrderConfirmationScreen extends AbstractContainerScreen<
                 this.item,
                 this.stack,
                 this::returnToMain,
+                this::openManagementEntry,
                 !this.initializedOnce,
                 this.selectedQuantity
         );
@@ -68,6 +69,12 @@ public class WheatMarketOrderConfirmationScreen extends AbstractContainerScreen<
     private void returnToMain() {
         if (this.minecraft != null) {
             this.minecraft.setScreen(new WheatMarketMainScreen(this.menu, this.inventory, this.title));
+        }
+    }
+
+    private void openManagementEntry() {
+        if (this.minecraft != null) {
+            this.minecraft.setScreen(new WheatMarketItemEditScreen(this.menu, this.inventory, this.title, this.item, this.stack));
         }
     }
 

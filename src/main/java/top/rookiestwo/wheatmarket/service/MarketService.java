@@ -244,6 +244,44 @@ public class MarketService {
         });
     }
 
+    public CompletableFuture<ServiceResult<StockEditStartResult>> beginStockEdit(UUID actorId, boolean isOp,
+                                                                                 UUID marketItemID,
+                                                                                 int maxStockAmount) {
+        return updateExistingItem(actorId, isOp, marketItemID, item -> {
+            if (!Boolean.TRUE.equals(item.getIfSell()) || item.isInfinite()) {
+                return ServiceResult.failure("gui.wheatmarket.operation.invalid_amount");
+            }
+            int currentAmount = item.getAmount();
+            if (currentAmount <= 0 || currentAmount > maxStockAmount) {
+                return ServiceResult.failure("gui.wheatmarket.operation.invalid_amount");
+            }
+            MarketItem updated = copyOf(item);
+            updated.setAmount(0);
+            return ServiceResult.success(new StockEditStartResult(copyTag(item.getItemNBTCompound()), currentAmount, updated));
+        });
+    }
+
+    public CompletableFuture<ServiceResult<StockEditFinishResult>> finishStockEdit(UUID actorId, boolean isOp,
+                                                                                   UUID marketItemID,
+                                                                                   CompoundTag expectedItemNbt,
+                                                                                   int finalAmount,
+                                                                                   int maxStockAmount) {
+        return updateExistingItem(actorId, isOp, marketItemID, item -> {
+            if (!Boolean.TRUE.equals(item.getIfSell()) || item.isInfinite()) {
+                return ServiceResult.failure("gui.wheatmarket.operation.invalid_amount");
+            }
+            if (finalAmount < 0 || finalAmount > maxStockAmount) {
+                return ServiceResult.failure("gui.wheatmarket.operation.invalid_amount");
+            }
+            if (expectedItemNbt == null || !expectedItemNbt.equals(item.getItemNBTCompound())) {
+                return ServiceResult.failure("gui.wheatmarket.operation.invalid_amount");
+            }
+            MarketItem updated = copyOf(item);
+            updated.setAmount(finalAmount);
+            return ServiceResult.success(new StockEditFinishResult(finalAmount, updated, finalAmount <= 0));
+        });
+    }
+
     public CompletableFuture<ServiceResult<MarketItemResult>> changePrice(UUID actorId, boolean isOp, UUID marketItemID, double price) {
         return updateExistingItem(actorId, isOp, marketItemID, item -> {
             if (!isPositiveMoney(price)) {
@@ -507,6 +545,18 @@ public class MarketService {
 
     public record ItemStackResult(CompoundTag itemNbt, int amount, MarketItem updatedItem,
                                   boolean removeFromCache) implements MarketItemMutationResult {
+    }
+
+    public record StockEditStartResult(CompoundTag itemNbt, int originalAmount,
+                                       MarketItem updatedItem) implements MarketItemMutationResult {
+        @Override
+        public boolean removeFromCache() {
+            return false;
+        }
+    }
+
+    public record StockEditFinishResult(int finalAmount, MarketItem updatedItem,
+                                        boolean removeFromCache) implements MarketItemMutationResult {
     }
 
     public record MarketItemResult(MarketItem updatedItem) implements MarketItemMutationResult {

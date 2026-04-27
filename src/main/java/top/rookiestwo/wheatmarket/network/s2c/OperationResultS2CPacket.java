@@ -8,9 +8,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import top.rookiestwo.wheatmarket.WheatMarket;
-import top.rookiestwo.wheatmarket.client.gui.WheatMarketListingScreen;
-import top.rookiestwo.wheatmarket.client.gui.WheatMarketMainScreen;
-import top.rookiestwo.wheatmarket.client.gui.WheatMarketOrderConfirmationScreen;
+import top.rookiestwo.wheatmarket.client.gui.*;
 
 public class OperationResultS2CPacket implements CustomPacketPayload {
     public static final Type<OperationResultS2CPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "operation_result"));
@@ -62,6 +60,16 @@ public class OperationResultS2CPacket implements CustomPacketPayload {
             if (minecraft.screen instanceof WheatMarketListingScreen listingScreen
                     && listingScreen.handleOperationResult(success, message)) {
                 WheatMarket.LOGGER.debug("Operation result consumed by listing screen: success={}, key={}", success, messageKey);
+                return;
+            }
+            if (minecraft.screen instanceof WheatMarketItemEditScreen itemEditScreen
+                    && itemEditScreen.handleOperationResult(success, message)) {
+                WheatMarket.LOGGER.debug("Operation result consumed by item edit screen: success={}, key={}", success, messageKey);
+                return;
+            }
+            if (minecraft.screen instanceof WheatMarketStockEditScreen stockEditScreen
+                    && stockEditScreen.handleOperationResult(success, message)) {
+                WheatMarket.LOGGER.debug("Operation result consumed by stock edit screen: success={}, key={}", success, messageKey);
                 return;
             }
             if (context.player() != null) {

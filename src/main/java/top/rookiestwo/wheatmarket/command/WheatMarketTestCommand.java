@@ -238,8 +238,13 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
                         .thenAccept(result -> report.expectFailure("market: reject amount above stock", result, "gui.wheatmarket.operation.invalid_amount")))
                 .thenCompose(ignored -> marketService.buyItem(TEST_BUYER, TEST_MARKET_ITEM, 1)
                         .thenAccept(result -> report.expectFailure("market: reject insufficient balance", result, "gui.wheatmarket.operation.insufficient_balance")))
+                .thenCompose(ignored -> economyService.setBalance(TEST_BUYER, 100.0)
+                        .thenAccept(result -> report.expectSuccess("market: set buyer balance for zero stock", result)))
+                .thenCompose(ignored -> marketService.buyItem(TEST_BUYER, TEST_MARKET_ITEM, 1)
+                        .thenAccept(result -> report.expectSuccess("market: buy finite item", result)))
+                .thenAccept(ignored -> report.expectMarketItemHidden("market: hide zero-stock item", marketService.requestMarketList(TEST_BUYER, 0, 0, 0, "", 0, 64)))
                 .thenCompose(ignored -> marketService.delist(TEST_SELLER, true, TEST_MARKET_ITEM)
-                        .thenAccept(result -> report.expectSuccess("market: cleanup after finite stock test", result)))
+                        .thenAccept(result -> report.expectSuccessOrMissing("market: cleanup after finite stock test", result)))
                 .thenCompose(ignored -> economyService.setBalance(TEST_BUYER, 100.0)
                         .thenAccept(result -> report.expectSuccess("market: set buyer balance for infinite stock", result)))
                 .thenCompose(ignored -> marketService.listItem(createInfiniteTestMarketItem(player))
@@ -417,6 +422,20 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
                 return;
             }
             expectEquals(name, expected, result.getValue());
+        }
+
+        void expectMarketItemHidden(String name, ServiceResult<MarketService.MarketListResult> result) {
+            if (!result.isSuccess()) {
+                fail(name + " expected list success, got " + result.getMessageKey());
+                return;
+            }
+            boolean visible = result.getValue().items().stream()
+                    .anyMatch(entry -> TEST_MARKET_ITEM.equals(entry.item().getMarketItemID()));
+            if (visible) {
+                fail(name + " expected item to be hidden");
+            } else {
+                passed++;
+            }
         }
 
         void expectEquals(String name, double expected, double actual) {

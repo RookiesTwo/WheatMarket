@@ -72,6 +72,7 @@ public class MarketService {
         Collection<MarketItem> allItems = marketItemCache.values();
         List<MarketItem> filtered = allItems.stream()
                 .filter(item -> !item.isExpired())
+                .filter(item -> item.isInfinite() || item.getAmount() > 0)
                 .filter(item -> {
                     if (tradeType == 1) return item.getIfSell();
                     if (tradeType == 2) return !item.getIfSell();
@@ -169,13 +170,22 @@ public class MarketService {
             if (!updatedItem.reduceAmount(amount)) {
                 return ServiceResult.<PurchaseResult>failure("gui.wheatmarket.operation.invalid_amount");
             }
-            marketItemRepository.update(connection, updatedItem);
-            purchaseRecordRepository.insert(connection, UUID.randomUUID(), marketItemID, buyerId, amount);
+            if (updatedItem.isAvailable()) {
+                marketItemRepository.update(connection, updatedItem);
+                purchaseRecordRepository.insert(connection, UUID.randomUUID(), marketItemID, buyerId, amount);
+            } else {
+                purchaseRecordRepository.deleteByMarketItem(connection, marketItemID);
+                marketItemRepository.delete(connection, marketItemID);
+            }
 
             return ServiceResult.success(new PurchaseResult(copyTag(item.getItemNBTCompound()), amount, newBalance, updatedItem));
         }).thenApply(result -> {
             if (result.isSuccess()) {
-                marketItemCache.put(result.getValue().updatedItem());
+                if (result.getValue().removeFromCache()) {
+                    marketItemCache.remove(marketItemID);
+                } else {
+                    marketItemCache.put(result.getValue().updatedItem());
+                }
             }
             return result;
         }).exceptionally(e -> {
@@ -481,7 +491,7 @@ public class MarketService {
                                  MarketItem updatedItem) implements MarketItemMutationResult {
         @Override
         public boolean removeFromCache() {
-            return false;
+            return !updatedItem.isAvailable();
         }
     }
 

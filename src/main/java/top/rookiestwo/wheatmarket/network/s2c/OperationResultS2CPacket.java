@@ -8,6 +8,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import top.rookiestwo.wheatmarket.WheatMarket;
+import top.rookiestwo.wheatmarket.client.gui.WheatMarketMainScreen;
 import top.rookiestwo.wheatmarket.client.gui.WheatMarketOrderConfirmationScreen;
 
 public class OperationResultS2CPacket implements CustomPacketPayload {
@@ -59,6 +60,9 @@ public class OperationResultS2CPacket implements CustomPacketPayload {
             }
             if (context.player() != null) {
                 context.player().displayClientMessage(message, false);
+            }
+            if (success && minecraft.screen instanceof WheatMarketMainScreen mainScreen) {
+                mainScreen.refreshMarketList();
             }
             WheatMarket.LOGGER.debug("Operation result: success={}, key={}", success, messageKey);
         }).exceptionally(e -> {

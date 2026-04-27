@@ -7,7 +7,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
+import top.rookiestwo.wheatmarket.menu.ItemSelectionMode;
 import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
+import top.rookiestwo.wheatmarket.network.WheatMarketNetwork;
+import top.rookiestwo.wheatmarket.network.c2s.SetItemSelectionModeC2SPacket;
 import top.rookiestwo.wheatmarket.network.s2c.MarketListS2CPacket;
 
 public class WheatMarketMainScreen extends AbstractContainerScreen<WheatMarketMenu> {
@@ -27,7 +30,8 @@ public class WheatMarketMainScreen extends AbstractContainerScreen<WheatMarketMe
         super.init();
         this.leftPos = 0;
         this.topPos = 0;
-        this.homeUI = new WheatMarketHomeUI(this::showOrderConfirmation);
+        disableItemSelectionMode();
+        this.homeUI = new WheatMarketHomeUI(this::showOrderConfirmation, this::showItemSelection);
         installModularUI(this.homeUI.create(this.inventory.player));
         this.homeUI.requestCurrentPage();
     }
@@ -44,6 +48,18 @@ public class WheatMarketMainScreen extends AbstractContainerScreen<WheatMarketMe
         if (this.minecraft != null) {
             this.minecraft.setScreen(new WheatMarketOrderConfirmationScreen(this.menu, this.inventory, this.title, item, stack));
         }
+    }
+
+    private void showItemSelection() {
+        if (this.minecraft != null) {
+            this.minecraft.setScreen(new WheatMarketItemSelectionScreen(this.menu, this.inventory, this.title,
+                    ItemSelectionMode.TRANSFER));
+        }
+    }
+
+    private void disableItemSelectionMode() {
+        this.menu.setItemSelectionMode(ItemSelectionMode.DISABLED, this.inventory.player);
+        WheatMarketNetwork.sendToServer(new SetItemSelectionModeC2SPacket(ItemSelectionMode.DISABLED));
     }
 
     private void installModularUI(ModularUI modularUI) {

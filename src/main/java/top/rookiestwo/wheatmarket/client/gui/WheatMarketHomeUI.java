@@ -42,6 +42,7 @@ public class WheatMarketHomeUI {
     private static final IGuiTexture EMPTY_TEXTURE = new ColorRectTexture(0x00000000);
 
     private final BiConsumer<MarketListS2CPacket.MarketItemSummary, ItemStack> orderRequestHandler;
+    private final Runnable listingRequestHandler;
 
     private Selector<TradeFilter> tradeSelector;
     private Selector<SourceFilter> sourceSelector;
@@ -71,11 +72,18 @@ public class WheatMarketHomeUI {
     private int seenListVersion = -1;
 
     public WheatMarketHomeUI() {
-        this(null);
+        this(null, null);
     }
 
     public WheatMarketHomeUI(BiConsumer<MarketListS2CPacket.MarketItemSummary, ItemStack> orderRequestHandler) {
+        this(orderRequestHandler, null);
+    }
+
+    public WheatMarketHomeUI(BiConsumer<MarketListS2CPacket.MarketItemSummary, ItemStack> orderRequestHandler,
+                             Runnable listingRequestHandler) {
         this.orderRequestHandler = orderRequestHandler;
+        this.listingRequestHandler = listingRequestHandler == null ? () -> {
+        } : listingRequestHandler;
     }
 
     public ModularUI create(Player player) {
@@ -216,6 +224,7 @@ public class WheatMarketHomeUI {
                 .textShadow(false));
 
         searchButton.setOnClick(event -> resetAndRequest());
+        listingButton.setOnClick(event -> listingRequestHandler.run());
         sortButton.setOnClick(event -> toggleSortDirection());
         myItemsButton.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = myItemsTooltips());
         myItemsButton.setOnClick(event -> toggleOwnListingsOnly());

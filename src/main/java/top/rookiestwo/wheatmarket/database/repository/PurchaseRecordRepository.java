@@ -1,11 +1,6 @@
 package top.rookiestwo.wheatmarket.database.repository;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.UUID;
 
 public class PurchaseRecordRepository {
@@ -16,7 +11,7 @@ public class PurchaseRecordRepository {
                 "buyerID VARCHAR(36) NOT NULL," +
                 "lastPurchaseTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
                 "purchasedAmount INT NOT NULL," +
-                "FOREIGN KEY (marketItemID) REFERENCES market_item(MarketItemID)," +
+                "FOREIGN KEY (marketItemID) REFERENCES market_item(MarketItemID) ON DELETE CASCADE," +
                 "FOREIGN KEY (buyerID) REFERENCES player_info(uuid)" +
                 ");";
         try (Statement stmt = connection.createStatement()) {
@@ -44,6 +39,42 @@ public class PurchaseRecordRepository {
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 return rs.getTimestamp("lastTime");
+            }
+        }
+        return null;
+    }
+
+    public void deleteByMarketItem(Connection connection, UUID marketItemID) throws SQLException {
+        String sql = "DELETE FROM purchase_record WHERE marketItemID = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, marketItemID.toString());
+            stmt.executeUpdate();
+        }
+    }
+
+    public int getPurchasedAmountSince(Connection connection, UUID marketItemID, UUID buyerID, Timestamp since) throws SQLException {
+        String sql = "SELECT COALESCE(SUM(purchasedAmount), 0) AS purchasedAmount FROM purchase_record WHERE marketItemID = ? AND buyerID = ? AND lastPurchaseTime >= ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, marketItemID.toString());
+            stmt.setString(2, buyerID.toString());
+            stmt.setTimestamp(3, since);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("purchasedAmount");
+            }
+        }
+        return 0;
+    }
+
+    public Timestamp getEarliestPurchaseTimeSince(Connection connection, UUID marketItemID, UUID buyerID, Timestamp since) throws SQLException {
+        String sql = "SELECT MIN(lastPurchaseTime) AS earliestTime FROM purchase_record WHERE marketItemID = ? AND buyerID = ? AND lastPurchaseTime >= ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, marketItemID.toString());
+            stmt.setString(2, buyerID.toString());
+            stmt.setTimestamp(3, since);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getTimestamp("earliestTime");
             }
         }
         return null;

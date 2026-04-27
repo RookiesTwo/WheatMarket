@@ -1,5 +1,6 @@
 package top.rookiestwo.wheatmarket.network.s2c;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
@@ -7,6 +8,9 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import top.rookiestwo.wheatmarket.WheatMarket;
+import top.rookiestwo.wheatmarket.client.gui.WheatMarketListingScreen;
+import top.rookiestwo.wheatmarket.client.gui.WheatMarketMainScreen;
+import top.rookiestwo.wheatmarket.client.gui.WheatMarketOrderConfirmationScreen;
 
 public class OperationResultS2CPacket implements CustomPacketPayload {
     public static final Type<OperationResultS2CPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "operation_result"));
@@ -49,8 +53,22 @@ public class OperationResultS2CPacket implements CustomPacketPayload {
     public void handle(IPayloadContext context) {
         context.enqueueWork(() -> {
             Component message = Component.translatable(messageKey, (Object[]) messageArgs);
+            Minecraft minecraft = Minecraft.getInstance();
+            if (minecraft.screen instanceof WheatMarketOrderConfirmationScreen orderConfirmationScreen
+                    && orderConfirmationScreen.handleOperationResult(success, message)) {
+                WheatMarket.LOGGER.debug("Operation result consumed by order confirmation: success={}, key={}", success, messageKey);
+                return;
+            }
+            if (minecraft.screen instanceof WheatMarketListingScreen listingScreen
+                    && listingScreen.handleOperationResult(success, message)) {
+                WheatMarket.LOGGER.debug("Operation result consumed by listing screen: success={}, key={}", success, messageKey);
+                return;
+            }
             if (context.player() != null) {
                 context.player().displayClientMessage(message, false);
+            }
+            if (success && minecraft.screen instanceof WheatMarketMainScreen mainScreen) {
+                mainScreen.refreshMarketList();
             }
             WheatMarket.LOGGER.debug("Operation result: success={}, key={}", success, messageKey);
         }).exceptionally(e -> {

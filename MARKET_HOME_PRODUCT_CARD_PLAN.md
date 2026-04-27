@@ -1,37 +1,31 @@
-# Market Home Product Card Temporary Plan
+# Market Home Product Card Status
 
-## Goal
+## Current Implementation
 
-Implement the market home listing area as a paginated board of pinned paper product cards. Each market listing should
-look like an individual paper sheet nailed onto the wooden market board instead of a generic data card.
+- `WheatMarketHomeUI` owns page state, filters, sorting, localized search, balance display, network requests, and
+  pagination.
+- `MarketListingCard.create(...)` returns a reusable `UIElement` for one market listing.
+- The product board is a normal LDLib2 container in `market_home.xml`; pagination is used instead of scrolling.
+- Page size is calculated from the visible board area using `64x64` cards plus gaps and is capped at `64`, not fixed at
+  `10`.
+- Each card selects `paper_with_wrinkles_0.png` through `paper_with_wrinkles_9.png` deterministically from
+  `marketItemID`.
+- Current card content is intentionally minimal: sell/buy label, item icon, and price.
+- Card click is wired through `WheatMarketHomeUI` into the current order confirmation flow.
 
-## Component Boundary
+## Differences From The Original Temporary Plan
 
-- Keep `WheatMarketHomeUI` responsible for page state, filters, sorting, network requests, and pagination.
-- Add a reusable single-listing component that returns a `UIElement`.
-- Do not make a large list-level widget yet. The list container remains part of `market_home`.
+- `nail.png` exists as an asset, but the current `MarketListingCard` does not render a nail element.
+- The backend page size is no longer a hardcoded `10`; the client requests a calculated page size based on the board
+  layout.
+- The product area has already been renamed away from scroller semantics in code (`productBoard.clearAllChildren()` /
+  `addChild(...)`).
 
-## Visual Rules
+## Remaining Work
 
-- Each listing uses one of `paper_with_wrinkles_0.png` through `paper_with_wrinkles_9.png` as its background.
-- Select the paper variant deterministically from the listing's internal `marketItemID`.
-- Render `nail.png` near the top of each paper card.
-- Card content follows the intended structure:
-    - sell/buy label at the top
-    - item icon in the middle
-    - price at the bottom
-- Preserve strong readability before adding decorative random offsets or rotations.
-
-## Pagination Rules
-
-- Use pagination, not scrolling, for browsing many listings.
-- The current backend page size is 10, so the first implementation should target 10 cards per page.
-- If the final visual density is too crowded, change the backend page size and front-end layout together.
-
-## Execution Steps
-
-1. Add texture helpers for deterministic wrinkled paper selection and nail rendering.
-2. Add a single-listing card component for pinned paper visuals.
-3. Replace the current product card construction in `WheatMarketHomeUI` with the new component.
-4. Rename the product area from scroller semantics to board semantics.
-5. Verify Java inspections/build after the first implementation.
+- Add stock, seller/system-shop marker, listing time, last trade time, and cooldown/limit state to the card or tooltip.
+- Decide whether to actually render `nail.png` on cards or remove it from the visual plan.
+- Improve buy-order behavior: current click path reaches the confirmation UI, where buy orders are rejected as
+  unsupported.
+- Keep pagination and card layout changes coordinated with `WheatMarketHomeUI.calculateProductsPerPage()` and
+  `MarketService.MAX_ITEMS_PER_PAGE`.

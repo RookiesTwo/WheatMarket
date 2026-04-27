@@ -12,6 +12,18 @@
       "wheatmarket:paper_flipping_08"
     ]
   },
+  "pencil_writing": {
+    "subtitle": "sound.wheatmarket.pencil_writing",
+    "sounds": [
+      "wheatmarket:pencil_writing"
+    ]
+  },
+  "order_stamp": {
+    "subtitle": "sound.wheatmarket.order_stamp",
+    "sounds": [
+      "wheatmarket:order_stamp"
+    ]
+  },
   "laptop_open": {
     "subtitle": "sound.wheatmarket.laptop_open",
     "sounds": [

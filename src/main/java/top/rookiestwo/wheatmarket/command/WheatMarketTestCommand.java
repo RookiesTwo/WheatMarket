@@ -38,6 +38,7 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
     private static final UUID TEST_SELLER = testUuid("seller");
     private static final UUID TEST_BUYER = testUuid("buyer");
     private static final UUID TEST_MARKET_ITEM = testUuid("market_item");
+    private static final UUID TEST_SYSTEM_SELLER = testUuid("system_seller");
 
     @Override
     public void register(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -55,6 +56,12 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
                         )
                         .then(Commands.literal("enchanted_wheat")
                                 .executes(this::addEnchantedWheatListing)
+                        )
+                        .then(Commands.literal("limited_wheat")
+                                .executes(this::addLimitedWheatListing)
+                        )
+                        .then(Commands.literal("limited_diamond_pickaxe")
+                                .executes(this::addLimitedDiamondPickaxeListing)
                         )
         );
     }
@@ -90,6 +97,58 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
             }
             if (result.isSuccess()) {
                 player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.enchanted_wheat_add_success").withColor(CommonColors.GREEN));
+            } else {
+                player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.failed", result.getMessageKey()).withColor(CommonColors.SOFT_RED));
+            }
+        }));
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private int addLimitedWheatListing(CommandContext<CommandSourceStack> commandContext) {
+        ServerPlayer player = commandContext.getSource().getPlayer();
+        if (player == null) {
+            return Command.SINGLE_SUCCESS;
+        }
+        if (WheatMarket.DATABASE == null) {
+            player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.database_not_initialized").withColor(CommonColors.SOFT_RED));
+            return Command.SINGLE_SUCCESS;
+        }
+
+        MarketService marketService = WheatMarket.DATABASE.getMarketService();
+        marketService.listItem(createLimitedWheatListing(player)).whenComplete((result, throwable) -> player.server.execute(() -> {
+            if (throwable != null) {
+                WheatMarket.LOGGER.error("Failed to add limited wheat listing.", throwable);
+                player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.failed", throwable.getMessage()).withColor(CommonColors.SOFT_RED));
+                return;
+            }
+            if (result.isSuccess()) {
+                player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.limited_wheat_add_success").withColor(CommonColors.GREEN));
+            } else {
+                player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.failed", result.getMessageKey()).withColor(CommonColors.SOFT_RED));
+            }
+        }));
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private int addLimitedDiamondPickaxeListing(CommandContext<CommandSourceStack> commandContext) {
+        ServerPlayer player = commandContext.getSource().getPlayer();
+        if (player == null) {
+            return Command.SINGLE_SUCCESS;
+        }
+        if (WheatMarket.DATABASE == null) {
+            player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.database_not_initialized").withColor(CommonColors.SOFT_RED));
+            return Command.SINGLE_SUCCESS;
+        }
+
+        MarketService marketService = WheatMarket.DATABASE.getMarketService();
+        marketService.listItem(createLimitedDiamondPickaxeListing(player)).whenComplete((result, throwable) -> player.server.execute(() -> {
+            if (throwable != null) {
+                WheatMarket.LOGGER.error("Failed to add limited diamond pickaxe listing.", throwable);
+                player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.failed", throwable.getMessage()).withColor(CommonColors.SOFT_RED));
+                return;
+            }
+            if (result.isSuccess()) {
+                player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.limited_diamond_pickaxe_add_success").withColor(CommonColors.GREEN));
             } else {
                 player.sendSystemMessage(Component.translatable("info.command.wheatmarket.test.failed", result.getMessageKey()).withColor(CommonColors.SOFT_RED));
             }
@@ -179,8 +238,27 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
                         .thenAccept(result -> report.expectFailure("market: reject amount above stock", result, "gui.wheatmarket.operation.invalid_amount")))
                 .thenCompose(ignored -> marketService.buyItem(TEST_BUYER, TEST_MARKET_ITEM, 1)
                         .thenAccept(result -> report.expectFailure("market: reject insufficient balance", result, "gui.wheatmarket.operation.insufficient_balance")))
+                .thenCompose(ignored -> economyService.setBalance(TEST_BUYER, 100.0)
+                        .thenAccept(result -> report.expectSuccess("market: set buyer balance for zero stock", result)))
+                .thenCompose(ignored -> marketService.buyItem(TEST_BUYER, TEST_MARKET_ITEM, 1)
+                        .thenAccept(result -> report.expectSuccess("market: buy finite item", result)))
+                .thenAccept(ignored -> report.expectMarketItemHidden("market: hide zero-stock item", marketService.requestMarketList(TEST_BUYER, 0, 0, 0, "", 0, 64)))
                 .thenCompose(ignored -> marketService.delist(TEST_SELLER, true, TEST_MARKET_ITEM)
-                        .thenAccept(result -> report.expectSuccess("market: cleanup after test", result)));
+                        .thenAccept(result -> report.expectSuccessOrMissing("market: cleanup after finite stock test", result)))
+                .thenCompose(ignored -> economyService.setBalance(TEST_BUYER, 100.0)
+                        .thenAccept(result -> report.expectSuccess("market: set buyer balance for infinite stock", result)))
+                .thenCompose(ignored -> marketService.listItem(createInfiniteTestMarketItem(player))
+                        .thenAccept(result -> report.expectSuccess("market: list infinite test item", result)))
+                .thenCompose(ignored -> marketService.buyItem(TEST_BUYER, TEST_MARKET_ITEM, 1)
+                        .thenAccept(result -> {
+                            report.expectSuccess("market: buy infinite item", result);
+                            if (result.isSuccess()) {
+                                report.expectTrue("market: infinite flag retained", result.getValue().updatedItem().isInfinite());
+                                report.expectEquals("market: infinite stock amount unchanged", 1, result.getValue().updatedItem().getAmount());
+                            }
+                        }))
+                .thenCompose(ignored -> marketService.delist(TEST_SELLER, true, TEST_MARKET_ITEM)
+                        .thenAccept(result -> report.expectSuccess("market: cleanup after infinite stock test", result)));
 
         test.whenComplete((ignored, throwable) -> player.server.execute(() -> {
             if (throwable != null) {
@@ -206,6 +284,7 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
         item.setSellerID(TEST_SELLER);
         item.setPrice(price);
         item.setAmount(1);
+        item.setIfInfinite(false);
         item.setListingTime(new Timestamp(System.currentTimeMillis()));
         item.setIfAdmin(false);
         item.setIfSell(true);
@@ -213,6 +292,12 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
         item.setCooldownTimeInMinutes(0);
         item.setTimeToExpire(0);
         item.setLastTradeTime(null);
+        return item;
+    }
+
+    private MarketItem createInfiniteTestMarketItem(ServerPlayer player) {
+        MarketItem item = createTestMarketItem(player);
+        item.setIfInfinite(true);
         return item;
     }
 
@@ -229,6 +314,7 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
         item.setSellerID(player.getUUID());
         item.setPrice(price);
         item.setAmount(1);
+        item.setIfInfinite(false);
         item.setListingTime(new Timestamp(System.currentTimeMillis() - index));
         item.setIfAdmin(false);
         item.setIfSell(random.nextBoolean());
@@ -248,18 +334,46 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
         return createWheatListingFromStack(player, stack, 71.18, true, 0);
     }
 
+    private MarketItem createLimitedWheatListing(ServerPlayer player) {
+        MarketItem item = createWheatListingFromStack(player, new ItemStack(Items.WHEAT), 12.50, true, 0);
+        item.setAmount(16);
+        item.setCooldownAmount(3);
+        item.setCooldownTimeInMinutes(10);
+        return item;
+    }
+
+    private MarketItem createLimitedDiamondPickaxeListing(ServerPlayer player) {
+        ItemStack stack = new ItemStack(Items.DIAMOND_PICKAXE);
+        Holder<Enchantment> unbreaking = player.server.registryAccess()
+                .lookupOrThrow(Registries.ENCHANTMENT)
+                .getOrThrow(Enchantments.UNBREAKING);
+        stack.enchant(unbreaking, 1);
+
+        MarketItem item = createListingFromStack(player, stack, 12.50, true, 0, TEST_SYSTEM_SELLER, true);
+        item.setAmount(16);
+        item.setCooldownAmount(3);
+        item.setCooldownTimeInMinutes(10);
+        return item;
+    }
+
     private MarketItem createWheatListingFromStack(ServerPlayer player, ItemStack stack, double price, boolean ifSell, int listingOffset) {
+        return createListingFromStack(player, stack, price, ifSell, listingOffset, player.getUUID(), false);
+    }
+
+    private MarketItem createListingFromStack(ServerPlayer player, ItemStack stack, double price, boolean ifSell, int listingOffset,
+                                              UUID sellerId, boolean ifAdmin) {
         CompoundTag nbt = (CompoundTag) stack.save(player.server.registryAccess());
 
         MarketItem item = new MarketItem();
         item.setMarketItemID(UUID.randomUUID());
-        item.setItemID(BuiltInRegistries.ITEM.getKey(Items.WHEAT).toString());
+        item.setItemID(BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
         item.setItemNBTCompound(nbt);
-        item.setSellerID(player.getUUID());
+        item.setSellerID(sellerId);
         item.setPrice(price);
         item.setAmount(1);
+        item.setIfInfinite(false);
         item.setListingTime(new Timestamp(System.currentTimeMillis() - listingOffset));
-        item.setIfAdmin(false);
+        item.setIfAdmin(ifAdmin);
         item.setIfSell(ifSell);
         item.setCooldownAmount(0);
         item.setCooldownTimeInMinutes(0);
@@ -310,11 +424,33 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
             expectEquals(name, expected, result.getValue());
         }
 
+        void expectMarketItemHidden(String name, ServiceResult<MarketService.MarketListResult> result) {
+            if (!result.isSuccess()) {
+                fail(name + " expected list success, got " + result.getMessageKey());
+                return;
+            }
+            boolean visible = result.getValue().items().stream()
+                    .anyMatch(entry -> TEST_MARKET_ITEM.equals(entry.item().getMarketItemID()));
+            if (visible) {
+                fail(name + " expected item to be hidden");
+            } else {
+                passed++;
+            }
+        }
+
         void expectEquals(String name, double expected, double actual) {
             if (Math.abs(expected - actual) < 0.0001) {
                 passed++;
             } else {
                 fail(name + " expected " + expected + ", got " + actual);
+            }
+        }
+
+        void expectTrue(String name, boolean actual) {
+            if (actual) {
+                passed++;
+            } else {
+                fail(name + " expected true, got false");
             }
         }
 

@@ -13,22 +13,38 @@ import top.rookiestwo.wheatmarket.network.s2c.OperationResultS2CPacket;
 import top.rookiestwo.wheatmarket.service.MarketService;
 import top.rookiestwo.wheatmarket.service.result.ServiceResult;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class RequestMarketListC2SPacket implements CustomPacketPayload {
     public static final Type<RequestMarketListC2SPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "request_market_list"));
     public static final StreamCodec<FriendlyByteBuf, RequestMarketListC2SPacket> STREAM_CODEC = CustomPacketPayload.codec(RequestMarketListC2SPacket::encode, RequestMarketListC2SPacket::new);
+    private static final int MAX_SEARCH_ITEM_IDS = 2048;
 
     private int tradeType;
     private int itemType;
     private int sortType;
+    private boolean sortAscending;
+    private boolean ownListingsOnly;
     private String searchQuery;
+    private List<String> localizedSearchItemIds;
     private int page;
     private int pageSize;
 
     public RequestMarketListC2SPacket(int tradeType, int itemType, int sortType, String searchQuery, int page, int pageSize) {
+        this(tradeType, itemType, sortType, defaultSortAscending(sortType), false, searchQuery, List.of(), page, pageSize);
+    }
+
+    public RequestMarketListC2SPacket(int tradeType, int itemType, int sortType, boolean sortAscending, boolean ownListingsOnly,
+                                      String searchQuery,
+                                      List<String> localizedSearchItemIds, int page, int pageSize) {
         this.tradeType = tradeType;
         this.itemType = itemType;
         this.sortType = sortType;
+        this.sortAscending = sortAscending;
+        this.ownListingsOnly = ownListingsOnly;
         this.searchQuery = searchQuery;
+        this.localizedSearchItemIds = sanitizeLocalizedSearchItemIds(localizedSearchItemIds);
         this.page = page;
         this.pageSize = pageSize;
     }
@@ -37,23 +53,53 @@ public class RequestMarketListC2SPacket implements CustomPacketPayload {
         this.tradeType = buf.readVarInt();
         this.itemType = buf.readVarInt();
         this.sortType = buf.readVarInt();
+        this.sortAscending = buf.readBoolean();
+        this.ownListingsOnly = buf.readBoolean();
         this.searchQuery = buf.readUtf(256);
+        int itemIdCount = buf.readVarInt();
+        if (itemIdCount < 0 || itemIdCount > MAX_SEARCH_ITEM_IDS) {
+            throw new IllegalArgumentException("Invalid localized search item id count: " + itemIdCount);
+        }
+        this.localizedSearchItemIds = new ArrayList<>(itemIdCount);
+        for (int i = 0; i < itemIdCount; i++) {
+            this.localizedSearchItemIds.add(buf.readUtf(256));
+        }
         this.page = buf.readVarInt();
         this.pageSize = buf.readVarInt();
+    }
+
+    private static List<String> sanitizeLocalizedSearchItemIds(List<String> itemIds) {
+        if (itemIds == null || itemIds.isEmpty()) {
+            return List.of();
+        }
+        return itemIds.stream()
+                .filter(itemId -> itemId != null && !itemId.isBlank())
+                .limit(MAX_SEARCH_ITEM_IDS)
+                .toList();
+    }
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
+
+    private static boolean defaultSortAscending(int sortType) {
+        return sortType == 1;
     }
 
     public void encode(FriendlyByteBuf buf) {
         buf.writeVarInt(tradeType);
         buf.writeVarInt(itemType);
         buf.writeVarInt(sortType);
+        buf.writeBoolean(sortAscending);
+        buf.writeBoolean(ownListingsOnly);
         buf.writeUtf(searchQuery, 256);
+        buf.writeVarInt(localizedSearchItemIds.size());
+        for (String itemId : localizedSearchItemIds) {
+            buf.writeUtf(itemId, 256);
+        }
         buf.writeVarInt(page);
         buf.writeVarInt(pageSize);
-    }
-
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
     }
 
     public void handle(IPayloadContext context) {
@@ -62,7 +108,8 @@ public class RequestMarketListC2SPacket implements CustomPacketPayload {
             if (WheatMarket.DATABASE == null) return;
 
             ServiceResult<MarketService.MarketListResult> result = WheatMarket.DATABASE.getMarketService()
-                    .requestMarketList(tradeType, itemType, sortType, searchQuery, page, pageSize);
+                    .requestMarketList(player.getUUID(), tradeType, itemType, sortType, searchQuery,
+                            localizedSearchItemIds, sortAscending, ownListingsOnly, page, pageSize);
             if (!result.isSuccess()) {
                 WheatMarketNetwork.sendToPlayer(player, new OperationResultS2CPacket(false, result.getMessageKey(), result.getMessageArgs()));
                 return;
@@ -70,7 +117,7 @@ public class RequestMarketListC2SPacket implements CustomPacketPayload {
 
             MarketService.MarketListResult marketList = result.getValue();
             WheatMarketNetwork.sendToPlayer(player,
-                    new MarketListS2CPacket(marketList.items(), marketList.totalPages(), marketList.currentPage()));
+                    new MarketListS2CPacket(marketList.items(), marketList.totalPages(), marketList.currentPage(), marketList.balance()));
         }).exceptionally(e -> {
             WheatMarket.LOGGER.error("Failed to handle market list request packet.", e);
             return null;

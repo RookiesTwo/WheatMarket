@@ -70,6 +70,8 @@
         flex: 1;
         min-width: 0;
         height: 100%;
+        padding-left: 6;
+        padding-right: 6;
         overflow: hidden;
         text-wrap: HIDE;
         vertical-align: CENTER;

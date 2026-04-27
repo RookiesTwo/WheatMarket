@@ -32,6 +32,8 @@ public class WheatMarketRegistry {
     private static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, WheatMarket.MOD_ID);
     public static DeferredHolder<MenuType<?>, MenuType<WheatMarketMenu>> WHEAT_MARKET_MENU = null;
     public static DeferredHolder<SoundEvent, SoundEvent> PAPER_FLIPPING = null;
+    public static DeferredHolder<SoundEvent, SoundEvent> PENCIL_WRITING = null;
+    public static DeferredHolder<SoundEvent, SoundEvent> ORDER_STAMP = null;
     private static DeferredHolder<Block, Block> LAPTOP_BLOCK = null;
 
     public WheatMarketRegistry(IEventBus modBus) {
@@ -57,6 +59,8 @@ public class WheatMarketRegistry {
 
     private static void registerSounds() {
         PAPER_FLIPPING = SOUND_EVENTS.register("paper_flipping", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "paper_flipping")));
+        PENCIL_WRITING = SOUND_EVENTS.register("pencil_writing", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "pencil_writing")));
+        ORDER_STAMP = SOUND_EVENTS.register("order_stamp", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "order_stamp")));
         SOUND_EVENTS.register("laptop_open", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "laptop_open")));
         SOUND_EVENTS.register("laptop_close", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "laptop_close")));
     }

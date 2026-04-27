@@ -7,10 +7,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import top.rookiestwo.wheatmarket.WheatMarket;
-import top.rookiestwo.wheatmarket.network.c2s.BuyItemC2SPacket;
-import top.rookiestwo.wheatmarket.network.c2s.ListItemC2SPacket;
-import top.rookiestwo.wheatmarket.network.c2s.ManageItemC2SPacket;
-import top.rookiestwo.wheatmarket.network.c2s.RequestMarketListC2SPacket;
+import top.rookiestwo.wheatmarket.network.c2s.*;
 import top.rookiestwo.wheatmarket.network.s2c.BalanceUpdateS2CPacket;
 import top.rookiestwo.wheatmarket.network.s2c.MarketListS2CPacket;
 import top.rookiestwo.wheatmarket.network.s2c.OperationResultS2CPacket;
@@ -30,6 +27,7 @@ public class WheatMarketNetwork {
         registrar.playToServer(BuyItemC2SPacket.TYPE, BuyItemC2SPacket.STREAM_CODEC, BuyItemC2SPacket::handle);
         registrar.playToServer(ListItemC2SPacket.TYPE, ListItemC2SPacket.STREAM_CODEC, ListItemC2SPacket::handle);
         registrar.playToServer(ManageItemC2SPacket.TYPE, ManageItemC2SPacket.STREAM_CODEC, ManageItemC2SPacket::handle);
+        registrar.playToServer(SetItemSelectionModeC2SPacket.TYPE, SetItemSelectionModeC2SPacket.STREAM_CODEC, SetItemSelectionModeC2SPacket::handle);
 
         registrar.playToClient(MarketListS2CPacket.TYPE, MarketListS2CPacket.STREAM_CODEC, MarketListS2CPacket::handle);
         registrar.playToClient(OperationResultS2CPacket.TYPE, OperationResultS2CPacket.STREAM_CODEC, OperationResultS2CPacket::handle);

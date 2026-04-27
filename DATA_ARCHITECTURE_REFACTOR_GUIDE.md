@@ -28,8 +28,9 @@
 
 - 货币继续使用 `double`；这是当前项目接受的轻量取舍，但必须拒绝 `NaN`、`Infinity` 和非法金额。
 - NBT 仍使用 `CompoundTag.toString()` / `TagParser.parseTag()` 持久化，缺少稳定序列化边界。
-- GUI 已用 LDLib2 接入市场列表请求；购买、上架和管理流程仍待完整接入当前网络和 service 流程。
-- 商品查询、分页、过期清理和完整 GUI 渲染仍未完成。
+- GUI 已用 LDLib2 接入市场列表请求、出售单购买确认和通用物品选择字段编辑子界面；完整上架表单和商品详情/管理界面仍待接入当前网络和
+  service 流程。
+- 市场列表真实渲染、筛选、搜索和分页已完成；商品卡片信息仍较少，repository 层条件查询/分页 SQL、过期清理和完整管理 GUI 仍未完成。
 - 玩家物品栏与数据库仍不是同一事务系统，事务成功后的物品栏补偿逻辑仍需随 UI 流程完善。
 
 ## 3. 当前目标架构
@@ -239,9 +240,7 @@ public final class TransactionManager {
 ```sql
 CREATE TABLE player_info (
     uuid VARCHAR(36) PRIMARY KEY,
-    balance DOUBLE NOT NULL DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    balance DOUBLE
 );
 ```
 
@@ -249,46 +248,50 @@ CREATE TABLE player_info (
 
 ```sql
 CREATE TABLE market_item (
-    market_item_id VARCHAR(36) PRIMARY KEY,
+    MarketItemID VARCHAR(36) PRIMARY KEY,
     item_id VARCHAR(255) NOT NULL,
-    item_nbt CLOB,
-    seller_id VARCHAR(36) NOT NULL,
+    itemNBTCompound CLOB,
+    sellerID VARCHAR(36) NOT NULL,
     price DOUBLE NOT NULL,
     amount INT NOT NULL,
-    listing_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    is_admin BOOLEAN NOT NULL DEFAULT FALSE,
-    is_sell BOOLEAN NOT NULL DEFAULT TRUE,
-    cooldown_amount INT NOT NULL DEFAULT 0,
-    cooldown_time_minutes INT NOT NULL DEFAULT 0,
-    expire_at TIMESTAMP NULL,
-    last_trade_time TIMESTAMP NULL,
-    FOREIGN KEY (seller_id) REFERENCES player_info(uuid)
+    ifInfinite BOOLEAN DEFAULT FALSE,
+    listingTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+    ifAdmin BOOLEAN DEFAULT FALSE,
+    ifSell BOOLEAN DEFAULT TRUE,
+    cooldownAmount INT DEFAULT 0,
+    cooldownTimeInMinutes INT DEFAULT 0,
+    timeToExpire BIGINT DEFAULT 0,
+    lastTradeTime DATETIME,
+    FOREIGN KEY (sellerID) REFERENCES player_info(uuid)
 );
 ```
+
+当前 `MarketItemRepository` 启动时会执行轻量迁移：为旧表补充 `ifInfinite` 列，并把旧 `amount = Integer.MAX_VALUE` 的无限商品迁移为
+`ifInfinite = TRUE, amount = 1`。
 
 ### 8.3 purchase_record
 
 ```sql
 CREATE TABLE purchase_record (
-    record_id VARCHAR(36) PRIMARY KEY,
-    market_item_id VARCHAR(36) NOT NULL,
-    buyer_id VARCHAR(36) NOT NULL,
-    purchased_amount INT NOT NULL,
-    purchased_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (market_item_id) REFERENCES market_item(market_item_id),
-    FOREIGN KEY (buyer_id) REFERENCES player_info(uuid)
+    recordID VARCHAR(36) PRIMARY KEY,
+    marketItemID VARCHAR(36) NOT NULL,
+    buyerID VARCHAR(36) NOT NULL,
+    lastPurchaseTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    purchasedAmount INT NOT NULL,
+    FOREIGN KEY (marketItemID) REFERENCES market_item(MarketItemID) ON DELETE CASCADE,
+    FOREIGN KEY (buyerID) REFERENCES player_info(uuid)
 );
 ```
 
 ### 8.4 indexes
 
-建议创建索引：
+当前 repository 尚未创建额外索引；如果后续补充，应使用当前实际字段名，例如：
 
 ```sql
-CREATE INDEX idx_market_item_seller ON market_item(seller_id);
-CREATE INDEX idx_market_item_query ON market_item(is_sell, is_admin, listing_time);
-CREATE INDEX idx_purchase_record_item_buyer ON purchase_record(market_item_id, buyer_id, purchased_at);
-CREATE INDEX idx_purchase_record_buyer ON purchase_record(buyer_id, purchased_at);
+CREATE INDEX idx_market_item_seller ON market_item(sellerID);
+CREATE INDEX idx_market_item_query ON market_item(ifSell, ifAdmin, listingTime);
+CREATE INDEX idx_purchase_record_item_buyer ON purchase_record(marketItemID, buyerID, lastPurchaseTime);
+CREATE INDEX idx_purchase_record_buyer ON purchase_record(buyerID, lastPurchaseTime);
 ```
 
 ## 9. NBT 持久化
@@ -466,7 +469,8 @@ Minecraft 玩家物品栏和 H2 数据库不是同一个事务系统。
 
 服务层不要直接发网络包。
 
-建议返回结果对象：
+当前实现为普通泛型结果类 `ServiceResult<T>`，包含 `success`、`value`、`messageKey` 和 `messageArgs`。未来如果需要更强类型约束，可迁移为
+sealed 结果对象，例如：
 
 ```java
 public sealed interface ServiceResult<T> {
@@ -475,7 +479,8 @@ public sealed interface ServiceResult<T> {
 }
 ```
 
-Packet handler 负责把 `Failure` 转成 `OperationResultS2CPacket`。
+Packet handler 负责检查 `result.isSuccess()`，并把失败结果中的 `messageKey` / `messageArgs` 转成
+`OperationResultS2CPacket`。
 
 这样可以让服务层被命令、网络和测试复用。
 
@@ -484,7 +489,7 @@ Packet handler 负责把 `Failure` 转成 `OperationResultS2CPacket`。
 规则：
 
 - SQL 异常不能被表层吞掉。
-- 业务失败返回 `ServiceResult.Failure`。
+- 业务失败返回 `ServiceResult.failure(...)`。
 - 系统失败记录 error，并返回通用失败消息。
 - 成功消息只能在事务成功后发送。
 - 不要把“玩家不存在”和“数据库异常”都当作余额 0。
@@ -501,16 +506,17 @@ Packet handler 负责把 `Failure` 转成 `OperationResultS2CPacket`。
 - 当前已有购买、上架、管理和列表请求 packet 已改用 `MarketService`。
 - 事务成功后才更新 `MarketItemCache`。
 - `MarketItemCache` 不再暴露可变 Map，也不再提供全量 `saveAllToDatabase` 旧接口。
+- `EconomyService` 和 `MarketService` 已在主要金额入口使用 `Double.isFinite(...)`，拒绝 `NaN`、`Infinity` 和非法金额。
 
 后续按顺序推进：
 
-### Phase E: double 货币使用约束
+### Phase E: double 货币使用约束（已落地，持续约束）
 
 1. 保持 Java `double` 和数据库 `DOUBLE`。
-2. 所有金额入口在 service 层校验 `Double.isFinite(value)`。
+2. 所有新增金额入口继续在 service 层校验 `Double.isFinite(value)`。
 3. 价格、转账、增加和扣除金额必须 `> 0`。
 4. 设置余额允许 `0`，但必须拒绝负数和非有限数。
-5. 玩家可见金额统一格式化到固定小数位。
+5. 玩家可见金额继续统一格式化到固定小数位。
 
 验收：
 
@@ -531,14 +537,25 @@ Packet handler 负责把 `Failure` 转成 `OperationResultS2CPacket`。
 
 ### Phase G: GUI 接入与查询补全
 
-1. 将 GUI 操作接入现有 payload。
-2. 只按真实 GUI 需求补充 repository/service 查询方法。
-3. 实现商品列表真实渲染、筛选、搜索和分页。
+1. 保持已完成的市场主页真实渲染、筛选、搜索和分页。
+2. 将完整上架表单、商品详情/管理界面接入现有 payload。
+3. 只按真实 GUI 需求补充 repository/service 查询方法。
+4. 将通用物品选择子界面的选择结果接入具体父流程，而不是在选择界面中硬编码业务。
+5. 物品选择子界面作为父级表单字段编辑器使用，由父流程通过 `ItemSelectionRequest` 指定 `purpose`、固定 `mode`、
+   `initialSelection`、`baselineAmount`、`lockedStackTemplate`、`allowEmpty` 和确认回调。
+6. 出售订单上架使用 `LIST_SELL + TRANSFER`，收购订单上架使用 `LIST_BUY + SAMPLE`，补货/编辑库存使用
+   `EDIT_LISTING_STOCK + TRANSFER`。
+7. 补货/编辑库存必须锁定原商品模板；目标出售单仍有未售完库存时，应以剩余库存 `ItemStack` 预填选择槽，且允许用户清空选择槽表示编辑后库存为
+   0 或准备取回全部剩余库存。
 
 验收：
 
 - GUI 不直接写数据库或缓存。
 - 新增查询只覆盖已接入界面的真实需求。
+- 物品选择子界面可被不同父菜单复用，并由父流程决定用途、固定模式、预填内容、锁定模板和如何消费 `ItemSelectionResult`。
+- 选择界面只负责返回 count=1 的模板 `selectedStack`、`totalAmount`、`baselineAmount`、`deltaAmount`
+  和空状态；最终上架、补货、取回或库存编辑仍由父流程转换为业务 packet 并在服务端校验。父流程不得把聚合数量写入需要
+  `ItemStack.save(...)` 的 `ItemStack.count`。
 
 ## 16. 测试与验证
 

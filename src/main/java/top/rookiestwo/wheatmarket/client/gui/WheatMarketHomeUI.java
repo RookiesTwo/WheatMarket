@@ -11,12 +11,17 @@ import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Selector;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.TextField;
+import com.lowdragmc.lowdraglib2.gui.ui.event.HoverTooltips;
+import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
 import com.lowdragmc.lowdraglib2.utils.XmlUtils;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import org.appliedenergistics.yoga.YogaPositionType;
 import org.w3c.dom.Document;
 import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.network.WheatMarketNetwork;
@@ -25,6 +30,7 @@ import top.rookiestwo.wheatmarket.network.s2c.MarketListS2CPacket;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.function.BiConsumer;
 
 public class WheatMarketHomeUI {
     private static final ResourceLocation HOME_XML = ResourceLocation.parse("wheatmarket:ui/market_home.xml");
@@ -32,6 +38,11 @@ public class WheatMarketHomeUI {
     private static final int PRODUCT_CARD_HEIGHT = 64;
     private static final int PRODUCT_CARD_GAP = 10;
     private static final int MAX_PRODUCTS_PER_PAGE = 64;
+    private static final int MAX_LOCALIZED_SEARCH_IDS = 2048;
+    private static final IGuiTexture EMPTY_TEXTURE = new ColorRectTexture(0x00000000);
+
+    private final BiConsumer<MarketListS2CPacket.MarketItemSummary, ItemStack> orderRequestHandler;
+    private final Runnable listingRequestHandler;
 
     private Selector<TradeFilter> tradeSelector;
     private Selector<SourceFilter> sourceSelector;
@@ -45,6 +56,7 @@ public class WheatMarketHomeUI {
     private UIElement actionBar;
     private UIElement marketPanel;
     private UIElement paginationBar;
+    private UIElement myItemsOverlay;
     private Button listingButton;
     private Button sortButton;
     private Button myItemsButton;
@@ -54,8 +66,25 @@ public class WheatMarketHomeUI {
     private Button nextButton;
     private Label pageLabel;
     private Label balanceLabel;
+    private boolean sortAscending = SortFilter.LIST_TIME.defaultAscending;
+    private boolean ownListingsOnly;
     private int requestedPage;
     private int seenListVersion = -1;
+
+    public WheatMarketHomeUI() {
+        this(null, null);
+    }
+
+    public WheatMarketHomeUI(BiConsumer<MarketListS2CPacket.MarketItemSummary, ItemStack> orderRequestHandler) {
+        this(orderRequestHandler, null);
+    }
+
+    public WheatMarketHomeUI(BiConsumer<MarketListS2CPacket.MarketItemSummary, ItemStack> orderRequestHandler,
+                             Runnable listingRequestHandler) {
+        this.orderRequestHandler = orderRequestHandler;
+        this.listingRequestHandler = listingRequestHandler == null ? () -> {
+        } : listingRequestHandler;
+    }
 
     public ModularUI create(Player player) {
         Document xml = XmlUtils.loadXml(HOME_XML);
@@ -74,15 +103,26 @@ public class WheatMarketHomeUI {
     public void requestCurrentPage() {
         TradeFilter tradeFilter = tradeSelector.getValue() == null ? TradeFilter.ALL : tradeSelector.getValue();
         SourceFilter sourceFilter = sourceSelector.getValue() == null ? SourceFilter.ALL : sourceSelector.getValue();
-        SortFilter sortFilter = sortSelector.getValue() == null ? SortFilter.LIST_TIME : sortSelector.getValue();
+        SortFilter sortFilter = selectedSortFilter();
         WheatMarketNetwork.sendToServer(new RequestMarketListC2SPacket(
                 tradeFilter.packetValue,
                 sourceFilter.packetValue,
                 sortFilter.packetValue,
+                sortAscending,
+                ownListingsOnly,
                 searchField.getValue(),
+                resolveLocalizedSearchItemIds(searchField.getValue()),
                 requestedPage,
                 calculateProductsPerPage()
         ));
+    }
+
+    public boolean submitSearchIfSearchFieldFocused() {
+        if (searchField == null || !searchField.isFocused()) {
+            return false;
+        }
+        resetAndRequest();
+        return true;
     }
 
     public void tick() {
@@ -90,6 +130,10 @@ public class WheatMarketHomeUI {
             seenListVersion = WheatMarket.CLIENT_MARKET_LIST_VERSION;
             rebuildMarketList();
         }
+    }
+
+    public void setBalance(double balance) {
+        balanceLabel.setText(Component.translatable("gui.wheatmarket.balance", formatMoney(balance)));
     }
 
     private void bindStaticElements(UI ui) {
@@ -127,6 +171,7 @@ public class WheatMarketHomeUI {
         actionBar.style(style -> style.background(WheatMarketUiTextures.panelTexture()));
         marketPanel.style(style -> style.background(WheatMarketUiTextures.panelTexture()));
         paginationBar.style(style -> style.background(WheatMarketUiTextures.panelTexture()));
+        balanceLabel.style(style -> style.background(WheatMarketUiTextures.paperTexture()));
 
         styleButtonWithFixedHoverIcon(
                 listingButton,
@@ -135,6 +180,7 @@ public class WheatMarketHomeUI {
         );
         styleButton(sortButton, WheatMarketUiTextures.FILTER_ICON_TEXTURE);
         styleIconButton(myItemsButton, WheatMarketUiTextures.playerAvatarTexture(player));
+        installMyItemsOverlay();
         stylePlainButton(searchButton);
         stylePlainButton(refreshButton);
         stylePlainButton(previousButton);
@@ -147,12 +193,12 @@ public class WheatMarketHomeUI {
     }
 
     private void applyLogic() {
-        balanceLabel.setText(Component.translatable("gui.wheatmarket.balance", formatMoney(WheatMarket.CLIENT_BALANCE)));
         balanceLabel.textStyle(style -> style
                 .textAlignVertical(Vertical.CENTER)
                 .textWrap(TextWrap.HIDE)
                 .textColor(0x2B2116)
                 .textShadow(false));
+        setBalance(WheatMarket.CLIENT_BALANCE);
         pageLabel.setText(Component.translatable("gui.wheatmarket.market.page", 1, 1));
 
         tradeSelector.setCandidates(List.of(TradeFilter.ALL, TradeFilter.SELL, TradeFilter.BUY))
@@ -163,7 +209,10 @@ public class WheatMarketHomeUI {
                 .setOnValueChanged(value -> resetAndRequest());
         sortSelector.setCandidates(List.of(SortFilter.LIST_TIME, SortFilter.ITEM_ID, SortFilter.LAST_TRADE))
                 .setSelected(SortFilter.LIST_TIME)
-                .setOnValueChanged(value -> resetAndRequest());
+                .setOnValueChanged(value -> {
+                    sortAscending = (value == null ? SortFilter.LIST_TIME : value).defaultAscending;
+                    resetAndRequest();
+                });
 
         searchField.setText("");
         searchField.textFieldStyle(style -> style
@@ -175,7 +224,10 @@ public class WheatMarketHomeUI {
                 .textShadow(false));
 
         searchButton.setOnClick(event -> resetAndRequest());
-        sortButton.setOnClick(event -> resetAndRequest());
+        listingButton.setOnClick(event -> listingRequestHandler.run());
+        sortButton.setOnClick(event -> toggleSortDirection());
+        myItemsButton.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = myItemsTooltips());
+        myItemsButton.setOnClick(event -> toggleOwnListingsOnly());
         refreshButton.setOnClick(event -> requestCurrentPage());
         previousButton.setOnClick(event -> {
             if (requestedPage > 0) {
@@ -194,6 +246,16 @@ public class WheatMarketHomeUI {
     private void resetAndRequest() {
         requestedPage = 0;
         requestCurrentPage();
+    }
+
+    private void toggleSortDirection() {
+        sortAscending = !sortAscending;
+        resetAndRequest();
+    }
+
+    private void toggleOwnListingsOnly() {
+        ownListingsOnly = !ownListingsOnly;
+        resetAndRequest();
     }
 
     private int calculateProductsPerPage() {
@@ -248,7 +310,8 @@ public class WheatMarketHomeUI {
         }
 
         for (MarketListS2CPacket.MarketItemSummary item : items) {
-            productBoard.addChild(MarketListingCard.create(item, itemStackFromSummary(item)));
+            ItemStack stack = itemStackFromSummary(item);
+            productBoard.addChild(MarketListingCard.create(item, stack, orderRequestHandler));
         }
     }
 
@@ -273,6 +336,23 @@ public class WheatMarketHomeUI {
         );
         button.noText();
         button.addPreIcon(iconTexture);
+    }
+
+    private void installMyItemsOverlay() {
+        myItemsOverlay = new UIElement()
+                .layout(layout -> layout
+                        .positionType(YogaPositionType.ABSOLUTE)
+                        .left(0)
+                        .top(0)
+                        .widthPercent(100)
+                        .heightPercent(100))
+                .style(style -> style
+                        .background(IGuiTexture.dynamic(() -> ownListingsOnly
+                                ? WheatMarketUiTextures.myItemsSelectedOverlayTexture()
+                                : EMPTY_TEXTURE))
+                        .zIndex(5));
+        myItemsOverlay.setAllowHitTest(false);
+        myItemsButton.addChild(myItemsOverlay);
     }
 
     private void styleButtonWithFixedHoverIcon(Button button, String iconTexturePath, String hoveredIconTexturePath) {
@@ -313,6 +393,41 @@ public class WheatMarketHomeUI {
         ItemStack stack = ItemStack.parseOptional(minecraft.level.registryAccess(), item.getItemNBT());
         stack.setCount(1);
         return stack;
+    }
+
+    private List<String> resolveLocalizedSearchItemIds(String searchQuery) {
+        String normalizedQuery = normalizeSearchQuery(searchQuery);
+        if (normalizedQuery.isEmpty()) {
+            return List.of();
+        }
+        return BuiltInRegistries.ITEM.stream()
+                .filter(item -> localizedItemNameMatches(item, normalizedQuery))
+                .map(item -> BuiltInRegistries.ITEM.getKey(item).toString())
+                .limit(MAX_LOCALIZED_SEARCH_IDS)
+                .toList();
+    }
+
+    private boolean localizedItemNameMatches(Item item, String normalizedQuery) {
+        String localizedName = item.getDefaultInstance().getHoverName().getString();
+        return normalizeSearchQuery(localizedName).contains(normalizedQuery);
+    }
+
+    private String normalizeSearchQuery(String value) {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private SortFilter selectedSortFilter() {
+        return sortSelector.getValue() == null ? SortFilter.LIST_TIME : sortSelector.getValue();
+    }
+
+    private HoverTooltips myItemsTooltips() {
+        Component current = Component.translatable(ownListingsOnly
+                ? "gui.wheatmarket.my_items.current_own"
+                : "gui.wheatmarket.my_items.current_all");
+        Component next = Component.translatable(ownListingsOnly
+                ? "gui.wheatmarket.my_items.switch_to_all"
+                : "gui.wheatmarket.my_items.switch_to_own");
+        return HoverTooltips.empty().append(current, next);
     }
 
     private String formatMoney(double value) {
@@ -358,16 +473,18 @@ public class WheatMarketHomeUI {
     }
 
     private enum SortFilter {
-        LIST_TIME("gui.wheatmarket.filter.list_time", 0),
-        ITEM_ID("gui.wheatmarket.filter.item_id", 1),
-        LAST_TRADE("gui.wheatmarket.filter.last_trade", 2);
+        LIST_TIME("gui.wheatmarket.filter.list_time", 0, false),
+        ITEM_ID("gui.wheatmarket.filter.item_id", 1, true),
+        LAST_TRADE("gui.wheatmarket.filter.last_trade", 2, false);
 
         private final String translationKey;
         private final int packetValue;
+        private final boolean defaultAscending;
 
-        SortFilter(String translationKey, int packetValue) {
+        SortFilter(String translationKey, int packetValue, boolean defaultAscending) {
             this.translationKey = translationKey;
             this.packetValue = packetValue;
+            this.defaultAscending = defaultAscending;
         }
 
         @Override

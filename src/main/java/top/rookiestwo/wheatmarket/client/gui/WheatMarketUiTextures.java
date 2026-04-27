@@ -18,6 +18,7 @@ public final class WheatMarketUiTextures {
     public static final String ADD_ICON_TEXTURE = "wheatmarket:textures/gui/add.png";
     public static final String SUBTRACT_ICON_TEXTURE = "wheatmarket:textures/gui/subtract.png";
     public static final String FILTER_ICON_TEXTURE = "wheatmarket:textures/gui/filter_icon.png";
+    public static final String MY_ITEMS_CHECK_TEXTURE = "wheatmarket:textures/gui/my_items_check.png";
 
     private static final String PANEL_SPRITE = "wheatmarket:screen/main_menu/board";
     private static final String PAPER_SPRITE = "wheatmarket:screen/main_menu/paper";
@@ -26,12 +27,14 @@ public final class WheatMarketUiTextures {
     private static final String BUTTON_SPRITE = "wheatmarket:screen/main_menu/button";
     private static final String BUTTON_PRESSED_SPRITE = "wheatmarket:screen/main_menu/button_pressed";
     private static final String TITLE_TEXTURE = "wheatmarket:textures/gui/market_menu_title.png";
+    private static final String COMPLETED_STAMP_TEXTURE = "wheatmarket:textures/gui/completed_stamp.png";
     private static final String AVATAR_PLACEHOLDER_TEXTURE = "minecraft:textures/block/grass_block_top.png";
 
     private static final int PAPER_FRAME_COLOR = 0x7F5C4024;
     private static final int ROOT_BG_COLOR = 0xFFA25A1F;
     private static final int WRINKLED_PAPER_BORDER = 4;
     private static final int SEARCH_FOCUS_BORDER_COLOR = 0x995A4024;
+    private static final int SELECTED_OVERLAY_COLOR = 0x66000000;
 
     private WheatMarketUiTextures() {
     }
@@ -100,7 +103,21 @@ public final class WheatMarketUiTextures {
         return avatarPlaceholderTexture();
     }
 
+    public static IGuiTexture myItemsSelectedOverlayTexture() {
+        return GuiTextureGroup.of(
+                new ColorRectTexture(SELECTED_OVERLAY_COLOR),
+                SpriteTexture.of(MY_ITEMS_CHECK_TEXTURE).scale(0.72F)
+        );
+    }
+
     public static IGuiTexture titleTexture() {
         return SpriteTexture.of(TITLE_TEXTURE).setSprite(0, 0, 256, 32);
+    }
+
+    public static IGuiTexture completedStampTexture(int alpha, float scale, float rotation) {
+        return SpriteTexture.of(COMPLETED_STAMP_TEXTURE)
+                .setColor((alpha << 24) | 0x00FFFFFF)
+                .scale(scale)
+                .rotate(rotation);
     }
 }

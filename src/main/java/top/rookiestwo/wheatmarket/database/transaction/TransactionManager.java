@@ -25,6 +25,10 @@ public class TransactionManager {
         }, executor);
     }
 
+    public <T> T executeSync(TransactionCallback<T> callback) throws Exception {
+        return execute(callback);
+    }
+
     private <T> T execute(TransactionCallback<T> callback) throws Exception {
         boolean previousAutoCommit = connection.getAutoCommit();
         connection.setAutoCommit(false);

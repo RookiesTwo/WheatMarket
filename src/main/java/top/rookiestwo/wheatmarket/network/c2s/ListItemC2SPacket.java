@@ -9,6 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.database.entities.MarketItem;
+import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
 import top.rookiestwo.wheatmarket.network.WheatMarketNetwork;
 import top.rookiestwo.wheatmarket.network.s2c.OperationResultS2CPacket;
 
@@ -18,6 +19,7 @@ import java.util.UUID;
 public class ListItemC2SPacket implements CustomPacketPayload {
     public static final Type<ListItemC2SPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "list_item"));
     public static final StreamCodec<FriendlyByteBuf, ListItemC2SPacket> STREAM_CODEC = CustomPacketPayload.codec(ListItemC2SPacket::encode, ListItemC2SPacket::new);
+    private static final int MAX_BUY_ORDER_AMOUNT = 999;
 
     private int slotIndex;
     private int amount;
@@ -27,6 +29,13 @@ public class ListItemC2SPacket implements CustomPacketPayload {
     private boolean ifInfinite;
     private int cooldownAmount;
     private int cooldownTimeInMinutes;
+
+    public ListItemC2SPacket(int amount, double price, boolean ifSell,
+                             boolean ifAdmin, boolean ifInfinite,
+                             int cooldownAmount, int cooldownTimeInMinutes) {
+        this(WheatMarketMenu.ITEM_SELECTION_SLOT_INDEX, amount, price, ifSell, ifAdmin, ifInfinite,
+                cooldownAmount, cooldownTimeInMinutes);
+    }
 
     public ListItemC2SPacket(int slotIndex, int amount, double price, boolean ifSell,
                              boolean ifAdmin, boolean ifInfinite,
@@ -72,6 +81,11 @@ public class ListItemC2SPacket implements CustomPacketPayload {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
             if (WheatMarket.DATABASE == null) return;
+            if (!(player.containerMenu instanceof WheatMarketMenu wheatMarketMenu)) {
+                WheatMarketNetwork.sendToPlayer(player,
+                        new OperationResultS2CPacket(false, "gui.wheatmarket.operation.failed"));
+                return;
+            }
 
             if (ifAdmin && !player.hasPermissions(2)) {
                 WheatMarketNetwork.sendToPlayer(player,
@@ -97,20 +111,26 @@ public class ListItemC2SPacket implements CustomPacketPayload {
                 return;
             }
 
-            ItemStack stackInSlot = player.getInventory().getItem(slotIndex);
-            if (stackInSlot.isEmpty()) {
+            if (!ifSell && amount > MAX_BUY_ORDER_AMOUNT) {
                 WheatMarketNetwork.sendToPlayer(player,
-                        new OperationResultS2CPacket(false, "gui.wheatmarket.operation.slot_empty"));
+                        new OperationResultS2CPacket(false, "gui.wheatmarket.operation.invalid_amount"));
                 return;
             }
 
-            if (stackInSlot.getCount() < amount && !ifAdmin) {
+            ItemStack selectedStack = wheatMarketMenu.getSelectedItem();
+            if (selectedStack.isEmpty()) {
+                WheatMarketNetwork.sendToPlayer(player,
+                        new OperationResultS2CPacket(false, "gui.wheatmarket.operation.no_selected_item"));
+                return;
+            }
+
+            if (ifSell && !ifAdmin && selectedStack.getCount() < amount) {
                 WheatMarketNetwork.sendToPlayer(player,
                         new OperationResultS2CPacket(false, "gui.wheatmarket.operation.insufficient_items"));
                 return;
             }
 
-            ItemStack listingStack = stackInSlot.copy();
+            ItemStack listingStack = selectedStack.copy();
             listingStack.setCount(1);
 
             MarketItem marketItem = new MarketItem();
@@ -119,7 +139,8 @@ public class ListItemC2SPacket implements CustomPacketPayload {
             marketItem.setItemNBTCompound((net.minecraft.nbt.CompoundTag) listingStack.save(player.server.registryAccess()));
             marketItem.setSellerID(player.getUUID());
             marketItem.setPrice(price);
-            marketItem.setAmount(ifInfinite ? Integer.MAX_VALUE : amount);
+            marketItem.setAmount(amount);
+            marketItem.setIfInfinite(ifInfinite);
             marketItem.setListingTime(new Timestamp(System.currentTimeMillis()));
             marketItem.setIfAdmin(ifAdmin);
             marketItem.setIfSell(ifSell);
@@ -135,18 +156,15 @@ public class ListItemC2SPacket implements CustomPacketPayload {
                             return;
                         }
 
-                        if (!ifAdmin) {
-                            ItemStack currentStack = player.getInventory().getItem(slotIndex);
-                            if (!ItemStack.isSameItemSameComponents(currentStack, listingStack) || currentStack.getCount() < amount) {
+                        if (ifSell && !ifAdmin) {
+                            if (!wheatMarketMenu.consumeSelectedItemsForListing(listingStack, amount)) {
                                 WheatMarket.DATABASE.getMarketService().delist(player.getUUID(), false, marketItem.getMarketItemID());
                                 WheatMarketNetwork.sendToPlayer(player,
                                         new OperationResultS2CPacket(false, "gui.wheatmarket.operation.insufficient_items"));
                                 return;
                             }
-                            currentStack.shrink(amount);
-                            if (currentStack.isEmpty()) {
-                                player.getInventory().setItem(slotIndex, ItemStack.EMPTY);
-                            }
+                        } else if (!ifSell) {
+                            wheatMarketMenu.clearPreservedSampleSelection(listingStack);
                         }
 
                         WheatMarketNetwork.sendToPlayer(player,

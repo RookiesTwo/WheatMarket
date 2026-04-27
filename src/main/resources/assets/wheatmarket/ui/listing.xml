@@ -11,13 +11,13 @@
         justify-content: center;
         gap-all: 6;
         padding-all: 6;
-        overflow: hidden;
+        overflow: visible;
         }
 
         #player-column {
-        width: 18%;
-        min-width: 56;
-        max-width: 82;
+        width: 26%;
+        min-width: 84;
+        max-width: 170;
         height: 100%;
         flex-direction: column;
         align-items: center;
@@ -48,19 +48,19 @@
         #listing-paper {
         width: 0;
         flex: 1;
-        min-width: 200;
-        max-width: 340;
+        min-width: 190;
+        max-width: 280;
         height: 100%;
-        min-height: 208;
-        max-height: 274;
+        min-height: 240;
+        max-height: 330;
         flex-direction: column;
         align-items: center;
         gap-all: 5;
         padding-left: 12;
         padding-right: 12;
-        padding-top: 8;
-        padding-bottom: 9;
-        overflow: hidden;
+        padding-top: 22;
+        padding-bottom: 23;
+        overflow: visible;
         }
 
         #listing-title {
@@ -180,6 +180,18 @@
         flex-shrink: 0;
         }
 
+        #quantity-caption {
+        width: 34%;
+        min-width: 34;
+        max-width: 42;
+        height: 22;
+        horizontal-align: RIGHT;
+        vertical-align: CENTER;
+        text-wrap: HIDE;
+        text-shadow: false;
+        flex-shrink: 0;
+        }
+
         #listing-type-selector {
         width: 0;
         flex: 1;
@@ -207,10 +219,9 @@
         }
 
         #quantity-controls {
-        width: 0;
-        flex: 1;
-        min-width: 54;
-        max-width: 76;
+        width: 62;
+        min-width: 62;
+        max-width: 68;
         height: 22;
         flex-direction: row;
         align-items: center;
@@ -220,19 +231,18 @@
         }
 
         .quantity-button {
-        width: 18;
+        width: 14;
         height: 22;
         flex-shrink: 0;
         }
 
         #quantity-field {
-        width: 0;
-        flex: 1;
-        min-width: 18;
-        max-width: 54;
+        width: 26;
+        min-width: 26;
+        max-width: 36;
         height: 22;
-        padding-left: 7;
-        padding-right: 7;
+        padding-left: 2;
+        padding-right: 2;
         text-color: #19140D;
         cursor-color: #19140D;
         error-color: #A33629;
@@ -290,8 +300,19 @@
         flex-shrink: 0;
         }
 
+        #action-column {
+        width: 26%;
+        min-width: 84;
+        max-width: 170;
+        height: 100%;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 1;
+        overflow: hidden;
+        }
+
         #cancel-button {
-        width: 22%;
+        width: 96;
         min-width: 64;
         max-width: 96;
         height: 76;
@@ -340,6 +361,8 @@
                 <label id="feedback-label"/>
             </element>
         </element>
-        <button id="cancel-button" text="gui.wheatmarket.confirm.cancel"/>
+        <element id="action-column">
+            <button id="cancel-button" text="gui.wheatmarket.confirm.cancel"/>
+        </element>
     </root>
 </ldlib2-ui>

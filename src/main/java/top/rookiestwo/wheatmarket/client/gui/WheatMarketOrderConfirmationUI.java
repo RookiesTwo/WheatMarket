@@ -186,8 +186,8 @@ public class WheatMarketOrderConfirmationUI {
         cancelButton = require(ui, "cancel-button", Button.class);
         quantityField = require(ui, "quantity-field", TextField.class);
 
-        root.style(style -> style.background(WheatMarketUiTextures.rootBackground()));
-        orderPaper.style(style -> style.background(WheatMarketUiTextures.paperTexture()));
+        root.style(style -> style.background(WheatMarketUiTextures.tradingBackgroundTexture()));
+        orderPaper.style(style -> style.background(WheatMarketUiTextures.tradingPaperTexture()));
         stampOverlay.setAllowHitTest(false);
         stampOverlay.style(style -> style
                 .background(IGuiTexture.dynamic(this::buildStampOverlay))

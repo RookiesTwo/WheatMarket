@@ -22,11 +22,13 @@ public final class WheatMarketUiTextures {
 
     private static final String PANEL_SPRITE = "wheatmarket:screen/main_menu/board";
     private static final String PAPER_SPRITE = "wheatmarket:screen/main_menu/paper";
+    private static final String TRADING_PAPER_SPRITE = "wheatmarket:screen/main_menu/paper_2";
     private static final String WRINKLED_PAPER_TEXTURE_PREFIX = "wheatmarket:textures/gui/paper_with_wrinkles_";
     private static final String WRINKLED_PAPER_TEXTURE_SUFFIX = ".png";
     private static final String BUTTON_SPRITE = "wheatmarket:screen/main_menu/button";
     private static final String BUTTON_PRESSED_SPRITE = "wheatmarket:screen/main_menu/button_pressed";
     private static final String TITLE_TEXTURE = "wheatmarket:textures/gui/market_menu_title.png";
+    private static final String TRADING_BACKGROUND_TEXTURE = "wheatmarket:textures/gui/trading_background.png";
     private static final String COMPLETED_STAMP_TEXTURE = "wheatmarket:textures/gui/completed_stamp.png";
     private static final String AVATAR_PLACEHOLDER_TEXTURE = "minecraft:textures/block/grass_block_top.png";
 
@@ -43,6 +45,11 @@ public final class WheatMarketUiTextures {
         return new ColorRectTexture(ROOT_BG_COLOR);
     }
 
+    public static IGuiTexture tradingBackgroundTexture() {
+        return SpriteTexture.of(TRADING_BACKGROUND_TEXTURE)
+                .setWrapMode(SpriteTexture.WrapMode.REPEAT);
+    }
+
     public static IGuiTexture panelTexture() {
         return VanillaSpriteTexture.of(PANEL_SPRITE);
     }
@@ -52,6 +59,10 @@ public final class WheatMarketUiTextures {
                 VanillaSpriteTexture.of(PAPER_SPRITE),
                 new ColorBorderTexture(-1, PAPER_FRAME_COLOR)
         );
+    }
+
+    public static IGuiTexture tradingPaperTexture() {
+        return VanillaSpriteTexture.of(TRADING_PAPER_SPRITE);
     }
 
     public static IGuiTexture cardTexture() {

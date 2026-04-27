@@ -83,7 +83,7 @@
   "gui.wheatmarket.listing.select_item": "选择物品",
   "gui.wheatmarket.listing.type_label": "类型：",
   "gui.wheatmarket.listing.price_label": "单价：",
-  "gui.wheatmarket.listing.buy_quantity_label": "收购数量：",
+  "gui.wheatmarket.listing.buy_quantity_label": "数量：",
   "gui.wheatmarket.listing.price_placeholder": "输入单价",
   "gui.wheatmarket.listing.expiry": "有效期：%1$s 天",
   "gui.wheatmarket.listing.total": "预计总价：%1$s",

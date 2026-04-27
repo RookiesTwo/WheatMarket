@@ -284,7 +284,7 @@
         }
 
         #signature-label {
-        position-type: absolute;
+        position: absolute;
         width: 1;
         height: 1;
         horizontal-align: CENTER;
@@ -294,7 +294,7 @@
         }
 
         #stamp-overlay {
-        position-type: absolute;
+        position: absolute;
         width: 1;
         height: 1;
         }

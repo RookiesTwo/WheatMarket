@@ -67,38 +67,17 @@ public class WheatMarketMenu extends AbstractContainerMenu {
             if (!slot.mayPickup(player)) {
                 return ItemStack.EMPTY;
             }
-            if (stockEditActive) {
-                int moveAmount = Math.min(stack.getCount(), normalMaxStackSize(stack));
-                ItemStack movingStack = stack.copy();
-                movingStack.setCount(moveAmount);
-                if (moveItemStackTo(movingStack, PLAYER_INVENTORY_SLOT_START, PLAYER_INVENTORY_SLOT_END, true)) {
-                    int moved = moveAmount - movingStack.getCount();
-                    if (moved <= 0) {
-                        return ItemStack.EMPTY;
-                    }
-                    shrinkStockEdit(moved);
-                    return originalStack;
-                }
-                return ItemStack.EMPTY;
-            }
-            if (moveItemStackTo(stack, PLAYER_INVENTORY_SLOT_START, PLAYER_INVENTORY_SLOT_END, true)) {
-                if (stack.isEmpty()) {
-                    slot.set(ItemStack.EMPTY);
-                    if (!stockEditActive) {
-                        itemSelectionContainsRealItems = false;
-                    }
-                } else {
-                    slot.setChanged();
-                }
-                return originalStack;
-            }
+            quickMoveOneSelectionStackToPlayer(stack, stockEditActive);
+            // Vanilla QUICK_MOVE repeats while the returned stack still matches the source slot.
             return ItemStack.EMPTY;
         }
 
         if (stockEditActive) {
-            if (!moveItemStackTo(stack, ITEM_SELECTION_SLOT_INDEX, ITEM_SELECTION_SLOT_INDEX + 1, false)) {
+            int moved = addToStockEdit(stack, stack.getCount());
+            if (moved <= 0) {
                 return ItemStack.EMPTY;
             }
+            stack.shrink(moved);
             if (stack.isEmpty()) {
                 slot.set(ItemStack.EMPTY);
             } else {
@@ -713,6 +692,26 @@ public class WheatMarketMenu extends AbstractContainerMenu {
 
     private int normalMaxStackSize(ItemStack stack) {
         return Math.max(1, Math.min(stack.getMaxStackSize(), ITEM_SELECTION_MAX_AMOUNT));
+    }
+
+    private boolean quickMoveOneSelectionStackToPlayer(ItemStack selected, boolean stockEdit) {
+        int moveAmount = Math.min(selected.getCount(), normalMaxStackSize(selected));
+        ItemStack movingStack = selected.copy();
+        movingStack.setCount(moveAmount);
+        if (!moveItemStackTo(movingStack, PLAYER_INVENTORY_SLOT_START, PLAYER_INVENTORY_SLOT_END, true)) {
+            return false;
+        }
+
+        int moved = moveAmount - movingStack.getCount();
+        if (moved <= 0) {
+            return false;
+        }
+        if (stockEdit) {
+            shrinkStockEdit(moved);
+        } else {
+            shrinkSelection(moved);
+        }
+        return true;
     }
 
     private void returnOrClearSelection(Player player) {

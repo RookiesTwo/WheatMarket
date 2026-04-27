@@ -1,5 +1,6 @@
 package top.rookiestwo.wheatmarket.network.s2c;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -7,6 +8,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import top.rookiestwo.wheatmarket.WheatMarket;
+import top.rookiestwo.wheatmarket.client.gui.WheatMarketMainScreen;
 import top.rookiestwo.wheatmarket.database.entities.MarketItem;
 import top.rookiestwo.wheatmarket.service.MarketService;
 
@@ -21,8 +23,13 @@ public class MarketListS2CPacket implements CustomPacketPayload {
     private List<MarketItemSummary> items;
     private int totalPages;
     private int currentPage;
+    private double balance;
 
     public MarketListS2CPacket(List<MarketService.MarketListEntry> marketItems, int totalPages, int currentPage) {
+        this(marketItems, totalPages, currentPage, 0.0);
+    }
+
+    public MarketListS2CPacket(List<MarketService.MarketListEntry> marketItems, int totalPages, int currentPage, double balance) {
         this.items = new ArrayList<>();
         for (MarketService.MarketListEntry entry : marketItems) {
             MarketItem item = entry.item();
@@ -43,6 +50,7 @@ public class MarketListS2CPacket implements CustomPacketPayload {
         }
         this.totalPages = totalPages;
         this.currentPage = currentPage;
+        this.balance = balance;
     }
 
     public MarketListS2CPacket(FriendlyByteBuf buf) {
@@ -53,6 +61,7 @@ public class MarketListS2CPacket implements CustomPacketPayload {
         }
         this.totalPages = buf.readVarInt();
         this.currentPage = buf.readVarInt();
+        this.balance = buf.readDouble();
     }
 
     public void encode(FriendlyByteBuf buf) {
@@ -62,6 +71,7 @@ public class MarketListS2CPacket implements CustomPacketPayload {
         }
         buf.writeVarInt(totalPages);
         buf.writeVarInt(currentPage);
+        buf.writeDouble(balance);
     }
 
     @Override
@@ -74,6 +84,10 @@ public class MarketListS2CPacket implements CustomPacketPayload {
             WheatMarket.CLIENT_MARKET_LIST = this.items;
             WheatMarket.CLIENT_TOTAL_PAGES = this.totalPages;
             WheatMarket.CLIENT_CURRENT_PAGE = this.currentPage;
+            WheatMarket.CLIENT_BALANCE = this.balance;
+            if (Minecraft.getInstance().screen instanceof WheatMarketMainScreen mainScreen) {
+                mainScreen.handleBalanceUpdate(this.balance);
+            }
             WheatMarket.CLIENT_MARKET_LIST_VERSION++;
         }).exceptionally(e -> {
             WheatMarket.LOGGER.error("Failed to handle market list packet.", e);
@@ -164,16 +178,45 @@ public class MarketListS2CPacket implements CustomPacketPayload {
             buf.writeVarInt(cooldownTimeInMinutes);
         }
 
-        public UUID getMarketItemID() { return marketItemID; }
-        public CompoundTag getItemNBT() { return itemNBT; }
-        public double getPrice() { return price; }
-        public int getAmount() { return amount; }
-        public UUID getSellerID() { return sellerID; }
-        public boolean isIfAdmin() { return ifAdmin; }
-        public boolean isIfSell() { return ifSell; }
-        public long getListingTime() { return listingTime; }
-        public long getLastTradeTime() { return lastTradeTime; }
-        public boolean isHasCooldown() { return hasCooldown; }
+        public UUID getMarketItemID() {
+            return marketItemID;
+        }
+
+        public CompoundTag getItemNBT() {
+            return itemNBT;
+        }
+
+        public double getPrice() {
+            return price;
+        }
+
+        public int getAmount() {
+            return amount;
+        }
+
+        public UUID getSellerID() {
+            return sellerID;
+        }
+
+        public boolean isIfAdmin() {
+            return ifAdmin;
+        }
+
+        public boolean isIfSell() {
+            return ifSell;
+        }
+
+        public long getListingTime() {
+            return listingTime;
+        }
+
+        public long getLastTradeTime() {
+            return lastTradeTime;
+        }
+
+        public boolean isHasCooldown() {
+            return hasCooldown;
+        }
 
         public int getCooldownAmount() {
             return cooldownAmount;

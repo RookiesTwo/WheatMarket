@@ -83,4 +83,10 @@ public class WheatMarketMainScreen extends AbstractContainerScreen<WheatMarketMe
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
+
+    public void handleBalanceUpdate(double balance) {
+        if (this.homeUI != null) {
+            this.homeUI.setBalance(balance);
+        }
+    }
 }

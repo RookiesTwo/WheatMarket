@@ -49,11 +49,20 @@ public class MarketService {
 
     public ServiceResult<MarketListResult> requestMarketList(UUID buyerId, int tradeType, int itemType, int sortType,
                                                              String searchQuery, int page, int pageSize) {
-        return requestMarketList(buyerId, tradeType, itemType, sortType, searchQuery, List.of(), page, pageSize);
+        return requestMarketList(buyerId, tradeType, itemType, sortType, searchQuery, List.of(),
+                defaultSortAscending(sortType), false, page, pageSize);
     }
 
     public ServiceResult<MarketListResult> requestMarketList(UUID buyerId, int tradeType, int itemType, int sortType,
                                                              String searchQuery, Collection<String> localizedSearchItemIds,
+                                                             int page, int pageSize) {
+        return requestMarketList(buyerId, tradeType, itemType, sortType, searchQuery, localizedSearchItemIds,
+                defaultSortAscending(sortType), false, page, pageSize);
+    }
+
+    public ServiceResult<MarketListResult> requestMarketList(UUID buyerId, int tradeType, int itemType, int sortType,
+                                                             String searchQuery, Collection<String> localizedSearchItemIds,
+                                                             boolean sortAscending, boolean ownListingsOnly,
                                                              int page, int pageSize) {
         int safePageSize = Math.max(MIN_ITEMS_PER_PAGE, Math.min(pageSize, MAX_ITEMS_PER_PAGE));
         String normalizedSearchQuery = normalizeSearchQuery(searchQuery);
@@ -73,22 +82,12 @@ public class MarketService {
                     if (itemType == 2) return !item.getIfAdmin();
                     return true;
                 })
+                .filter(item -> !ownListingsOnly || (buyerId != null && buyerId.equals(item.getSellerID())))
                 .filter(item -> {
                     if (normalizedSearchQuery.isEmpty()) return true;
                     return matchesSearchQuery(item, normalizedSearchQuery, normalizedSearchItemIds);
                 })
-                .sorted((a, b) -> {
-                    switch (sortType) {
-                        case 1:
-                            return a.getItemID().compareToIgnoreCase(b.getItemID());
-                        case 2:
-                            long aTime = a.getLastTradeTime() != null ? a.getLastTradeTime().getTime() : 0;
-                            long bTime = b.getLastTradeTime() != null ? b.getLastTradeTime().getTime() : 0;
-                            return Long.compare(bTime, aTime);
-                        default:
-                            return b.getListingTime().compareTo(a.getListingTime());
-                    }
-                })
+                .sorted((a, b) -> compareMarketItems(a, b, sortType, sortAscending))
                 .collect(Collectors.toList());
 
         int totalPages = Math.max(1, (int) Math.ceil((double) filtered.size() / safePageSize));
@@ -97,10 +96,18 @@ public class MarketService {
         int toIndex = Math.min(fromIndex + safePageSize, filtered.size());
         List<MarketItem> pageItems = filtered.subList(fromIndex, toIndex);
         try {
-            List<MarketListEntry> entries = transactionManager.executeSync(connection -> pageItems.stream()
-                    .map(item -> new MarketListEntry(item, resolveRemainingCooldownAmount(connection, item, buyerId)))
-                    .toList());
-            return ServiceResult.success(new MarketListResult(entries, totalPages, safePage));
+            MarketListPageData pageData = transactionManager.executeSync(connection -> {
+                double balance = 0.0;
+                if (buyerId != null) {
+                    playerInfoRepository.ensureExists(connection, buyerId);
+                    balance = playerInfoRepository.getBalance(connection, buyerId);
+                }
+                List<MarketListEntry> entries = pageItems.stream()
+                        .map(item -> new MarketListEntry(item, resolveRemainingCooldownAmount(connection, item, buyerId)))
+                        .toList();
+                return new MarketListPageData(entries, balance);
+            });
+            return ServiceResult.success(new MarketListResult(pageData.items(), totalPages, safePage, pageData.balance()));
         } catch (Exception e) {
             WheatMarket.LOGGER.error("Failed to build market list.", e);
             return ServiceResult.failure("gui.wheatmarket.operation.failed");
@@ -392,6 +399,31 @@ public class MarketService {
         return itemId.contains(normalizedSearchQuery) || localizedSearchItemIds.contains(itemId);
     }
 
+    private int compareMarketItems(MarketItem a, MarketItem b, int sortType, boolean sortAscending) {
+        int comparison = switch (sortType) {
+            case 1 -> safeItemId(a).compareToIgnoreCase(safeItemId(b));
+            case 2 -> Long.compare(safeLastTradeTime(a), safeLastTradeTime(b));
+            default -> Long.compare(safeListingTime(a), safeListingTime(b));
+        };
+        return sortAscending ? comparison : -comparison;
+    }
+
+    private boolean defaultSortAscending(int sortType) {
+        return sortType == 1;
+    }
+
+    private String safeItemId(MarketItem item) {
+        return item.getItemID() == null ? "" : item.getItemID();
+    }
+
+    private long safeListingTime(MarketItem item) {
+        return item.getListingTime() == null ? 0L : item.getListingTime().getTime();
+    }
+
+    private long safeLastTradeTime(MarketItem item) {
+        return item.getLastTradeTime() == null ? 0L : item.getLastTradeTime().getTime();
+    }
+
     private Set<String> normalizeSearchItemIds(Collection<String> itemIds) {
         if (itemIds == null || itemIds.isEmpty()) {
             return Set.of();
@@ -423,10 +455,13 @@ public class MarketService {
         ServiceResult<T> apply(MarketItem item);
     }
 
-    public record MarketListResult(List<MarketListEntry> items, int totalPages, int currentPage) {
+    public record MarketListResult(List<MarketListEntry> items, int totalPages, int currentPage, double balance) {
     }
 
     public record MarketListEntry(MarketItem item, int remainingCooldownAmount) {
+    }
+
+    private record MarketListPageData(List<MarketListEntry> items, double balance) {
     }
 
     public record PurchaseResult(CompoundTag itemNbt, int amount, double newBalance,

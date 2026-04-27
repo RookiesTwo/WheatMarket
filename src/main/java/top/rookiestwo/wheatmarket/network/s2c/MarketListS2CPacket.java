@@ -38,6 +38,7 @@ public class MarketListS2CPacket implements CustomPacketPayload {
                     item.getItemNBTCompound(),
                     item.getPrice(),
                     item.getAmount(),
+                    item.isInfinite(),
                     item.getSellerID(),
                     item.getIfAdmin(),
                     item.getIfSell(),
@@ -112,6 +113,7 @@ public class MarketListS2CPacket implements CustomPacketPayload {
         private final CompoundTag itemNBT;
         private final double price;
         private final int amount;
+        private final boolean ifInfinite;
         private final UUID sellerID;
         private final boolean ifAdmin;
         private final boolean ifSell;
@@ -124,11 +126,11 @@ public class MarketListS2CPacket implements CustomPacketPayload {
         public MarketItemSummary(UUID marketItemID, CompoundTag itemNBT, double price, int amount,
                                  UUID sellerID, boolean ifAdmin, boolean ifSell,
                                  long listingTime, long lastTradeTime, boolean hasCooldown) {
-            this(marketItemID, itemNBT, price, amount, sellerID, ifAdmin, ifSell, listingTime, lastTradeTime,
+            this(marketItemID, itemNBT, price, amount, false, sellerID, ifAdmin, ifSell, listingTime, lastTradeTime,
                     hasCooldown, 0, 0);
         }
 
-        public MarketItemSummary(UUID marketItemID, CompoundTag itemNBT, double price, int amount,
+        public MarketItemSummary(UUID marketItemID, CompoundTag itemNBT, double price, int amount, boolean ifInfinite,
                                  UUID sellerID, boolean ifAdmin, boolean ifSell,
                                  long listingTime, long lastTradeTime, boolean hasCooldown,
                                  int cooldownAmount, int cooldownTimeInMinutes) {
@@ -136,6 +138,7 @@ public class MarketListS2CPacket implements CustomPacketPayload {
             this.itemNBT = itemNBT;
             this.price = price;
             this.amount = amount;
+            this.ifInfinite = ifInfinite;
             this.sellerID = sellerID;
             this.ifAdmin = ifAdmin;
             this.ifSell = ifSell;
@@ -151,6 +154,7 @@ public class MarketListS2CPacket implements CustomPacketPayload {
             CompoundTag nbt = buf.readNbt();
             double price = buf.readDouble();
             int amount = buf.readVarInt();
+            boolean ifInfinite = buf.readBoolean();
             UUID sellerID = buf.readUUID();
             boolean ifAdmin = buf.readBoolean();
             boolean ifSell = buf.readBoolean();
@@ -159,7 +163,7 @@ public class MarketListS2CPacket implements CustomPacketPayload {
             boolean hasCooldown = buf.readBoolean();
             int cooldownAmount = buf.readVarInt();
             int cooldownTimeInMinutes = buf.readVarInt();
-            return new MarketItemSummary(id, nbt, price, amount, sellerID, ifAdmin, ifSell, listingTime, lastTradeTime,
+            return new MarketItemSummary(id, nbt, price, amount, ifInfinite, sellerID, ifAdmin, ifSell, listingTime, lastTradeTime,
                     hasCooldown, cooldownAmount, cooldownTimeInMinutes);
         }
 
@@ -168,6 +172,7 @@ public class MarketListS2CPacket implements CustomPacketPayload {
             buf.writeNbt(itemNBT);
             buf.writeDouble(price);
             buf.writeVarInt(amount);
+            buf.writeBoolean(ifInfinite);
             buf.writeUUID(sellerID);
             buf.writeBoolean(ifAdmin);
             buf.writeBoolean(ifSell);
@@ -192,6 +197,10 @@ public class MarketListS2CPacket implements CustomPacketPayload {
 
         public int getAmount() {
             return amount;
+        }
+
+        public boolean isIfInfinite() {
+            return ifInfinite;
         }
 
         public UUID getSellerID() {

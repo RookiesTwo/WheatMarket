@@ -16,6 +16,7 @@ public class MarketItem {
     private UUID sellerID;
     private Double price;
     private int amount;
+    private Boolean ifInfinite;
     private Timestamp listingTime;
     private Boolean ifAdmin;
     private Boolean ifSell;
@@ -30,7 +31,7 @@ public class MarketItem {
 
     // 完整参数构造函数
     public MarketItem(UUID marketItemID, String itemID, CompoundTag itemNBTCompound, UUID sellerID, Double price,
-                      int amount, Timestamp listingTime, Boolean ifAdmin, Boolean ifSell,
+                      int amount, Boolean ifInfinite, Timestamp listingTime, Boolean ifAdmin, Boolean ifSell,
                       int cooldownAmount, int cooldownTimeInMinutes, long timeToExpire,
                       Timestamp lastTradeTime) {
         this.marketItemID = marketItemID;
@@ -39,6 +40,7 @@ public class MarketItem {
         this.sellerID = sellerID;
         this.price = price;
         this.amount = amount;
+        this.ifInfinite = ifInfinite;
         this.listingTime = listingTime;
         this.ifAdmin = ifAdmin;
         this.ifSell = ifSell;
@@ -55,6 +57,7 @@ public class MarketItem {
         this.sellerID = sellerID;
         this.price = price;
         this.amount = amount;
+        this.ifInfinite = false;
         this.listingTime = new Timestamp(System.currentTimeMillis());
         this.ifAdmin = ifAdmin;
         this.ifSell = true;
@@ -103,6 +106,18 @@ public class MarketItem {
 
     public void setAmount(int amount) {
         this.amount = amount;
+    }
+
+    public Boolean getIfInfinite() {
+        return ifInfinite;
+    }
+
+    public void setIfInfinite(Boolean ifInfinite) {
+        this.ifInfinite = ifInfinite;
+    }
+
+    public boolean isInfinite() {
+        return Boolean.TRUE.equals(ifInfinite);
     }
 
     public Timestamp getListingTime() {
@@ -199,17 +214,19 @@ public class MarketItem {
      * 检查商品是否可用（在售且未过期）
      */
     public boolean isAvailable() {
-        return ifSell && !isExpired() && amount > 0;
+        return Boolean.TRUE.equals(ifSell) && !isExpired() && (isInfinite() || amount > 0);
     }
 
     /**
      * 减少商品数量
      */
     public boolean reduceAmount(int reduceBy) {
-        if (reduceBy <= 0 || reduceBy > amount) {
+        if (reduceBy <= 0 || (!isInfinite() && reduceBy > amount)) {
             return false;
         }
-        this.amount -= reduceBy;
+        if (!isInfinite()) {
+            this.amount -= reduceBy;
+        }
         this.lastTradeTime = new Timestamp(System.currentTimeMillis());
         return true;
     }
@@ -223,6 +240,7 @@ public class MarketItem {
                 ", sellerID=" + sellerID +
                 ", price=" + price +
                 ", amount=" + amount +
+                ", ifInfinite=" + ifInfinite +
                 ", listingTime=" + listingTime +
                 ", ifAdmin=" + ifAdmin +
                 ", ifSell=" + ifSell +

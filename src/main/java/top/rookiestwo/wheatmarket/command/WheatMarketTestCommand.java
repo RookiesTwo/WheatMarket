@@ -239,7 +239,21 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
                 .thenCompose(ignored -> marketService.buyItem(TEST_BUYER, TEST_MARKET_ITEM, 1)
                         .thenAccept(result -> report.expectFailure("market: reject insufficient balance", result, "gui.wheatmarket.operation.insufficient_balance")))
                 .thenCompose(ignored -> marketService.delist(TEST_SELLER, true, TEST_MARKET_ITEM)
-                        .thenAccept(result -> report.expectSuccess("market: cleanup after test", result)));
+                        .thenAccept(result -> report.expectSuccess("market: cleanup after finite stock test", result)))
+                .thenCompose(ignored -> economyService.setBalance(TEST_BUYER, 100.0)
+                        .thenAccept(result -> report.expectSuccess("market: set buyer balance for infinite stock", result)))
+                .thenCompose(ignored -> marketService.listItem(createInfiniteTestMarketItem(player))
+                        .thenAccept(result -> report.expectSuccess("market: list infinite test item", result)))
+                .thenCompose(ignored -> marketService.buyItem(TEST_BUYER, TEST_MARKET_ITEM, 1)
+                        .thenAccept(result -> {
+                            report.expectSuccess("market: buy infinite item", result);
+                            if (result.isSuccess()) {
+                                report.expectTrue("market: infinite flag retained", result.getValue().updatedItem().isInfinite());
+                                report.expectEquals("market: infinite stock amount unchanged", 1, result.getValue().updatedItem().getAmount());
+                            }
+                        }))
+                .thenCompose(ignored -> marketService.delist(TEST_SELLER, true, TEST_MARKET_ITEM)
+                        .thenAccept(result -> report.expectSuccess("market: cleanup after infinite stock test", result)));
 
         test.whenComplete((ignored, throwable) -> player.server.execute(() -> {
             if (throwable != null) {
@@ -265,6 +279,7 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
         item.setSellerID(TEST_SELLER);
         item.setPrice(price);
         item.setAmount(1);
+        item.setIfInfinite(false);
         item.setListingTime(new Timestamp(System.currentTimeMillis()));
         item.setIfAdmin(false);
         item.setIfSell(true);
@@ -272,6 +287,12 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
         item.setCooldownTimeInMinutes(0);
         item.setTimeToExpire(0);
         item.setLastTradeTime(null);
+        return item;
+    }
+
+    private MarketItem createInfiniteTestMarketItem(ServerPlayer player) {
+        MarketItem item = createTestMarketItem(player);
+        item.setIfInfinite(true);
         return item;
     }
 
@@ -288,6 +309,7 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
         item.setSellerID(player.getUUID());
         item.setPrice(price);
         item.setAmount(1);
+        item.setIfInfinite(false);
         item.setListingTime(new Timestamp(System.currentTimeMillis() - index));
         item.setIfAdmin(false);
         item.setIfSell(random.nextBoolean());
@@ -344,6 +366,7 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
         item.setSellerID(sellerId);
         item.setPrice(price);
         item.setAmount(1);
+        item.setIfInfinite(false);
         item.setListingTime(new Timestamp(System.currentTimeMillis() - listingOffset));
         item.setIfAdmin(ifAdmin);
         item.setIfSell(ifSell);
@@ -401,6 +424,14 @@ public class WheatMarketTestCommand extends BaseCommand implements CommandInterf
                 passed++;
             } else {
                 fail(name + " expected " + expected + ", got " + actual);
+            }
+        }
+
+        void expectTrue(String name, boolean actual) {
+            if (actual) {
+                passed++;
+            } else {
+                fail(name + " expected true, got false");
             }
         }
 

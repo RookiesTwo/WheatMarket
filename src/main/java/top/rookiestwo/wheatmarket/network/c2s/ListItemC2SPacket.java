@@ -119,7 +119,8 @@ public class ListItemC2SPacket implements CustomPacketPayload {
             marketItem.setItemNBTCompound((net.minecraft.nbt.CompoundTag) listingStack.save(player.server.registryAccess()));
             marketItem.setSellerID(player.getUUID());
             marketItem.setPrice(price);
-            marketItem.setAmount(ifInfinite ? Integer.MAX_VALUE : amount);
+            marketItem.setAmount(amount);
+            marketItem.setIfInfinite(ifInfinite);
             marketItem.setListingTime(new Timestamp(System.currentTimeMillis()));
             marketItem.setIfAdmin(ifAdmin);
             marketItem.setIfSell(ifSell);

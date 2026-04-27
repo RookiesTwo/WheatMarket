@@ -472,7 +472,7 @@ public class WheatMarketOrderConfirmationUI {
     }
 
     private int calculateMaxQuantity() {
-        int stockLimit = item.getAmount() == Integer.MAX_VALUE
+        int stockLimit = item.isIfInfinite()
                 ? INFINITE_ORDER_QUANTITY_LIMIT
                 : Math.max(1, item.getAmount());
         if (item.getCooldownAmount() > 0) {
@@ -668,7 +668,7 @@ public class WheatMarketOrderConfirmationUI {
     }
 
     private Component formatStock() {
-        if (item.getAmount() == Integer.MAX_VALUE) {
+        if (item.isIfInfinite()) {
             return Component.translatable("gui.wheatmarket.market.infinite");
         }
         return Component.literal(String.valueOf(item.getAmount()));

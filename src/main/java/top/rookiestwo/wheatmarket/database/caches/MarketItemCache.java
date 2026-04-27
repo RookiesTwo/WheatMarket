@@ -5,11 +5,7 @@ import net.minecraft.nbt.TagParser;
 import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.database.entities.MarketItem;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
@@ -56,6 +52,7 @@ public class MarketItemCache {
                 UUID sellerID = UUID.fromString(rs.getString("sellerID"));
                 Double price = rs.getDouble("price");
                 int amount = rs.getInt("amount");
+                Boolean ifInfinite = rs.getBoolean("ifInfinite");
                 Timestamp listingTime = rs.getTimestamp("listingTime");
                 Boolean ifAdmin = rs.getBoolean("ifAdmin");
                 Boolean ifSell = rs.getBoolean("ifSell");
@@ -65,7 +62,7 @@ public class MarketItemCache {
                 Timestamp lastTradeTime = rs.getTimestamp("lastTradeTime");
 
                 MarketItem item = new MarketItem(
-                        marketItemID, itemID, itemNBTCompound, sellerID, price, amount, listingTime,
+                        marketItemID, itemID, itemNBTCompound, sellerID, price, amount, ifInfinite, listingTime,
                         ifAdmin, ifSell, cooldownAmount, cooldownTimeInMinutes,
                         timeToExpire, lastTradeTime
                 );

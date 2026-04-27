@@ -10,7 +10,6 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.network.WheatMarketNetwork;
 import top.rookiestwo.wheatmarket.network.s2c.OperationResultS2CPacket;
-import top.rookiestwo.wheatmarket.service.MarketService;
 
 import java.util.UUID;
 
@@ -224,7 +223,7 @@ public class ManageItemC2SPacket implements CustomPacketPayload {
                         WheatMarketNetwork.sendToPlayer(player, new OperationResultS2CPacket(false, result.getMessageKey(), result.getMessageArgs()));
                         return;
                     }
-                    boolean isInfinite = result.getValue().updatedItem().getAmount() == Integer.MAX_VALUE;
+                    boolean isInfinite = result.getValue().updatedItem().isInfinite();
                     WheatMarketNetwork.sendToPlayer(player,
                             new OperationResultS2CPacket(true, "gui.wheatmarket.operation.toggle_infinite_success",
                                     String.valueOf(isInfinite)));

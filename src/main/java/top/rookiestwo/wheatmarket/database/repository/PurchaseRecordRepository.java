@@ -11,7 +11,7 @@ public class PurchaseRecordRepository {
                 "buyerID VARCHAR(36) NOT NULL," +
                 "lastPurchaseTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
                 "purchasedAmount INT NOT NULL," +
-                "FOREIGN KEY (marketItemID) REFERENCES market_item(MarketItemID)," +
+                "FOREIGN KEY (marketItemID) REFERENCES market_item(MarketItemID) ON DELETE CASCADE," +
                 "FOREIGN KEY (buyerID) REFERENCES player_info(uuid)" +
                 ");";
         try (Statement stmt = connection.createStatement()) {
@@ -42,6 +42,14 @@ public class PurchaseRecordRepository {
             }
         }
         return null;
+    }
+
+    public void deleteByMarketItem(Connection connection, UUID marketItemID) throws SQLException {
+        String sql = "DELETE FROM purchase_record WHERE marketItemID = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, marketItemID.toString());
+            stmt.executeUpdate();
+        }
     }
 
     public int getPurchasedAmountSince(Connection connection, UUID marketItemID, UUID buyerID, Timestamp since) throws SQLException {

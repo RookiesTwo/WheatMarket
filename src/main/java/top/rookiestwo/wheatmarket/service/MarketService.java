@@ -126,7 +126,7 @@ public class MarketService {
             if (!item.getIfSell()) {
                 return ServiceResult.<PurchaseResult>failure("gui.wheatmarket.operation.not_for_sale");
             }
-            if (amount <= 0 || amount > item.getAmount()) {
+            if (amount <= 0 || (!item.isInfinite() && amount > item.getAmount())) {
                 return ServiceResult.<PurchaseResult>failure("gui.wheatmarket.operation.invalid_amount");
             }
             if (!isPositiveMoney(item.getPrice())) {
@@ -166,7 +166,9 @@ public class MarketService {
             }
 
             MarketItem updatedItem = copyOf(item);
-            updatedItem.reduceAmount(amount);
+            if (!updatedItem.reduceAmount(amount)) {
+                return ServiceResult.<PurchaseResult>failure("gui.wheatmarket.operation.invalid_amount");
+            }
             marketItemRepository.update(connection, updatedItem);
             purchaseRecordRepository.insert(connection, UUID.randomUUID(), marketItemID, buyerId, amount);
 
@@ -209,7 +211,13 @@ public class MarketService {
             if (amount <= 0) {
                 return ServiceResult.failure("gui.wheatmarket.operation.invalid_amount");
             }
+            if (item.isInfinite()) {
+                return ServiceResult.failure("gui.wheatmarket.operation.invalid_amount");
+            }
             MarketItem updated = copyOf(item);
+            if (item.getAmount() > Integer.MAX_VALUE - amount) {
+                return ServiceResult.failure("gui.wheatmarket.operation.invalid_amount");
+            }
             updated.setAmount(item.getAmount() + amount);
             return ServiceResult.success(new RestockResult(amount, updated));
         });
@@ -217,7 +225,7 @@ public class MarketService {
 
     public CompletableFuture<ServiceResult<ItemStackResult>> withdraw(UUID actorId, boolean isOp, UUID marketItemID, int amount) {
         return updateExistingItem(actorId, isOp, marketItemID, item -> {
-            if (amount <= 0 || amount > item.getAmount()) {
+            if (amount <= 0 || item.isInfinite() || amount > item.getAmount()) {
                 return ServiceResult.failure("gui.wheatmarket.operation.invalid_amount");
             }
             MarketItem updated = copyOf(item);
@@ -260,7 +268,10 @@ public class MarketService {
                 return ServiceResult.failure("gui.wheatmarket.operation.no_permission");
             }
             MarketItem updated = copyOf(item);
-            updated.setAmount(item.getAmount() == Integer.MAX_VALUE ? 1 : Integer.MAX_VALUE);
+            updated.setIfInfinite(!item.isInfinite());
+            if (!updated.isInfinite() && updated.getAmount() <= 0) {
+                updated.setAmount(1);
+            }
             return ServiceResult.success(new MarketItemResult(updated));
         });
     }
@@ -296,6 +307,7 @@ public class MarketService {
 
             T value = mutationResult.getValue();
             if (value.removeFromCache()) {
+                purchaseRecordRepository.deleteByMarketItem(connection, marketItemID);
                 marketItemRepository.delete(connection, marketItemID);
             } else {
                 marketItemRepository.update(connection, value.updatedItem());
@@ -324,6 +336,7 @@ public class MarketService {
                 item.getSellerID(),
                 item.getPrice(),
                 item.getAmount(),
+                item.getIfInfinite(),
                 item.getListingTime(),
                 item.getIfAdmin(),
                 item.getIfSell(),

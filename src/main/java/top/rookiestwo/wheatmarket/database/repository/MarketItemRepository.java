@@ -3,15 +3,12 @@ package top.rookiestwo.wheatmarket.database.repository;
 import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.database.entities.MarketItem;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.UUID;
 
 public class MarketItemRepository {
+    private static final int LEGACY_INFINITE_AMOUNT = Integer.MAX_VALUE;
+
     public void createTable(Connection connection) throws SQLException {
         String sql = "CREATE TABLE IF NOT EXISTS market_item (" +
                 "MarketItemID VARCHAR(36) PRIMARY KEY," +
@@ -20,6 +17,7 @@ public class MarketItemRepository {
                 "sellerID VARCHAR(36) NOT NULL," +
                 "price DOUBLE NOT NULL," +
                 "amount INT NOT NULL," +
+                "ifInfinite BOOLEAN DEFAULT FALSE," +
                 "listingTime DATETIME DEFAULT CURRENT_TIMESTAMP," +
                 "ifAdmin BOOLEAN DEFAULT FALSE," +
                 "ifSell BOOLEAN DEFAULT TRUE," +
@@ -32,12 +30,20 @@ public class MarketItemRepository {
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(sql);
         }
+        migrateSchema(connection);
+    }
+
+    private void migrateSchema(Connection connection) throws SQLException {
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute("ALTER TABLE market_item ADD COLUMN IF NOT EXISTS ifInfinite BOOLEAN DEFAULT FALSE");
+            stmt.executeUpdate("UPDATE market_item SET ifInfinite = TRUE, amount = 1 WHERE amount = " + LEGACY_INFINITE_AMOUNT);
+        }
     }
 
     public void insert(Connection connection, MarketItem item) throws SQLException {
         String sql = "INSERT INTO market_item (MarketItemID, itemID, itemNBTCompound, sellerID, price, amount, " +
-                "listingTime, ifAdmin, ifSell, cooldownAmount, cooldownTimeInMinutes, timeToExpire, lastTradeTime) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "ifInfinite, listingTime, ifAdmin, ifSell, cooldownAmount, cooldownTimeInMinutes, timeToExpire, lastTradeTime) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             bindMarketItem(stmt, item);
             stmt.executeUpdate();
@@ -46,7 +52,7 @@ public class MarketItemRepository {
 
     public void update(Connection connection, MarketItem item) throws SQLException {
         String sql = "UPDATE market_item SET itemID=?, itemNBTCompound=?, sellerID=?, price=?, amount=?, " +
-                "listingTime=?, ifAdmin=?, ifSell=?, cooldownAmount=?, cooldownTimeInMinutes=?, " +
+                "ifInfinite=?, listingTime=?, ifAdmin=?, ifSell=?, cooldownAmount=?, cooldownTimeInMinutes=?, " +
                 "timeToExpire=?, lastTradeTime=? WHERE MarketItemID=?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, item.getItemID());
@@ -54,14 +60,15 @@ public class MarketItemRepository {
             stmt.setString(3, item.getSellerID().toString());
             stmt.setDouble(4, item.getPrice());
             stmt.setInt(5, item.getAmount());
-            stmt.setTimestamp(6, item.getListingTime());
-            stmt.setBoolean(7, item.getIfAdmin());
-            stmt.setBoolean(8, item.getIfSell());
-            stmt.setInt(9, item.getCooldownAmount());
-            stmt.setInt(10, item.getCooldownTimeInMinutes());
-            stmt.setLong(11, item.getTimeToExpire());
-            stmt.setTimestamp(12, item.getLastTradeTime());
-            stmt.setString(13, item.getMarketItemID().toString());
+            stmt.setBoolean(6, item.isInfinite());
+            stmt.setTimestamp(7, item.getListingTime());
+            stmt.setBoolean(8, item.getIfAdmin());
+            stmt.setBoolean(9, item.getIfSell());
+            stmt.setInt(10, item.getCooldownAmount());
+            stmt.setInt(11, item.getCooldownTimeInMinutes());
+            stmt.setLong(12, item.getTimeToExpire());
+            stmt.setTimestamp(13, item.getLastTradeTime());
+            stmt.setString(14, item.getMarketItemID().toString());
             requireUpdated(stmt.executeUpdate(), "No market item row for " + item.getMarketItemID());
         }
     }
@@ -93,13 +100,14 @@ public class MarketItemRepository {
         stmt.setString(4, item.getSellerID().toString());
         stmt.setDouble(5, item.getPrice());
         stmt.setInt(6, item.getAmount());
-        stmt.setTimestamp(7, item.getListingTime());
-        stmt.setBoolean(8, item.getIfAdmin());
-        stmt.setBoolean(9, item.getIfSell());
-        stmt.setInt(10, item.getCooldownAmount());
-        stmt.setInt(11, item.getCooldownTimeInMinutes());
-        stmt.setLong(12, item.getTimeToExpire());
-        stmt.setTimestamp(13, item.getLastTradeTime());
+        stmt.setBoolean(7, item.isInfinite());
+        stmt.setTimestamp(8, item.getListingTime());
+        stmt.setBoolean(9, item.getIfAdmin());
+        stmt.setBoolean(10, item.getIfSell());
+        stmt.setInt(11, item.getCooldownAmount());
+        stmt.setInt(12, item.getCooldownTimeInMinutes());
+        stmt.setLong(13, item.getTimeToExpire());
+        stmt.setTimestamp(14, item.getLastTradeTime());
     }
 
     private MarketItem resultSetToMarketItem(ResultSet rs) throws SQLException {
@@ -120,6 +128,7 @@ public class MarketItemRepository {
                 UUID.fromString(rs.getString("sellerID")),
                 rs.getDouble("price"),
                 rs.getInt("amount"),
+                rs.getBoolean("ifInfinite"),
                 rs.getTimestamp("listingTime"),
                 rs.getBoolean("ifAdmin"),
                 rs.getBoolean("ifSell"),

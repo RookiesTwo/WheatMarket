@@ -109,6 +109,7 @@ public class WheatMarketOrderConfirmationUI {
     private float signatureCenterY;
     private boolean ownListing;
     private boolean operator;
+    private boolean showManageButton;
 
     public WheatMarketOrderConfirmationUI(MarketListS2CPacket.MarketItemSummary item, ItemStack stack,
                                           Runnable onCancel, Runnable onManage,
@@ -254,6 +255,7 @@ public class WheatMarketOrderConfirmationUI {
         signerName = player.getName().getString();
         ownListing = isOwnListing(player);
         operator = player.hasPermissions(2);
+        showManageButton = operator && !ownListing;
         orderTitle.setText(Component.translatable(item.isIfSell()
                 ? "gui.wheatmarket.confirm.sell_title"
                 : "gui.wheatmarket.confirm.buy_title"));
@@ -269,7 +271,7 @@ public class WheatMarketOrderConfirmationUI {
         feedbackLabel.setText(Component.empty());
         updateConfirmButtonText();
         manageButton.setText(Component.translatable("gui.wheatmarket.confirm.manage"));
-        setShown(manageButton, operator);
+        setShown(manageButton, showManageButton);
         setShown(quantityRow, !ownListing);
 
         populateRestriction(restrictionPanel, restrictionTimeLabel, restrictionAmountLabel);
@@ -450,7 +452,7 @@ public class WheatMarketOrderConfirmationUI {
         decreaseButton.setActive(showDecrease);
         increaseButton.setActive(showIncrease);
         confirmButton.setActive(interactive && (ownListing || maxQuantity > 0));
-        manageButton.setActive(interactive && operator);
+        manageButton.setActive(interactive && showManageButton);
         cancelButton.setActive(interactive);
         quantityField.setActive(interactive && maxQuantity >= 0);
     }

@@ -4,11 +4,10 @@ import com.lowdragmc.lowdraglib2.gui.texture.*;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
-import com.lowdragmc.lowdraglib2.gui.ui.data.Horizontal;
-import com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap;
-import com.lowdragmc.lowdraglib2.gui.ui.data.Vertical;
+import com.lowdragmc.lowdraglib2.gui.ui.data.*;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.ScrollerView;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.TextField;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
 import com.lowdragmc.lowdraglib2.utils.XmlUtils;
@@ -176,6 +175,7 @@ public class WheatMarketItemEditUI {
     private void bindAndPopulate(UI ui, Player player) {
         UIElement root = require(ui, "item-edit-root", UIElement.class);
         UIElement editPaper = require(ui, "item-edit-paper", UIElement.class);
+        ScrollerView editScroller = require(ui, "item-edit-scroll", ScrollerView.class);
         UIElement playerAvatar = require(ui, "player-avatar", UIElement.class);
         UIElement itemPreview = require(ui, "item-preview", UIElement.class);
         UIElement itemIcon = require(ui, "edit-item-icon", UIElement.class);
@@ -211,9 +211,10 @@ public class WheatMarketItemEditUI {
         root.style(style -> style.background(WheatMarketUiTextures.tradingBackgroundTexture()));
         root.addEventListener(UIEvents.MOUSE_DOWN, event -> onRootMouseDown(event.x, event.y), true);
         editPaper.style(style -> style.background(WheatMarketUiTextures.tradingPaperTexture()));
+        configureEditScroller(editScroller);
         playerAvatar.style(style -> style.background(WheatMarketUiTextures.playerAvatarTexture(player)));
         playerBalanceLabel.style(style -> style.background(WheatMarketUiTextures.paperTexture()));
-        itemPreview.style(style -> style.background(new ColorBorderTexture(1, ITEM_PREVIEW_BORDER)));
+        itemPreview.style(style -> style.background(new ColorBorderTexture(-1, ITEM_PREVIEW_BORDER)));
         itemIcon.style(style -> style.background(new ItemStackTexture(stack)));
         itemPreview.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = WheatMarketItemTooltips.forStack(stack));
 
@@ -224,12 +225,12 @@ public class WheatMarketItemEditUI {
         styleLabel(stockLabel, TEXT_COLOR, Horizontal.CENTER);
         styleLabel(listingTimeLabel, TEXT_COLOR, Horizontal.CENTER);
         styleLabel(lastTradeLabel, TEXT_COLOR, Horizontal.CENTER);
-        styleLabel(priceCaption, TEXT_COLOR, Horizontal.RIGHT);
-        styleLabel(stockCaption, TEXT_COLOR, Horizontal.RIGHT);
+        styleFormCaption(priceCaption);
+        styleFormCaption(stockCaption);
         styleLabel(currentStockLabel, TEXT_COLOR, Horizontal.CENTER);
         styleLabel(opTitle, NOTICE_TEXT_COLOR, Horizontal.CENTER);
-        styleLabel(cooldownAmountCaption, TEXT_COLOR, Horizontal.RIGHT);
-        styleLabel(cooldownTimeCaption, TEXT_COLOR, Horizontal.RIGHT);
+        styleFormCaption(cooldownAmountCaption);
+        styleFormCaption(cooldownTimeCaption);
         styleLabel(playerBalanceLabel, TEXT_COLOR, Horizontal.CENTER);
         styleLabel(feedbackLabel, NOTICE_TEXT_COLOR, Horizontal.CENTER);
 
@@ -306,6 +307,24 @@ public class WheatMarketItemEditUI {
             }
         });
         priceField.addEventListener(UIEvents.BLUR, event -> normalizePriceFieldIfBlurred());
+    }
+
+    private void configureEditScroller(ScrollerView scroller) {
+        scroller.scrollerStyle(style -> style
+                .mode(ScrollerMode.VERTICAL)
+                .horizontalScrollDisplay(ScrollDisplay.NEVER)
+                .verticalScrollDisplay(ScrollDisplay.NEVER)
+                .scrollerViewStyle(0.0F)
+                .minScrollPixel(8.0F)
+                .maxScrollPixel(24.0F));
+        scroller.style(style -> style.background(EMPTY_OVERLAY));
+        scroller.viewPort(viewPort -> viewPort
+                .layout(layout -> layout.paddingAll(0.0F))
+                .style(style -> style.background(EMPTY_OVERLAY)));
+        scroller.viewContainer(container -> container.style(style -> style.background(EMPTY_OVERLAY)));
+        scroller.verticalContainer(container -> container.style(style -> style.background(EMPTY_OVERLAY)));
+        scroller.horizontalScroller(horizontalScroller -> horizontalScroller.setDisplay(false));
+        scroller.verticalScroller(verticalScroller -> verticalScroller.setDisplay(false));
     }
 
     private void configureCooldownField(TextField field, boolean amountField) {
@@ -620,6 +639,16 @@ public class WheatMarketItemEditUI {
                 .textShadow(false));
     }
 
+    private void styleFormCaption(Label label) {
+        label.textStyle(style -> style
+                .textAlignHorizontal(Horizontal.RIGHT)
+                .textAlignVertical(Vertical.CENTER)
+                .textWrap(TextWrap.HIDE)
+                .textColor(TEXT_COLOR)
+                .textShadow(false)
+                .adaptiveWidth(true));
+    }
+
     private void styleActionButton(Button button, int baseColor, int hoverColor, int pressedColor) {
         button.buttonStyle(style -> style
                 .baseTexture(buttonTexture(baseColor))
@@ -636,7 +665,7 @@ public class WheatMarketItemEditUI {
     private IGuiTexture buttonTexture(int color) {
         return GuiTextureGroup.of(
                 new ColorRectTexture(color),
-                new ColorBorderTexture(1, BUTTON_BORDER)
+                new ColorBorderTexture(-1, BUTTON_BORDER)
         );
     }
 

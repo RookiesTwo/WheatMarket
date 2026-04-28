@@ -9,21 +9,21 @@
         flex-direction: row;
         align-items: center;
         justify-content: center;
-        gap-all: 6;
-        padding-all: 6;
+        gap-all: 4;
+        padding-all: 4;
         overflow: visible;
         }
 
         #player-column {
-        width: 26%;
-        min-width: 84;
-        max-width: 170;
+        width: 22%;
+        min-width: 68;
+        max-width: 150;
         height: 100%;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap-all: 10;
-        flex-shrink: 0;
+        gap-all: 8;
+        flex-shrink: 1;
         overflow: hidden;
         }
 
@@ -43,23 +43,25 @@
         vertical-align: CENTER;
         text-wrap: HIDE;
         text-shadow: false;
+        padding-left: 6;
+        padding-right: 6;
         }
 
         #item-edit-paper {
         width: 0;
         flex: 1;
-        min-width: 212;
+        min-width: 196;
         max-width: 332;
         height: 100%;
-        min-height: 260;
+        min-height: 240;
         max-height: 350;
         flex-direction: column;
         align-items: center;
-        gap-all: 5;
-        padding-left: 12;
-        padding-right: 12;
-        padding-top: 18;
-        padding-bottom: 15;
+        gap-all: 4;
+        padding-left: 10;
+        padding-right: 10;
+        padding-top: 16;
+        padding-bottom: 13;
         overflow: visible;
         }
 
@@ -75,18 +77,38 @@
         flex-shrink: 0;
         }
 
-        #item-edit-main {
+        #item-edit-scroll {
         width: 100%;
         flex: 1;
         min-height: 0;
+        flex-shrink: 1;
+        overflow: hidden;
+        }
+
+        #item-edit-scroll-content {
+        width: 100%;
+        min-height: 100%;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        gap-all: 5;
+        padding-bottom: 4;
+        overflow: visible;
+        }
+
+        #item-edit-main {
+        width: 100%;
+        height: 164;
+        min-height: 150;
         flex-direction: row;
         gap-all: 6;
+        flex-shrink: 0;
         overflow: hidden;
         }
 
         #item-edit-left {
         width: 42%;
-        min-width: 76;
+        min-width: 68;
         max-width: 138;
         height: 100%;
         flex-direction: column;
@@ -145,7 +167,7 @@
         justify-content: center;
         gap-all: 3;
         padding-left: 2;
-        padding-right: 4;
+        padding-right: 8;
         flex-shrink: 1;
         overflow: hidden;
         }
@@ -167,15 +189,22 @@
         flex-direction: row;
         align-items: center;
         justify-content: center;
-        gap-all: 4;
         flex-shrink: 0;
         overflow: hidden;
         }
 
+        .form-group {
+        max-width: 100%;
+        height: 22;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap-all: 4;
+        flex-shrink: 1;
+        overflow: hidden;
+        }
+
         .form-caption {
-        width: 38%;
-        min-width: 40;
-        max-width: 56;
         height: 22;
         horizontal-align: RIGHT;
         vertical-align: CENTER;
@@ -231,17 +260,9 @@
         overflow: hidden;
         }
 
-        #stock-edit-button {
-        width: 70%;
-        min-width: 74;
-        max-width: 120;
-        height: 22;
-        flex-shrink: 0;
-        }
-
         #op-panel {
         width: 100%;
-        height: 96;
+        height: 120;
         flex-direction: column;
         align-items: center;
         gap-all: 3;
@@ -298,20 +319,20 @@
         }
 
         #action-column {
-        width: 26%;
-        min-width: 84;
-        max-width: 170;
+        width: 22%;
+        min-width: 68;
+        max-width: 150;
         height: 100%;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap-all: 8;
+        gap-all: 6;
         flex-shrink: 1;
         overflow: hidden;
         }
 
         #delist-button {
-        width: 96;
+        width: 100%;
         min-width: 64;
         max-width: 96;
         height: 36;
@@ -319,7 +340,7 @@
         }
 
         #cancel-button {
-        width: 96;
+        width: 100%;
         min-width: 64;
         max-width: 96;
         height: 52;
@@ -333,30 +354,40 @@
         </element>
         <element id="item-edit-paper">
             <label id="item-edit-title"/>
-            <element id="item-edit-main">
-                <element id="item-edit-left">
-                    <label id="owner-label"/>
-                    <element id="item-preview">
-                        <element id="edit-item-icon"/>
-                    </element>
-                    <label id="item-name-label" class="summary-label"/>
-                    <label id="type-label" class="summary-label"/>
-                    <label id="stock-label" class="summary-label"/>
-                </element>
-                <element id="item-edit-right">
-                    <label id="listing-time-label" class="info-label"/>
-                    <label id="last-trade-label" class="info-label"/>
-                    <element id="price-row" class="form-row">
-                        <label id="price-caption" class="form-caption"/>
-                        <text-field id="price-field" class="input-field" value="1.00"/>
-                    </element>
-                    <button id="price-apply-button" class="small-button" text="gui.wheatmarket.edit.apply_price"/>
-                    <element id="stock-row" class="form-row">
-                        <label id="stock-caption" class="form-caption"/>
-                        <label id="current-stock-label"/>
-                    </element>
-                    <element id="stock-buttons-row">
-                        <button id="stock-edit-button" text="gui.wheatmarket.edit.edit_stock"/>
+            <scroller-view id="item-edit-scroll">
+                <element id="item-edit-scroll-content">
+                    <element id="item-edit-main">
+                        <element id="item-edit-left">
+                            <label id="owner-label"/>
+                            <element id="item-preview">
+                                <element id="edit-item-icon"/>
+                            </element>
+                            <label id="item-name-label" class="summary-label"/>
+                            <label id="type-label" class="summary-label"/>
+                            <label id="stock-label" class="summary-label"/>
+                        </element>
+                        <element id="item-edit-right">
+                            <label id="listing-time-label" class="info-label"/>
+                            <label id="last-trade-label" class="info-label"/>
+                            <element id="price-row" class="form-row">
+                                <element class="form-group">
+                                    <label id="price-caption" class="form-caption"/>
+                                    <text-field id="price-field" class="input-field" value="1.00"/>
+                                </element>
+                            </element>
+                            <button id="price-apply-button" class="small-button"
+                                    text="gui.wheatmarket.edit.apply_price"/>
+                            <element id="stock-row" class="form-row">
+                                <element class="form-group">
+                                    <label id="stock-caption" class="form-caption"/>
+                                    <label id="current-stock-label"/>
+                                </element>
+                            </element>
+                            <element id="stock-buttons-row">
+                                <button id="stock-edit-button" class="small-button"
+                                        text="gui.wheatmarket.edit.edit_stock"/>
+                            </element>
+                        </element>
                     </element>
                     <element id="op-panel">
                         <label id="op-title"/>
@@ -365,17 +396,21 @@
                             <button id="toggle-infinite-button" text="gui.wheatmarket.edit.toggle_infinite"/>
                         </element>
                         <element id="cooldown-amount-row" class="form-row">
-                            <label id="cooldown-amount-caption" class="form-caption"/>
-                            <text-field id="cooldown-amount-field" class="input-field" value="0"/>
+                            <element class="form-group">
+                                <label id="cooldown-amount-caption" class="form-caption"/>
+                                <text-field id="cooldown-amount-field" class="input-field" value="0"/>
+                            </element>
                         </element>
                         <element id="cooldown-time-row" class="form-row">
-                            <label id="cooldown-time-caption" class="form-caption"/>
-                            <text-field id="cooldown-time-field" class="input-field" value="0"/>
+                            <element class="form-group">
+                                <label id="cooldown-time-caption" class="form-caption"/>
+                                <text-field id="cooldown-time-field" class="input-field" value="0"/>
+                            </element>
                         </element>
                         <button id="cooldown-apply-button" text="gui.wheatmarket.edit.apply_cooldown"/>
                     </element>
                 </element>
-            </element>
+            </scroller-view>
             <label id="feedback-label"/>
         </element>
         <element id="action-column">

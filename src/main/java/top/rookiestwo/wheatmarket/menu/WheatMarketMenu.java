@@ -442,9 +442,7 @@ public class WheatMarketMenu extends AbstractContainerMenu {
             int requestedPickupAmount = button == 1
                     ? Math.max(1, (selected.getCount() + 1) / 2)
                     : selected.getCount();
-            if (stockEdit) {
-                requestedPickupAmount = Math.min(requestedPickupAmount, normalMaxStackSize(selected));
-            }
+            requestedPickupAmount = Math.min(requestedPickupAmount, normalMaxStackSize(selected));
             int pickupAmount = Math.min(requestedPickupAmount, selected.getCount());
             if (pickupAmount <= 0) {
                 return;
@@ -463,7 +461,7 @@ public class WheatMarketMenu extends AbstractContainerMenu {
 
         if (!selected.isEmpty() && !ItemStack.isSameItemSameComponents(selected, carried)) {
             boolean selectedWasReal = stockEdit || itemSelectionContainsRealItems;
-            if (button == 0 && replaceRealSlot(carried, stockEdit)) {
+            if (button == 0 && canSwapSelectedToCursor(selected, selectedWasReal) && replaceRealSlot(carried, stockEdit)) {
                 setCarried(selectedWasReal ? selected.copy() : ItemStack.EMPTY);
                 broadcastChanges();
             }
@@ -493,6 +491,10 @@ public class WheatMarketMenu extends AbstractContainerMenu {
             itemSelectionContainsRealItems = true;
         }
         return true;
+    }
+
+    private boolean canSwapSelectedToCursor(ItemStack selected, boolean selectedWasReal) {
+        return !selectedWasReal || selected.getCount() <= normalMaxStackSize(selected);
     }
 
     private void setSample(ItemStack stack) {

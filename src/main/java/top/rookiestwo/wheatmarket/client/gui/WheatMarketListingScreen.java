@@ -19,6 +19,10 @@ public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarke
     private WheatMarketListingUI.ListingType listingType;
     private String priceText;
     private int buyQuantity;
+    private boolean ifAdmin;
+    private boolean ifInfinite;
+    private int cooldownAmount;
+    private int cooldownTimeInMinutes;
     private WheatMarketListingUI listingUI;
     private ModularUI modularUI;
     private boolean selectionReleased;
@@ -35,6 +39,13 @@ public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarke
     private WheatMarketListingScreen(WheatMarketMenu menu, Inventory inventory, Component title,
                                      ItemStack stack, int amount, WheatMarketListingUI.ListingType listingType,
                                      String priceText, int buyQuantity) {
+        this(menu, inventory, title, stack, amount, listingType, priceText, buyQuantity, false, false, 0, 0);
+    }
+
+    private WheatMarketListingScreen(WheatMarketMenu menu, Inventory inventory, Component title,
+                                     ItemStack stack, int amount, WheatMarketListingUI.ListingType listingType,
+                                     String priceText, int buyQuantity, boolean ifAdmin, boolean ifInfinite,
+                                     int cooldownAmount, int cooldownTimeInMinutes) {
         super(menu, inventory, title);
         this.inventory = inventory;
         this.stack = stack == null ? ItemStack.EMPTY : stack.copy();
@@ -42,6 +53,10 @@ public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarke
         this.listingType = listingType == null ? WheatMarketListingUI.ListingType.SELL : listingType;
         this.priceText = priceText == null || priceText.isBlank() ? "1.00" : priceText;
         this.buyQuantity = Math.max(1, buyQuantity);
+        this.ifAdmin = ifAdmin;
+        this.ifInfinite = ifAdmin && this.listingType == WheatMarketListingUI.ListingType.SELL && ifInfinite;
+        this.cooldownAmount = Math.max(0, cooldownAmount);
+        this.cooldownTimeInMinutes = Math.max(0, cooldownTimeInMinutes);
     }
 
     @Override
@@ -58,6 +73,10 @@ public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarke
                 this.listingType,
                 this.priceText,
                 this.buyQuantity,
+                this.ifAdmin,
+                this.ifInfinite,
+                this.cooldownAmount,
+                this.cooldownTimeInMinutes,
                 this::openItemSelection,
                 this::submitListing,
                 this::handleListingTypeChanged,
@@ -80,9 +99,10 @@ public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarke
         }
 
         WheatMarketListingUI.Draft draft = this.listingUI == null
-                ? new WheatMarketListingUI.Draft(this.stack, this.amount, this.listingType, this.priceText, this.buyQuantity)
+                ? new WheatMarketListingUI.Draft(this.stack, this.amount, this.listingType, this.priceText, this.buyQuantity,
+                this.ifAdmin, this.ifInfinite, this.cooldownAmount, this.cooldownTimeInMinutes)
                 : this.listingUI.createDraft();
-        ItemSelectionPurpose purpose = draft.listingType() == WheatMarketListingUI.ListingType.BUY
+        ItemSelectionPurpose purpose = draft.listingType() == WheatMarketListingUI.ListingType.BUY || draft.ifAdmin()
                 ? ItemSelectionPurpose.LIST_BUY
                 : ItemSelectionPurpose.LIST_SELL;
         ItemStack[] selectedStack = {draft.selectedStack()};
@@ -98,7 +118,7 @@ public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarke
                     selectedStack[0] = result.selectedStack();
                     if (result.empty()) {
                         selectedAmount[0] = 0;
-                    } else if (draft.listingType() == WheatMarketListingUI.ListingType.BUY) {
+                    } else if (draft.listingType() == WheatMarketListingUI.ListingType.BUY || draft.ifAdmin()) {
                         selectedAmount[0] = 1;
                     } else {
                         selectedAmount[0] = result.totalAmount();
@@ -117,7 +137,11 @@ public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarke
                         selectedAmount[0],
                         draft.listingType(),
                         draft.priceText(),
-                        draft.buyQuantity()
+                        draft.buyQuantity(),
+                        draft.ifAdmin(),
+                        draft.ifInfinite(),
+                        draft.cooldownAmount(),
+                        draft.cooldownTimeInMinutes()
                 )));
     }
 
@@ -133,10 +157,10 @@ public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarke
                 submission.amount(),
                 submission.price(),
                 submission.listingType() == WheatMarketListingUI.ListingType.SELL,
-                false,
-                false,
-                0,
-                0
+                submission.ifAdmin(),
+                submission.ifInfinite(),
+                submission.cooldownAmount(),
+                submission.cooldownTimeInMinutes()
         ));
     }
 
@@ -146,6 +170,10 @@ public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarke
         this.listingType = draft.listingType();
         this.priceText = draft.priceText();
         this.buyQuantity = draft.buyQuantity();
+        this.ifAdmin = draft.ifAdmin();
+        this.ifInfinite = draft.ifInfinite();
+        this.cooldownAmount = draft.cooldownAmount();
+        this.cooldownTimeInMinutes = draft.cooldownTimeInMinutes();
         this.menu.setItemSelectionMode(ItemSelectionMode.DISABLED, this.inventory.player);
         WheatMarketNetwork.sendToServer(new SetItemSelectionModeC2SPacket(ItemSelectionMode.DISABLED));
     }

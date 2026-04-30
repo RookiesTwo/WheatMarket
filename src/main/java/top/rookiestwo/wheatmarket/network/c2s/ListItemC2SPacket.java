@@ -99,6 +99,24 @@ public class ListItemC2SPacket implements CustomPacketPayload {
                 return;
             }
 
+            if ((cooldownAmount > 0 || cooldownTimeInMinutes > 0) && !player.hasPermissions(2)) {
+                WheatMarketNetwork.sendToPlayer(player,
+                        new OperationResultS2CPacket(false, "gui.wheatmarket.operation.no_permission"));
+                return;
+            }
+
+            if (cooldownAmount < 0 || cooldownTimeInMinutes < 0) {
+                WheatMarketNetwork.sendToPlayer(player,
+                        new OperationResultS2CPacket(false, "gui.wheatmarket.operation.invalid_amount"));
+                return;
+            }
+
+            if (ifInfinite && (!ifAdmin || !ifSell)) {
+                WheatMarketNetwork.sendToPlayer(player,
+                        new OperationResultS2CPacket(false, "gui.wheatmarket.operation.invalid_action"));
+                return;
+            }
+
             if (price <= 0) {
                 WheatMarketNetwork.sendToPlayer(player,
                         new OperationResultS2CPacket(false, "gui.wheatmarket.operation.invalid_price"));

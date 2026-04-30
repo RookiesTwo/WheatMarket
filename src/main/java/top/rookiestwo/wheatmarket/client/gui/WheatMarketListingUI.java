@@ -157,9 +157,9 @@ public class WheatMarketListingUI {
         confirmButton = require(ui, "confirm-button", Button.class);
         cancelButton = require(ui, "cancel-button", Button.class);
 
-        root.style(style -> style.background(WheatMarketUiTextures.rootBackground()));
+        root.style(style -> style.background(WheatMarketUiTextures.tradingBackgroundTexture()));
         root.addEventListener(UIEvents.MOUSE_DOWN, event -> onRootMouseDown(event.x, event.y), true);
-        listingPaper.style(style -> style.background(WheatMarketUiTextures.paperTexture()));
+        listingPaper.style(style -> style.background(WheatMarketUiTextures.tradingPaperTexture()));
         playerAvatar.style(style -> style.background(WheatMarketUiTextures.playerAvatarTexture(player)));
         playerBalanceLabel.style(style -> style.background(WheatMarketUiTextures.paperTexture()));
         itemPreview.style(style -> style.background(new ColorBorderTexture(1, ITEM_PREVIEW_BORDER)));

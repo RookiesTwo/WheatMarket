@@ -12,6 +12,8 @@ import org.lwjgl.glfw.GLFW;
 import top.rookiestwo.wheatmarket.menu.ItemSelectionMode;
 import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
 import top.rookiestwo.wheatmarket.network.WheatMarketNetwork;
+import top.rookiestwo.wheatmarket.network.c2s.BeginStockEditC2SPacket;
+import top.rookiestwo.wheatmarket.network.c2s.FinalizeStockEditC2SPacket;
 import top.rookiestwo.wheatmarket.network.c2s.SetItemSelectionModeC2SPacket;
 
 public class WheatMarketItemSelectionScreen extends AbstractContainerScreen<WheatMarketMenu> {
@@ -27,6 +29,10 @@ public class WheatMarketItemSelectionScreen extends AbstractContainerScreen<Whea
     private ModularUI itemSelectionModularUI;
     private boolean deactivated;
     private boolean configuredSelection;
+    private boolean beginFailed;
+    private boolean stockEditFinalizing;
+    private boolean stockEditFinalized;
+    private int submittedFinalStock;
 
     public WheatMarketItemSelectionScreen(WheatMarketMenu menu, Inventory inventory, Component title,
                                           ItemSelectionRequest request,
@@ -58,7 +64,7 @@ public class WheatMarketItemSelectionScreen extends AbstractContainerScreen<Whea
                 this.topPos,
                 this.request,
                 this::confirmSelection,
-                () -> returnToParent(false)
+                this::handleBackAction
         );
         installItemSelectionModularUI(this.itemSelectionUI.create(this.inventory.player));
     }
@@ -91,19 +97,40 @@ public class WheatMarketItemSelectionScreen extends AbstractContainerScreen<Whea
 
     @Override
     public void onClose() {
+        if (isStockEdit()) {
+            finishStockEdit();
+            return;
+        }
         deactivateSelectionMode();
         super.onClose();
     }
 
     @Override
     public void removed() {
+        if (isStockEdit()) {
+            if (!stockEditFinalized && !stockEditFinalizing && configuredSelection) {
+                finishStockEdit();
+            }
+            super.removed();
+            return;
+        }
         deactivateSelectionMode();
         super.removed();
     }
 
     private void configureSelection() {
         deactivated = false;
-        this.menu.configureItemSelection(selectedMode, this.request.initialSelection(), this.request.lockedStackTemplate(), this.inventory.player);
+        if (isStockEdit()) {
+            this.menu.prepareClientStockEdit(
+                    this.request.marketItemId(),
+                    this.request.lockedStackTemplate(),
+                    stackAmount(this.request.initialSelection()),
+                    this.inventory.player
+            );
+            WheatMarketNetwork.sendToServer(new BeginStockEditC2SPacket(this.request.marketItemId()));
+            return;
+        }
+        this.menu.configureItemSelection(selectedMode, clientInitialSelection(), this.request.lockedStackTemplate(), this.inventory.player);
         WheatMarketNetwork.sendToServer(new SetItemSelectionModeC2SPacket(
                 selectedMode,
                 stackToNbt(this.request.initialSelection()),
@@ -112,7 +139,15 @@ public class WheatMarketItemSelectionScreen extends AbstractContainerScreen<Whea
         ));
     }
 
+    private ItemStack clientInitialSelection() {
+        return this.request.initialSelection();
+    }
+
     private void confirmSelection() {
+        if (isStockEdit()) {
+            finishStockEdit();
+            return;
+        }
         if (deactivated) {
             return;
         }
@@ -120,7 +155,49 @@ public class WheatMarketItemSelectionScreen extends AbstractContainerScreen<Whea
             return;
         }
         this.request.onConfirm().accept(selectionResult());
-        returnToParent(shouldPreserveConfirmedSelection());
+        returnToParent(shouldKeepConfirmedSelection());
+    }
+
+    private void handleBackAction() {
+        if (isStockEdit()) {
+            finishStockEdit();
+            return;
+        }
+        returnToParent(false);
+    }
+
+    public boolean handleOperationResult(boolean success, Component message) {
+        if (!isStockEdit()) {
+            return false;
+        }
+        if (!stockEditFinalizing) {
+            if (!success && this.itemSelectionUI != null) {
+                beginFailed = true;
+                this.itemSelectionUI.showFailure(message);
+                return true;
+            }
+            return false;
+        }
+
+        stockEditFinalizing = false;
+        if (!success) {
+            if (this.itemSelectionUI != null) {
+                this.itemSelectionUI.setFinalizing(false);
+                this.itemSelectionUI.showFailure(message);
+            }
+            return true;
+        }
+
+        stockEditFinalized = true;
+        this.request.onConfirm().accept(submittedStockEditResult());
+        if (this.menu.isStockEditActive()) {
+            this.menu.completeStockEditFinalization(true);
+        }
+        deactivated = true;
+        if (this.minecraft != null) {
+            this.minecraft.setScreen(this.parentScreenFactory.create(this.menu, this.inventory, this.title));
+        }
+        return true;
     }
 
     private ItemSelectionResult selectionResult() {
@@ -137,6 +214,23 @@ public class WheatMarketItemSelectionScreen extends AbstractContainerScreen<Whea
         );
     }
 
+    private ItemSelectionResult submittedStockEditResult() {
+        ItemStack selectedStack = ItemStack.EMPTY;
+        if (submittedFinalStock > 0 && !this.request.lockedStackTemplate().isEmpty()) {
+            selectedStack = this.request.lockedStackTemplate().copy();
+            selectedStack.setCount(submittedFinalStock);
+        }
+        return new ItemSelectionResult(
+                this.request.purpose(),
+                this.selectedMode,
+                selectedStack,
+                submittedFinalStock,
+                this.request.baselineAmount(),
+                submittedFinalStock - this.request.baselineAmount(),
+                submittedFinalStock <= 0
+        );
+    }
+
     private CompoundTag stackToNbt(ItemStack stack) {
         if (stack == null || stack.isEmpty()) {
             return null;
@@ -150,14 +244,42 @@ public class WheatMarketItemSelectionScreen extends AbstractContainerScreen<Whea
         return stack == null || stack.isEmpty() ? 0 : stack.getCount();
     }
 
-    private boolean shouldPreserveConfirmedSelection() {
+    private boolean shouldKeepConfirmedSelection() {
         return (this.request.purpose() == ItemSelectionPurpose.LIST_SELL
                 || this.request.purpose() == ItemSelectionPurpose.LIST_BUY)
                 && this.menu.hasSelectedItem();
     }
 
-    private void returnToParent(boolean preserveSelection) {
-        deactivateSelectionMode(preserveSelection);
+    private boolean isStockEdit() {
+        return this.request.purpose() == ItemSelectionPurpose.STOCK_EDIT;
+    }
+
+    private void finishStockEdit() {
+        if (stockEditFinalized || stockEditFinalizing) {
+            return;
+        }
+        if (beginFailed) {
+            stockEditFinalized = true;
+            if (this.menu.isStockEditActive()) {
+                this.menu.completeStockEditFinalization(true);
+            }
+            deactivated = true;
+            if (this.minecraft != null) {
+                this.minecraft.setScreen(this.parentScreenFactory.create(this.menu, this.inventory, this.title));
+            }
+            return;
+        }
+
+        stockEditFinalizing = true;
+        submittedFinalStock = this.menu.getStockEditAmount();
+        if (this.itemSelectionUI != null) {
+            this.itemSelectionUI.setFinalizing(true);
+        }
+        WheatMarketNetwork.sendToServer(new FinalizeStockEditC2SPacket());
+    }
+
+    private void returnToParent(boolean keepSelection) {
+        deactivateSelectionMode(keepSelection);
         if (this.minecraft != null) {
             this.minecraft.setScreen(this.parentScreenFactory.create(this.menu, this.inventory, this.title));
         }
@@ -167,17 +289,21 @@ public class WheatMarketItemSelectionScreen extends AbstractContainerScreen<Whea
         deactivateSelectionMode(false);
     }
 
-    private void deactivateSelectionMode(boolean preserveSelection) {
+    private void deactivateSelectionMode(boolean keepSelection) {
         if (deactivated) {
             return;
         }
+        if (isStockEdit()) {
+            finishStockEdit();
+            return;
+        }
         deactivated = true;
-        if (preserveSelection) {
-            this.menu.preserveItemSelectionForDraft(this.inventory.player);
+        if (keepSelection) {
+            this.menu.deactivateItemSelection(this.inventory.player);
         } else {
             this.menu.setItemSelectionMode(ItemSelectionMode.DISABLED, this.inventory.player);
         }
-        WheatMarketNetwork.sendToServer(new SetItemSelectionModeC2SPacket(ItemSelectionMode.DISABLED, preserveSelection));
+        WheatMarketNetwork.sendToServer(new SetItemSelectionModeC2SPacket(ItemSelectionMode.DISABLED, keepSelection));
     }
 
     private void installParentBackgroundModularUI() {

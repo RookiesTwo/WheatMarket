@@ -90,7 +90,7 @@ public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarke
         ItemSelectionRequest request = new ItemSelectionRequest(
                 purpose,
                 purpose.defaultMode(),
-                initialSelectionFor(draft),
+                ItemStack.EMPTY,
                 0,
                 ItemStack.EMPTY,
                 false,
@@ -121,17 +121,6 @@ public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarke
                 )));
     }
 
-    private ItemStack initialSelectionFor(WheatMarketListingUI.Draft draft) {
-        if (draft.selectedStack().isEmpty()) {
-            return ItemStack.EMPTY;
-        }
-        ItemStack initialSelection = draft.selectedStack().copy();
-        initialSelection.setCount(draft.listingType() == WheatMarketListingUI.ListingType.BUY
-                ? 1
-                : Math.max(1, draft.selectedAmount()));
-        return initialSelection;
-    }
-
     private void returnToMain() {
         releaseSelection();
         if (this.minecraft != null) {
@@ -157,6 +146,7 @@ public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarke
         this.listingType = draft.listingType();
         this.priceText = draft.priceText();
         this.buyQuantity = draft.buyQuantity();
+        this.menu.setItemSelectionMode(ItemSelectionMode.DISABLED, this.inventory.player);
         WheatMarketNetwork.sendToServer(new SetItemSelectionModeC2SPacket(ItemSelectionMode.DISABLED));
     }
 

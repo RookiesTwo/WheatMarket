@@ -11,13 +11,13 @@
         justify-content: center;
         gap-all: 6;
         padding-all: 6;
-        overflow: hidden;
+        overflow: visible;
         }
 
         #player-column {
-        width: 18%;
-        min-width: 56;
-        max-width: 82;
+        width: 26%;
+        min-width: 84;
+        max-width: 170;
         height: 100%;
         flex-direction: column;
         align-items: center;
@@ -48,19 +48,19 @@
         #order-paper {
         width: 0;
         flex: 1;
-        min-width: 170;
-        max-width: 340;
+        min-width: 190;
+        max-width: 280;
         height: 100%;
-        min-height: 210;
-        max-height: 270;
+        min-height: 242;
+        max-height: 330;
         flex-direction: column;
         align-items: center;
         gap-all: 5;
         padding-left: 12;
         padding-right: 12;
-        padding-top: 8;
-        padding-bottom: 10;
-        overflow: hidden;
+        padding-top: 22;
+        padding-bottom: 24;
+        overflow: visible;
         }
 
         #order-title {
@@ -81,7 +81,7 @@
         min-height: 0;
         flex-direction: row;
         gap-all: 8;
-        overflow: hidden;
+        overflow: visible;
         }
 
         #order-left {
@@ -92,10 +92,10 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap-all: 5;
+        gap-all: 4;
         padding-left: 12;
         flex-shrink: 0;
-        overflow: hidden;
+        overflow: visible;
         }
 
         #owner-label {
@@ -154,6 +154,14 @@
         text-wrap: HIDE;
         text-shadow: false;
         flex-shrink: 1;
+        }
+
+        #listing-time-label {
+        width: 100%;
+        max-width: 100%;
+        height: 22;
+        min-height: 18;
+        flex-shrink: 0;
         }
 
         #restriction-panel {
@@ -276,7 +284,7 @@
         }
 
         #signature-label {
-        position-type: absolute;
+        position: absolute;
         width: 1;
         height: 1;
         horizontal-align: CENTER;
@@ -286,13 +294,34 @@
         }
 
         #stamp-overlay {
-        position-type: absolute;
+        position: absolute;
         width: 1;
         height: 1;
         }
 
+        #action-column {
+        width: 26%;
+        min-width: 84;
+        max-width: 170;
+        height: 100%;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap-all: 8;
+        flex-shrink: 1;
+        overflow: hidden;
+        }
+
+        #manage-button {
+        width: 76;
+        min-width: 64;
+        max-width: 88;
+        height: 24;
+        flex-shrink: 0;
+        }
+
         #cancel-button {
-        width: 22%;
+        width: 96;
         min-width: 64;
         max-width: 96;
         height: 76;
@@ -316,7 +345,6 @@
                 </element>
                 <element id="order-right">
                     <label id="item-name-label" class="info-label"/>
-                    <label id="listing-time-label" class="info-label"/>
                     <label id="stock-label" class="info-label"/>
                     <element id="restriction-panel">
                         <label id="restriction-time-label" class="restriction-label"/>
@@ -324,6 +352,7 @@
                     </element>
                 </element>
             </element>
+            <label id="listing-time-label" class="info-label"/>
             <element id="quantity-row">
                 <label id="quantity-caption" text="gui.wheatmarket.confirm.quantity_label"/>
                 <element id="quantity-controls">
@@ -345,6 +374,9 @@
         </element>
         <label id="signature-label"/>
         <element id="stamp-overlay"/>
-        <button id="cancel-button" text="gui.wheatmarket.confirm.cancel"/>
+        <element id="action-column">
+            <button id="manage-button" text="gui.wheatmarket.confirm.manage"/>
+            <button id="cancel-button" text="gui.wheatmarket.confirm.cancel"/>
+        </element>
     </root>
 </ldlib2-ui>

@@ -3,7 +3,7 @@
            xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/Low-Drag-MC/LDLib2/refs/heads/1.21/ldlib2-ui.xsd">
     <stylesheet location="ldlib2:lss/mc.lss"/>
     <style>
-        #listing-root {
+        #item-edit-root {
         width: 100%;
         height: 100%;
         flex-direction: row;
@@ -45,28 +45,28 @@
         text-shadow: false;
         }
 
-        #listing-paper {
+        #item-edit-paper {
         width: 0;
         flex: 1;
-        min-width: 190;
-        max-width: 280;
+        min-width: 212;
+        max-width: 332;
         height: 100%;
-        min-height: 240;
-        max-height: 330;
+        min-height: 260;
+        max-height: 350;
         flex-direction: column;
         align-items: center;
         gap-all: 5;
         padding-left: 12;
         padding-right: 12;
-        padding-top: 22;
-        padding-bottom: 23;
+        padding-top: 18;
+        padding-bottom: 15;
         overflow: visible;
         }
 
-        #listing-title {
+        #item-edit-title {
         width: 68%;
         min-width: 130;
-        max-width: 210;
+        max-width: 220;
         height: 24;
         horizontal-align: CENTER;
         vertical-align: CENTER;
@@ -75,7 +75,7 @@
         flex-shrink: 0;
         }
 
-        #listing-main {
+        #item-edit-main {
         width: 100%;
         flex: 1;
         min-height: 0;
@@ -84,15 +84,16 @@
         overflow: hidden;
         }
 
-        #listing-left {
-        width: 45%;
-        min-width: 50;
-        max-width: 150;
+        #item-edit-left {
+        width: 42%;
+        min-width: 76;
+        max-width: 138;
         height: 100%;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         gap-all: 5;
+        padding-left: 4;
         padding-right: 2;
         flex-shrink: 1;
         overflow: hidden;
@@ -117,15 +118,15 @@
         flex-shrink: 0;
         }
 
-        #listing-item-icon {
+        #edit-item-icon {
         width: 34;
         height: 34;
         flex-shrink: 0;
         }
 
-        #selected-item-label {
+        .summary-label {
         width: 100%;
-        height: 24;
+        height: 21;
         horizontal-align: CENTER;
         vertical-align: CENTER;
         text-wrap: HIDE;
@@ -133,14 +134,7 @@
         flex-shrink: 0;
         }
 
-        #choose-item-button {
-        width: 88%;
-        max-width: 100%;
-        height: 22;
-        flex-shrink: 0;
-        }
-
-        #listing-right {
+        #item-edit-right {
         width: 0;
         flex: 1;
         min-width: 0;
@@ -149,11 +143,21 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap-all: 4;
+        gap-all: 3;
         padding-left: 2;
-        padding-right: 8;
+        padding-right: 4;
         flex-shrink: 1;
         overflow: hidden;
+        }
+
+        .info-label {
+        width: 100%;
+        height: 18;
+        horizontal-align: CENTER;
+        vertical-align: CENTER;
+        text-wrap: HIDE;
+        text-shadow: false;
+        flex-shrink: 0;
         }
 
         .form-row {
@@ -169,9 +173,9 @@
         }
 
         .form-caption {
-        width: 34%;
-        min-width: 34;
-        max-width: 50;
+        width: 38%;
+        min-width: 40;
+        max-width: 56;
         height: 22;
         horizontal-align: RIGHT;
         vertical-align: CENTER;
@@ -180,34 +184,11 @@
         flex-shrink: 0;
         }
 
-        #quantity-caption {
-        width: 34%;
-        min-width: 34;
-        max-width: 42;
-        height: 22;
-        horizontal-align: RIGHT;
-        vertical-align: CENTER;
-        text-wrap: HIDE;
-        text-shadow: false;
-        flex-shrink: 0;
-        }
-
-        #listing-type-selector {
+        .input-field {
         width: 0;
         flex: 1;
-        min-width: 46;
-        max-width: 76;
-        height: 22;
-        text-color: #19140D;
-        text-shadow: false;
-        flex-shrink: 1;
-        }
-
-        #price-field {
-        width: 0;
-        flex: 1;
-        min-width: 46;
-        max-width: 76;
+        min-width: 48;
+        max-width: 86;
         height: 22;
         padding-left: 6;
         padding-right: 6;
@@ -218,81 +199,97 @@
         flex-shrink: 1;
         }
 
-        #quantity-controls {
-        width: 62;
-        min-width: 62;
-        max-width: 68;
+        #current-stock-label {
+        width: 0;
+        flex: 1;
+        min-width: 48;
+        max-width: 86;
+        height: 22;
+        horizontal-align: CENTER;
+        vertical-align: CENTER;
+        text-wrap: HIDE;
+        text-shadow: false;
+        flex-shrink: 1;
+        }
+
+        .small-button {
+        width: 86;
+        min-width: 64;
+        max-width: 98;
+        height: 22;
+        flex-shrink: 0;
+        }
+
+        #stock-buttons-row {
+        width: 100%;
         height: 22;
         flex-direction: row;
         align-items: center;
         justify-content: center;
-        gap-all: 2;
+        gap-all: 4;
+        flex-shrink: 0;
+        overflow: hidden;
+        }
+
+        #stock-edit-button {
+        width: 70%;
+        min-width: 74;
+        max-width: 120;
+        height: 22;
+        flex-shrink: 0;
+        }
+
+        #op-panel {
+        width: 100%;
+        height: 96;
+        flex-direction: column;
+        align-items: center;
+        gap-all: 3;
+        flex-shrink: 0;
+        overflow: hidden;
+        }
+
+        #op-title {
+        width: 100%;
+        height: 16;
+        horizontal-align: CENTER;
+        vertical-align: CENTER;
+        text-wrap: HIDE;
+        text-shadow: false;
+        flex-shrink: 0;
+        }
+
+        #op-toggle-row {
+        width: 100%;
+        height: 22;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap-all: 4;
+        flex-shrink: 0;
+        overflow: hidden;
+        }
+
+        #toggle-admin-button, #toggle-infinite-button {
+        width: 0;
+        flex: 1;
+        min-width: 56;
+        max-width: 94;
+        height: 22;
         flex-shrink: 1;
         }
 
-        .quantity-button {
-        width: 14;
+        #cooldown-apply-button {
+        width: 70%;
+        min-width: 74;
+        max-width: 120;
         height: 22;
-        flex-shrink: 0;
-        }
-
-        #quantity-field {
-        width: 26;
-        min-width: 26;
-        max-width: 50;
-        height: 22;
-        padding-left: 2;
-        padding-right: 2;
-        text-color: #19140D;
-        cursor-color: #19140D;
-        error-color: #A33629;
-        text-shadow: false;
-        flex-shrink: 0;
-        }
-
-        #expiry-label {
-        width: 100%;
-        max-width: 100%;
-        height: 20;
-        horizontal-align: CENTER;
-        vertical-align: CENTER;
-        text-wrap: HIDE;
-        text-shadow: false;
-        flex-shrink: 0;
-        }
-
-        #total-label {
-        width: 100%;
-        max-width: 100%;
-        height: 22;
-        horizontal-align: CENTER;
-        vertical-align: CENTER;
-        text-wrap: HIDE;
-        text-shadow: false;
-        flex-shrink: 0;
-        }
-
-        #confirm-area {
-        width: 62%;
-        min-width: 130;
-        max-width: 220;
-        height: 46;
-        flex-direction: column;
-        align-items: center;
-        gap-all: 2;
-        padding-bottom: 2;
-        flex-shrink: 0;
-        }
-
-        #confirm-button {
-        width: 100%;
-        height: 28;
         flex-shrink: 0;
         }
 
         #feedback-label {
         width: 100%;
-        height: 16;
+        height: 18;
         horizontal-align: CENTER;
         vertical-align: CENTER;
         text-wrap: HIDE;
@@ -305,64 +302,85 @@
         min-width: 84;
         max-width: 170;
         height: 100%;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
+        gap-all: 8;
         flex-shrink: 1;
         overflow: hidden;
+        }
+
+        #delist-button {
+        width: 96;
+        min-width: 64;
+        max-width: 96;
+        height: 36;
+        flex-shrink: 0;
         }
 
         #cancel-button {
         width: 96;
         min-width: 64;
         max-width: 96;
-        height: 76;
+        height: 52;
         flex-shrink: 0;
         }
     </style>
-    <root id="listing-root">
+    <root id="item-edit-root">
         <element id="player-column">
             <element id="player-avatar"/>
             <label id="player-balance"/>
         </element>
-        <element id="listing-paper">
-            <label id="listing-title"/>
-            <element id="listing-main">
-                <element id="listing-left">
+        <element id="item-edit-paper">
+            <label id="item-edit-title"/>
+            <element id="item-edit-main">
+                <element id="item-edit-left">
                     <label id="owner-label"/>
                     <element id="item-preview">
-                        <element id="listing-item-icon"/>
+                        <element id="edit-item-icon"/>
                     </element>
-                    <label id="selected-item-label"/>
-                    <button id="choose-item-button" text="gui.wheatmarket.listing.select_item"/>
+                    <label id="item-name-label" class="summary-label"/>
+                    <label id="type-label" class="summary-label"/>
+                    <label id="stock-label" class="summary-label"/>
                 </element>
-                <element id="listing-right">
-                    <element id="type-row" class="form-row">
-                        <label id="type-caption" class="form-caption"/>
-                        <selector id="listing-type-selector"/>
-                    </element>
+                <element id="item-edit-right">
+                    <label id="listing-time-label" class="info-label"/>
+                    <label id="last-trade-label" class="info-label"/>
                     <element id="price-row" class="form-row">
                         <label id="price-caption" class="form-caption"/>
-                        <text-field id="price-field" value="1.00"/>
+                        <text-field id="price-field" class="input-field" value="1.00"/>
                     </element>
-                    <element id="quantity-row" class="form-row">
-                        <label id="quantity-caption" class="form-caption"/>
-                        <element id="quantity-controls">
-                            <button id="decrease-button" class="quantity-button" text="-"/>
-                            <text-field id="quantity-field" value="1"/>
-                            <button id="increase-button" class="quantity-button" text="+"/>
+                    <button id="price-apply-button" class="small-button" text="gui.wheatmarket.edit.apply_price"/>
+                    <element id="stock-row" class="form-row">
+                        <label id="stock-caption" class="form-caption"/>
+                        <label id="current-stock-label"/>
+                    </element>
+                    <element id="stock-buttons-row">
+                        <button id="stock-edit-button" text="gui.wheatmarket.edit.edit_stock"/>
+                    </element>
+                    <element id="op-panel">
+                        <label id="op-title"/>
+                        <element id="op-toggle-row">
+                            <button id="toggle-admin-button" text="gui.wheatmarket.edit.toggle_admin"/>
+                            <button id="toggle-infinite-button" text="gui.wheatmarket.edit.toggle_infinite"/>
                         </element>
+                        <element id="cooldown-amount-row" class="form-row">
+                            <label id="cooldown-amount-caption" class="form-caption"/>
+                            <text-field id="cooldown-amount-field" class="input-field" value="0"/>
+                        </element>
+                        <element id="cooldown-time-row" class="form-row">
+                            <label id="cooldown-time-caption" class="form-caption"/>
+                            <text-field id="cooldown-time-field" class="input-field" value="0"/>
+                        </element>
+                        <button id="cooldown-apply-button" text="gui.wheatmarket.edit.apply_cooldown"/>
                     </element>
-                    <label id="expiry-label"/>
-                    <label id="total-label"/>
                 </element>
             </element>
-            <element id="confirm-area">
-                <button id="confirm-button" text="gui.wheatmarket.listing.submit"/>
-                <label id="feedback-label"/>
-            </element>
+            <label id="feedback-label"/>
         </element>
         <element id="action-column">
-            <button id="cancel-button" text="gui.wheatmarket.confirm.cancel"/>
+            <button id="delist-button" text="gui.wheatmarket.edit.delist"/>
+            <button id="cancel-button" text="gui.wheatmarket.edit.back"/>
         </element>
     </root>
 </ldlib2-ui>

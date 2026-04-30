@@ -28,6 +28,7 @@ public class WheatMarketItemSelectionUI {
     private static final int GUI_HEIGHT = 174;
     private static final int TEXT_COLOR = 0xFFE8D8B8;
     private static final int MUTED_TEXT_COLOR = 0xFFBCA985;
+    private static final int FAILURE_TEXT_COLOR = 0xFFFF8E7A;
     private static final int SLOT_BACKGROUND = 0xCCF3E0B8;
     private static final int SLOT_BORDER = 0xFF3A332C;
     private static final int DIM_OVERLAY = 0x99000000;
@@ -49,9 +50,11 @@ public class WheatMarketItemSelectionUI {
     private UIElement panelElement;
     private UIElement slotBackgroundLayer;
     private Button confirmButton;
+    private Button backButton;
     private Label modeLabel;
     private Label restrictionLabel;
     private Label selectedItemLabel;
+    private boolean finalizing;
     private ItemSelectionMode seenMode;
     private ItemStack seenSelectedItem = ItemStack.EMPTY;
     private int seenSelectedAmount = -1;
@@ -91,8 +94,24 @@ public class WheatMarketItemSelectionUI {
 
     public void refreshConfirmState() {
         if (confirmButton != null) {
-            confirmButton.setActive(request.allowEmpty() || menu.hasSelectedItem());
+            confirmButton.setActive(!finalizing && (request.allowEmpty() || menu.hasSelectedItem()));
         }
+        if (backButton != null) {
+            backButton.setActive(!finalizing);
+        }
+    }
+
+    public void setFinalizing(boolean finalizing) {
+        this.finalizing = finalizing;
+        refreshConfirmState();
+    }
+
+    public void showFailure(Component message) {
+        if (restrictionLabel == null) {
+            return;
+        }
+        styleLabel(restrictionLabel, FAILURE_TEXT_COLOR);
+        restrictionLabel.setText(message);
     }
 
     private void bindStaticElements(UI ui) {
@@ -114,11 +133,11 @@ public class WheatMarketItemSelectionUI {
         selectedItemLabel = require(ui, "selected-item-label", Label.class);
 
         confirmButton = require(ui, "confirm-button", Button.class);
-        Button backButton = require(ui, "back-button", Button.class);
+        backButton = require(ui, "back-button", Button.class);
 
-        titleLabel.setText(Component.translatable("gui.wheatmarket.item_selection.title"));
+        titleLabel.setText(titleText());
         modeLabel.setText(modeText(request.mode()));
-        selectionSlotLabel.setText(Component.translatable("gui.wheatmarket.item_selection.selection_slot"));
+        selectionSlotLabel.setText(selectionSlotText());
         restrictionLabel.setText(restrictionText());
         inventoryLabel.setText(Component.translatable("container.inventory"));
 
@@ -130,6 +149,10 @@ public class WheatMarketItemSelectionUI {
         styleLabel(selectedItemLabel, TEXT_COLOR);
         styleButton(confirmButton);
         styleButton(backButton);
+        if (request.purpose() == ItemSelectionPurpose.STOCK_EDIT) {
+            confirmButton.setText(Component.translatable("gui.wheatmarket.stock_edit.done"));
+            backButton.setText(Component.translatable("gui.wheatmarket.stock_edit.back"));
+        }
 
         confirmButton.setOnClick(event -> confirmHandler.run());
         backButton.setOnClick(event -> backHandler.run());
@@ -196,21 +219,45 @@ public class WheatMarketItemSelectionUI {
 
     private Component selectedItemText(ItemStack selected, int selectedAmount, ItemSelectionMode selectedMode) {
         if (selected.isEmpty()) {
+            if (selectedMode == ItemSelectionMode.STOCK_EDIT) {
+                return Component.translatable("gui.wheatmarket.stock_edit.final_empty");
+            }
             return Component.translatable("gui.wheatmarket.item_selection.empty");
         }
         if (selectedMode == ItemSelectionMode.SAMPLE) {
             return Component.translatable("gui.wheatmarket.item_selection.sampled", selected.getHoverName());
         }
+        if (selectedMode == ItemSelectionMode.STOCK_EDIT) {
+            return Component.translatable("gui.wheatmarket.stock_edit.final_amount", selected.getHoverName(), selectedAmount);
+        }
         return Component.translatable("gui.wheatmarket.item_selection.selected_amount", selected.getHoverName(), selectedAmount);
     }
 
+    private Component titleText() {
+        return Component.translatable(request.purpose() == ItemSelectionPurpose.STOCK_EDIT
+                ? "gui.wheatmarket.stock_edit.title"
+                : "gui.wheatmarket.item_selection.title");
+    }
+
+    private Component selectionSlotText() {
+        return Component.translatable(request.purpose() == ItemSelectionPurpose.STOCK_EDIT
+                ? "gui.wheatmarket.stock_edit.stock_slot"
+                : "gui.wheatmarket.item_selection.selection_slot");
+    }
+
     private Component modeText(ItemSelectionMode mode) {
+        if (mode == ItemSelectionMode.STOCK_EDIT) {
+            return Component.translatable("gui.wheatmarket.stock_edit.mode");
+        }
         return Component.translatable(mode == ItemSelectionMode.SAMPLE
                 ? "gui.wheatmarket.item_selection.mode_sample"
                 : "gui.wheatmarket.item_selection.mode_transfer");
     }
 
     private Component restrictionText() {
+        if (request.purpose() == ItemSelectionPurpose.STOCK_EDIT) {
+            return Component.translatable("gui.wheatmarket.stock_edit.hint", request.lockedStackTemplate().getHoverName());
+        }
         if (request.hasLockedStackTemplate()) {
             return Component.translatable("gui.wheatmarket.item_selection.locked", request.lockedStackTemplate().getHoverName());
         }

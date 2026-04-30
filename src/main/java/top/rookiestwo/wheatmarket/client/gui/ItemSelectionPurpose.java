@@ -5,7 +5,7 @@ import top.rookiestwo.wheatmarket.menu.ItemSelectionMode;
 public enum ItemSelectionPurpose {
     LIST_SELL(ItemSelectionMode.TRANSFER),
     LIST_BUY(ItemSelectionMode.SAMPLE),
-    EDIT_LISTING_STOCK(ItemSelectionMode.TRANSFER);
+    STOCK_EDIT(ItemSelectionMode.STOCK_EDIT);
 
     private final ItemSelectionMode defaultMode;
 

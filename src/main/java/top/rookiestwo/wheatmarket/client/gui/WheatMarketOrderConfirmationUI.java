@@ -76,6 +76,7 @@ public class WheatMarketOrderConfirmationUI {
     private final MarketListS2CPacket.MarketItemSummary item;
     private final ItemStack stack;
     private final Runnable onCancel;
+    private final Runnable onManage;
     private final boolean playEntrySound;
     private final int initialQuantity;
 
@@ -87,9 +88,11 @@ public class WheatMarketOrderConfirmationUI {
     private Label feedbackLabel;
     private UIElement errorProgressTrack;
     private UIElement errorProgressFill;
+    private UIElement quantityRow;
     private Button decreaseButton;
     private Button increaseButton;
     private Button confirmButton;
+    private Button manageButton;
     private Button cancelButton;
     private TextField quantityField;
     private int quantity = 1;
@@ -104,13 +107,18 @@ public class WheatMarketOrderConfirmationUI {
     private boolean hasSignatureCenter;
     private float signatureCenterX;
     private float signatureCenterY;
+    private boolean ownListing;
+    private boolean operator;
 
     public WheatMarketOrderConfirmationUI(MarketListS2CPacket.MarketItemSummary item, ItemStack stack,
-                                          Runnable onCancel, boolean playEntrySound, int initialQuantity) {
+                                          Runnable onCancel, Runnable onManage,
+                                          boolean playEntrySound, int initialQuantity) {
         this.item = item;
         this.stack = stack.copy();
         this.stack.setCount(1);
         this.onCancel = onCancel;
+        this.onManage = onManage == null ? () -> {
+        } : onManage;
         this.playEntrySound = playEntrySound;
         this.initialQuantity = Math.max(1, initialQuantity);
     }
@@ -163,6 +171,7 @@ public class WheatMarketOrderConfirmationUI {
         UIElement itemPreview = require(ui, "item-preview", UIElement.class);
         UIElement itemIcon = require(ui, "order-item-icon", UIElement.class);
         UIElement restrictionPanel = require(ui, "restriction-panel", UIElement.class);
+        quantityRow = require(ui, "quantity-row", UIElement.class);
 
         Label orderTitle = require(ui, "order-title", Label.class);
         Label ownerLabel = require(ui, "owner-label", Label.class);
@@ -183,11 +192,12 @@ public class WheatMarketOrderConfirmationUI {
         decreaseButton = require(ui, "decrease-button", Button.class);
         increaseButton = require(ui, "increase-button", Button.class);
         confirmButton = require(ui, "confirm-button", Button.class);
+        manageButton = require(ui, "manage-button", Button.class);
         cancelButton = require(ui, "cancel-button", Button.class);
         quantityField = require(ui, "quantity-field", TextField.class);
 
-        root.style(style -> style.background(WheatMarketUiTextures.rootBackground()));
-        orderPaper.style(style -> style.background(WheatMarketUiTextures.paperTexture()));
+        root.style(style -> style.background(WheatMarketUiTextures.tradingBackgroundTexture()));
+        orderPaper.style(style -> style.background(WheatMarketUiTextures.tradingPaperTexture()));
         stampOverlay.setAllowHitTest(false);
         stampOverlay.style(style -> style
                 .background(IGuiTexture.dynamic(this::buildStampOverlay))
@@ -235,11 +245,15 @@ public class WheatMarketOrderConfirmationUI {
         styleActionButton(decreaseButton, BLUE_BUTTON, BLUE_BUTTON_HOVER, BLUE_BUTTON_PRESSED);
         styleActionButton(increaseButton, BLUE_BUTTON, BLUE_BUTTON_HOVER, BLUE_BUTTON_PRESSED);
         styleActionButton(confirmButton, BLUE_BUTTON, BLUE_BUTTON_HOVER, BLUE_BUTTON_PRESSED);
+        styleActionButton(manageButton, BLUE_BUTTON, BLUE_BUTTON_HOVER, BLUE_BUTTON_PRESSED);
         styleActionButton(cancelButton, RED_BUTTON, RED_BUTTON_HOVER, RED_BUTTON_PRESSED);
         confirmButton.enableText();
+        manageButton.enableText();
         styleQuantityField();
 
         signerName = player.getName().getString();
+        ownListing = isOwnListing(player);
+        operator = player.hasPermissions(2);
         orderTitle.setText(Component.translatable(item.isIfSell()
                 ? "gui.wheatmarket.confirm.sell_title"
                 : "gui.wheatmarket.confirm.buy_title"));
@@ -253,7 +267,10 @@ public class WheatMarketOrderConfirmationUI {
         stockLabel.setText(Component.translatable("gui.wheatmarket.confirm.stock", formatStock()));
         processingLabel.setText(Component.translatable("gui.wheatmarket.confirm.processing"));
         feedbackLabel.setText(Component.empty());
-        confirmButton.setText(Component.translatable("gui.wheatmarket.confirm.confirm_total", formatMoney(item.getPrice() * quantity)));
+        updateConfirmButtonText();
+        manageButton.setText(Component.translatable("gui.wheatmarket.confirm.manage"));
+        setShown(manageButton, operator);
+        setShown(quantityRow, !ownListing);
 
         populateRestriction(restrictionPanel, restrictionTimeLabel, restrictionAmountLabel);
         maxQuantity = calculateMaxQuantity();
@@ -269,6 +286,7 @@ public class WheatMarketOrderConfirmationUI {
             rememberSignatureCenter(event.x, event.y);
             submitOrder();
         });
+        manageButton.setOnClick(event -> onManage.run());
         cancelButton.setOnClick(event -> onCancel.run());
 
         updateBalanceLabel();
@@ -299,6 +317,10 @@ public class WheatMarketOrderConfirmationUI {
 
     private void submitOrder() {
         if (animationState != AnimationState.IDLE) {
+            return;
+        }
+        if (ownListing) {
+            onManage.run();
             return;
         }
         if (!item.isIfSell()) {
@@ -414,7 +436,7 @@ public class WheatMarketOrderConfirmationUI {
             quantity = Mth.clamp(newQuantity, 1, maxQuantity);
         }
         syncQuantityFieldText();
-        confirmButton.setText(Component.translatable("gui.wheatmarket.confirm.confirm_total", formatMoney(item.getPrice() * quantity)));
+        updateConfirmButtonText();
         applyControlState();
     }
 
@@ -427,9 +449,25 @@ public class WheatMarketOrderConfirmationUI {
         setButtonShownPreserveLayout(increaseButton, showIncrease);
         decreaseButton.setActive(showDecrease);
         increaseButton.setActive(showIncrease);
-        confirmButton.setActive(interactive && maxQuantity > 0);
+        confirmButton.setActive(interactive && (ownListing || maxQuantity > 0));
+        manageButton.setActive(interactive && operator);
         cancelButton.setActive(interactive);
         quantityField.setActive(interactive && maxQuantity >= 0);
+    }
+
+    private void updateConfirmButtonText() {
+        if (confirmButton == null) {
+            return;
+        }
+        if (ownListing) {
+            confirmButton.setText(Component.translatable("gui.wheatmarket.confirm.edit_item"));
+            return;
+        }
+        confirmButton.setText(Component.translatable("gui.wheatmarket.confirm.confirm_total", formatMoney(item.getPrice() * quantity)));
+    }
+
+    private boolean isOwnListing(Player player) {
+        return !item.isIfAdmin() && item.getSellerID().equals(player.getUUID());
     }
 
     private IGuiTexture buildStampOverlay() {

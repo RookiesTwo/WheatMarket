@@ -164,7 +164,7 @@ public class ListItemC2SPacket implements CustomPacketPayload {
                                 return;
                             }
                         } else if (!ifSell) {
-                            wheatMarketMenu.clearPreservedSampleSelection(listingStack);
+                            wheatMarketMenu.clearSampleSelection(listingStack);
                         }
 
                         WheatMarketNetwork.sendToPlayer(player,

@@ -8,6 +8,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import top.rookiestwo.wheatmarket.WheatMarket;
+import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
 import top.rookiestwo.wheatmarket.network.WheatMarketNetwork;
 import top.rookiestwo.wheatmarket.network.s2c.OperationResultS2CPacket;
 
@@ -24,6 +25,7 @@ public class ManageItemC2SPacket implements CustomPacketPayload {
     public static final int ACTION_TOGGLE_ADMIN = 4;
     public static final int ACTION_TOGGLE_INFINITE = 5;
     public static final int ACTION_SET_COOLDOWN = 6;
+    public static final int ITEM_SELECTION_SLOT_INDEX = -1;
 
     private UUID marketItemID;
     private int action;
@@ -93,6 +95,11 @@ public class ManageItemC2SPacket implements CustomPacketPayload {
     }
 
     private void handleRestock(ServerPlayer player, boolean isOp) {
+        if (slotIndex == ITEM_SELECTION_SLOT_INDEX) {
+            handleSelectionRestock(player, isOp);
+            return;
+        }
+
         if (slotIndex < 0 || slotIndex >= player.getInventory().getContainerSize()) {
             WheatMarketNetwork.sendToPlayer(player,
                     new OperationResultS2CPacket(false, "gui.wheatmarket.operation.invalid_slot"));
@@ -142,7 +149,62 @@ public class ManageItemC2SPacket implements CustomPacketPayload {
         );
     }
 
+    private void handleSelectionRestock(ServerPlayer player, boolean isOp) {
+        if (!(player.containerMenu instanceof WheatMarketMenu wheatMarketMenu)) {
+            WheatMarketNetwork.sendToPlayer(player,
+                    new OperationResultS2CPacket(false, "gui.wheatmarket.operation.failed"));
+            return;
+        }
+
+        if (amount <= 0) {
+            WheatMarketNetwork.sendToPlayer(player,
+                    new OperationResultS2CPacket(false, "gui.wheatmarket.operation.invalid_amount"));
+            return;
+        }
+
+        ItemStack selectedStack = wheatMarketMenu.getSelectedItem();
+        if (selectedStack.isEmpty()) {
+            WheatMarketNetwork.sendToPlayer(player,
+                    new OperationResultS2CPacket(false, "gui.wheatmarket.operation.no_selected_item"));
+            return;
+        }
+
+        int transferAmount = Math.min(amount, selectedStack.getCount());
+        if (transferAmount <= 0 || transferAmount < amount) {
+            WheatMarketNetwork.sendToPlayer(player,
+                    new OperationResultS2CPacket(false, "gui.wheatmarket.operation.insufficient_items"));
+            return;
+        }
+
+        WheatMarket.DATABASE.getMarketService().restock(player.getUUID(), isOp, marketItemID, transferAmount).thenAccept(result ->
+                player.server.execute(() -> {
+                    if (!result.isSuccess()) {
+                        WheatMarketNetwork.sendToPlayer(player, new OperationResultS2CPacket(false, result.getMessageKey(), result.getMessageArgs()));
+                        return;
+                    }
+
+                    ItemStack expectedStack = ItemStack.parseOptional(player.server.registryAccess(), result.getValue().updatedItem().getItemNBTCompound());
+                    expectedStack.setCount(1);
+                    if (!wheatMarketMenu.consumeSelectedItemsForListing(expectedStack, transferAmount)) {
+                        WheatMarket.DATABASE.getMarketService().withdraw(player.getUUID(), isOp, marketItemID, transferAmount);
+                        WheatMarketNetwork.sendToPlayer(player,
+                                new OperationResultS2CPacket(false, "gui.wheatmarket.operation.insufficient_items"));
+                        return;
+                    }
+
+                    WheatMarketNetwork.sendToPlayer(player,
+                            new OperationResultS2CPacket(true, "gui.wheatmarket.operation.restock_success",
+                                    String.valueOf(transferAmount)));
+                })
+        );
+    }
+
     private void handleWithdraw(ServerPlayer player, boolean isOp) {
+        if (slotIndex == ITEM_SELECTION_SLOT_INDEX) {
+            handleSelectionWithdraw(player, isOp);
+            return;
+        }
+
         if (amount <= 0) {
             WheatMarketNetwork.sendToPlayer(player,
                     new OperationResultS2CPacket(false, "gui.wheatmarket.operation.invalid_amount"));
@@ -155,6 +217,33 @@ public class ManageItemC2SPacket implements CustomPacketPayload {
                         WheatMarketNetwork.sendToPlayer(player, new OperationResultS2CPacket(false, result.getMessageKey(), result.getMessageArgs()));
                         return;
                     }
+                    giveItemToPlayer(player, result.getValue().itemNbt(), result.getValue().amount());
+                    WheatMarketNetwork.sendToPlayer(player,
+                            new OperationResultS2CPacket(true, "gui.wheatmarket.operation.withdraw_success"));
+                })
+        );
+    }
+
+    private void handleSelectionWithdraw(ServerPlayer player, boolean isOp) {
+        if (!(player.containerMenu instanceof WheatMarketMenu wheatMarketMenu)) {
+            WheatMarketNetwork.sendToPlayer(player,
+                    new OperationResultS2CPacket(false, "gui.wheatmarket.operation.failed"));
+            return;
+        }
+
+        if (amount <= 0) {
+            WheatMarketNetwork.sendToPlayer(player,
+                    new OperationResultS2CPacket(false, "gui.wheatmarket.operation.invalid_amount"));
+            return;
+        }
+
+        WheatMarket.DATABASE.getMarketService().withdraw(player.getUUID(), isOp, marketItemID, amount).thenAccept(result ->
+                player.server.execute(() -> {
+                    if (!result.isSuccess()) {
+                        WheatMarketNetwork.sendToPlayer(player, new OperationResultS2CPacket(false, result.getMessageKey(), result.getMessageArgs()));
+                        return;
+                    }
+
                     giveItemToPlayer(player, result.getValue().itemNbt(), result.getValue().amount());
                     WheatMarketNetwork.sendToPlayer(player,
                             new OperationResultS2CPacket(true, "gui.wheatmarket.operation.withdraw_success"));

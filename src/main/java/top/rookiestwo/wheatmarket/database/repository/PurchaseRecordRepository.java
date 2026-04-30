@@ -52,6 +52,14 @@ public class PurchaseRecordRepository {
         }
     }
 
+    public void delete(Connection connection, UUID recordID) throws SQLException {
+        String sql = "DELETE FROM purchase_record WHERE recordID = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, recordID.toString());
+            stmt.executeUpdate();
+        }
+    }
+
     public int getPurchasedAmountSince(Connection connection, UUID marketItemID, UUID buyerID, Timestamp since) throws SQLException {
         String sql = "SELECT COALESCE(SUM(purchasedAmount), 0) AS purchasedAmount FROM purchase_record WHERE marketItemID = ? AND buyerID = ? AND lastPurchaseTime >= ?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {

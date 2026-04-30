@@ -5,10 +5,12 @@ import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.api.distmarker.Dist;
 import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.database.caches.MarketItemCache;
+import top.rookiestwo.wheatmarket.database.repository.DeliveryItemRepository;
 import top.rookiestwo.wheatmarket.database.repository.MarketItemRepository;
 import top.rookiestwo.wheatmarket.database.repository.PlayerInfoRepository;
 import top.rookiestwo.wheatmarket.database.repository.PurchaseRecordRepository;
 import top.rookiestwo.wheatmarket.database.transaction.TransactionManager;
+import top.rookiestwo.wheatmarket.service.DeliveryService;
 import top.rookiestwo.wheatmarket.service.EconomyService;
 import top.rookiestwo.wheatmarket.service.MarketService;
 
@@ -30,7 +32,9 @@ public class WheatMarketDatabase {
     private PlayerInfoRepository playerInfoRepository;
     private MarketItemRepository marketItemRepository;
     private PurchaseRecordRepository purchaseRecordRepository;
+    private DeliveryItemRepository deliveryItemRepository;
     private EconomyService economyService;
+    private DeliveryService deliveryService;
     private MarketService marketService;
 
     public WheatMarketDatabase(Dist environment) {
@@ -74,18 +78,22 @@ public class WheatMarketDatabase {
         playerInfoRepository = new PlayerInfoRepository();
         marketItemRepository = new MarketItemRepository();
         purchaseRecordRepository = new PurchaseRecordRepository();
+        deliveryItemRepository = new DeliveryItemRepository();
 
         try {
             playerInfoRepository.createTable(connection);
             marketItemRepository.createTable(connection);
             purchaseRecordRepository.createTable(connection);
+            deliveryItemRepository.createTable(connection);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to create WheatMarket database tables", e);
         }
 
         this.marketItemCache = new MarketItemCache(connection);
         economyService = new EconomyService(transactionManager, playerInfoRepository);
-        marketService = new MarketService(transactionManager, playerInfoRepository, marketItemRepository, purchaseRecordRepository, marketItemCache);
+        deliveryService = new DeliveryService(transactionManager, deliveryItemRepository);
+        marketService = new MarketService(transactionManager, playerInfoRepository, marketItemRepository,
+                purchaseRecordRepository, deliveryItemRepository, marketItemCache);
     }
 
     public MarketItemCache getMarketItemCache() {
@@ -94,6 +102,10 @@ public class WheatMarketDatabase {
 
     public EconomyService getEconomyService() {
         return economyService;
+    }
+
+    public DeliveryService getDeliveryService() {
+        return deliveryService;
     }
 
     public MarketService getMarketService() {

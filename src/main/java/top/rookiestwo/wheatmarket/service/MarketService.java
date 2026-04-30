@@ -1,9 +1,13 @@
 package top.rookiestwo.wheatmarket.service;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.item.ItemStack;
 import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.database.caches.MarketItemCache;
+import top.rookiestwo.wheatmarket.database.entities.DeliveryItem;
 import top.rookiestwo.wheatmarket.database.entities.MarketItem;
+import top.rookiestwo.wheatmarket.database.repository.DeliveryItemRepository;
 import top.rookiestwo.wheatmarket.database.repository.MarketItemRepository;
 import top.rookiestwo.wheatmarket.database.repository.PlayerInfoRepository;
 import top.rookiestwo.wheatmarket.database.repository.PurchaseRecordRepository;
@@ -26,6 +30,7 @@ public class MarketService {
     private final PlayerInfoRepository playerInfoRepository;
     private final MarketItemRepository marketItemRepository;
     private final PurchaseRecordRepository purchaseRecordRepository;
+    private final DeliveryItemRepository deliveryItemRepository;
     private final MarketItemCache marketItemCache;
     private final Map<UUID, UUID> editLocks = new ConcurrentHashMap<>();
 
@@ -33,11 +38,13 @@ public class MarketService {
                          PlayerInfoRepository playerInfoRepository,
                          MarketItemRepository marketItemRepository,
                          PurchaseRecordRepository purchaseRecordRepository,
+                         DeliveryItemRepository deliveryItemRepository,
                          MarketItemCache marketItemCache) {
         this.transactionManager = transactionManager;
         this.playerInfoRepository = playerInfoRepository;
         this.marketItemRepository = marketItemRepository;
         this.purchaseRecordRepository = purchaseRecordRepository;
+        this.deliveryItemRepository = deliveryItemRepository;
         this.marketItemCache = marketItemCache;
     }
 
@@ -197,6 +204,184 @@ public class MarketService {
         }).exceptionally(e -> {
             WheatMarket.LOGGER.error("Failed to buy market item.", e);
             return ServiceResult.failure("gui.wheatmarket.operation.failed");
+        });
+    }
+
+    public CompletableFuture<ServiceResult<BuyOrderFulfillmentResult>> fulfillBuyOrder(UUID supplierId, UUID marketItemID,
+                                                                                       int amount, ItemStack suppliedStack,
+                                                                                       HolderLookup.Provider registryAccess) {
+        ItemStack suppliedSnapshot = suppliedStack == null ? ItemStack.EMPTY : suppliedStack.copy();
+        return transactionManager.executeAsync(connection -> {
+            MarketItem item = marketItemCache.get(marketItemID);
+            if (item == null) {
+                return ServiceResult.<BuyOrderFulfillmentResult>failure("gui.wheatmarket.operation.item_not_found");
+            }
+            if (isEditLocked(marketItemID)) {
+                return ServiceResult.<BuyOrderFulfillmentResult>failure("gui.wheatmarket.operation.item_locked");
+            }
+            if (item.isExpired()) {
+                return ServiceResult.<BuyOrderFulfillmentResult>failure("gui.wheatmarket.operation.item_expired");
+            }
+            if (item.getIfSell()) {
+                return ServiceResult.<BuyOrderFulfillmentResult>failure("gui.wheatmarket.operation.not_buy_order");
+            }
+            if (amount <= 0 || amount > item.getAmount()) {
+                return ServiceResult.<BuyOrderFulfillmentResult>failure("gui.wheatmarket.operation.invalid_amount");
+            }
+            if (suppliedSnapshot.isEmpty() || suppliedSnapshot.getCount() < amount) {
+                return ServiceResult.<BuyOrderFulfillmentResult>failure("gui.wheatmarket.operation.insufficient_items");
+            }
+            if (!isPositiveMoney(item.getPrice())) {
+                return ServiceResult.<BuyOrderFulfillmentResult>failure("gui.wheatmarket.operation.invalid_price");
+            }
+
+            ItemStack expectedTemplate = parseMarketItemStack(item, registryAccess);
+            if (expectedTemplate.isEmpty()) {
+                return ServiceResult.<BuyOrderFulfillmentResult>failure("gui.wheatmarket.operation.invalid_item_data");
+            }
+            ItemStack suppliedTemplate = suppliedSnapshot.copy();
+            suppliedTemplate.setCount(1);
+            expectedTemplate.setCount(1);
+            if (!ItemStack.isSameItemSameComponents(expectedTemplate, suppliedTemplate)) {
+                return ServiceResult.<BuyOrderFulfillmentResult>failure("gui.wheatmarket.operation.item_mismatch");
+            }
+
+            playerInfoRepository.ensureExists(connection, supplierId);
+            if (item.hasCooldownRestriction()) {
+                ServiceResult<Void> cooldownCheck = validateCooldownRestriction(connection, item, supplierId, amount);
+                if (!cooldownCheck.isSuccess()) {
+                    return ServiceResult.<BuyOrderFulfillmentResult>failure(cooldownCheck.getMessageKey(), cooldownCheck.getMessageArgs());
+                }
+            }
+
+            double totalCost = item.getPrice() * amount;
+            if (!isPositiveMoney(totalCost)) {
+                return ServiceResult.<BuyOrderFulfillmentResult>failure("gui.wheatmarket.operation.invalid_price");
+            }
+
+            double buyerNewBalance = Double.NaN;
+            if (!item.getIfAdmin()) {
+                playerInfoRepository.ensureExists(connection, item.getSellerID());
+                double buyerBalance = playerInfoRepository.getBalance(connection, item.getSellerID());
+                if (buyerBalance < totalCost) {
+                    return ServiceResult.<BuyOrderFulfillmentResult>failure("gui.wheatmarket.operation.insufficient_balance");
+                }
+                buyerNewBalance = buyerBalance - totalCost;
+                if (!isNonNegativeMoney(buyerNewBalance)) {
+                    return ServiceResult.<BuyOrderFulfillmentResult>failure("gui.wheatmarket.operation.invalid_price");
+                }
+                playerInfoRepository.setBalance(connection, item.getSellerID(), buyerNewBalance);
+            }
+
+            double supplierBalance = playerInfoRepository.getBalance(connection, supplierId);
+            double supplierNewBalance = supplierBalance + totalCost;
+            if (!isNonNegativeMoney(supplierNewBalance)) {
+                return ServiceResult.<BuyOrderFulfillmentResult>failure("gui.wheatmarket.operation.invalid_price");
+            }
+            playerInfoRepository.setBalance(connection, supplierId, supplierNewBalance);
+
+            MarketItem originalItem = copyOf(item);
+            MarketItem updatedItem = copyOf(item);
+            if (!updatedItem.reduceAmount(amount)) {
+                return ServiceResult.<BuyOrderFulfillmentResult>failure("gui.wheatmarket.operation.invalid_amount");
+            }
+
+            UUID purchaseRecordId = UUID.randomUUID();
+            DeliveryItem deliveryItem = new DeliveryItem(
+                    UUID.randomUUID(),
+                    item.getSellerID(),
+                    marketItemID,
+                    supplierId,
+                    item.getItemID(),
+                    copyTag(item.getItemNBTCompound()),
+                    amount,
+                    amount,
+                    new Timestamp(System.currentTimeMillis()),
+                    null
+            );
+
+            marketItemRepository.update(connection, updatedItem);
+            deliveryItemRepository.insert(connection, deliveryItem);
+            purchaseRecordRepository.insert(connection, purchaseRecordId, marketItemID, supplierId, amount);
+
+            return ServiceResult.success(new BuyOrderFulfillmentResult(originalItem, updatedItem, deliveryItem,
+                    purchaseRecordId, supplierId, item.getSellerID(), totalCost, supplierNewBalance,
+                    buyerNewBalance, item.getIfAdmin(), updatedItem.getAmount() <= 0));
+        }).thenApply(result -> {
+            if (result.isSuccess()) {
+                marketItemCache.put(result.getValue().updatedItem());
+            }
+            return result;
+        }).exceptionally(e -> {
+            WheatMarket.LOGGER.error("Failed to fulfill buy order {} for supplier {}.", marketItemID, supplierId, e);
+            return ServiceResult.failure("gui.wheatmarket.operation.failed");
+        });
+    }
+
+    public CompletableFuture<ServiceResult<Void>> revertBuyOrderFulfillment(BuyOrderFulfillmentResult rollbackData) {
+        return transactionManager.executeAsync(connection -> {
+            DeliveryItem existingDelivery = deliveryItemRepository.findById(connection, rollbackData.deliveryItem().getDeliveryID());
+            if (existingDelivery != null) {
+                deliveryItemRepository.delete(connection, rollbackData.deliveryItem().getDeliveryID());
+            }
+            purchaseRecordRepository.delete(connection, rollbackData.purchaseRecordId());
+
+            playerInfoRepository.ensureExists(connection, rollbackData.supplierId());
+            double supplierBalance = playerInfoRepository.getBalance(connection, rollbackData.supplierId());
+            double revertedSupplierBalance = supplierBalance - rollbackData.totalCost();
+            if (!isNonNegativeMoney(revertedSupplierBalance)) {
+                return ServiceResult.<Void>failure("gui.wheatmarket.operation.failed");
+            }
+            playerInfoRepository.setBalance(connection, rollbackData.supplierId(), revertedSupplierBalance);
+
+            if (!rollbackData.adminOrder()) {
+                playerInfoRepository.ensureExists(connection, rollbackData.receiverId());
+                double receiverBalance = playerInfoRepository.getBalance(connection, rollbackData.receiverId());
+                double revertedReceiverBalance = receiverBalance + rollbackData.totalCost();
+                if (!isNonNegativeMoney(revertedReceiverBalance)) {
+                    return ServiceResult.<Void>failure("gui.wheatmarket.operation.failed");
+                }
+                playerInfoRepository.setBalance(connection, rollbackData.receiverId(), revertedReceiverBalance);
+            }
+
+            if (marketItemRepository.get(connection, rollbackData.originalItem().getMarketItemID()) == null) {
+                marketItemRepository.insert(connection, copyOf(rollbackData.originalItem()));
+            } else {
+                marketItemRepository.update(connection, copyOf(rollbackData.originalItem()));
+            }
+            return ServiceResult.<Void>success(null);
+        }).thenApply(result -> {
+            if (result.isSuccess()) {
+                marketItemCache.put(copyOf(rollbackData.originalItem()));
+            }
+            return result;
+        }).exceptionally(e -> {
+            WheatMarket.LOGGER.error("Failed to revert buy order fulfillment for {}.", rollbackData.originalItem().getMarketItemID(), e);
+            return ServiceResult.<Void>failure("gui.wheatmarket.operation.failed");
+        });
+    }
+
+    public CompletableFuture<ServiceResult<Void>> completeBuyOrderFulfillmentCleanup(UUID marketItemID) {
+        return transactionManager.executeAsync(connection -> {
+            MarketItem item = marketItemCache.get(marketItemID);
+            if (item == null || item.getIfSell() || item.getAmount() > 0) {
+                return ServiceResult.<Void>success(null);
+            }
+            purchaseRecordRepository.deleteByMarketItem(connection, marketItemID);
+            marketItemRepository.delete(connection, marketItemID);
+            return ServiceResult.<Void>success(null);
+        }).thenApply(result -> {
+            if (result.isSuccess()) {
+                MarketItem current = marketItemCache.get(marketItemID);
+                if (current != null && !current.getIfSell() && current.getAmount() <= 0) {
+                    marketItemCache.remove(marketItemID);
+                    editLocks.remove(marketItemID);
+                }
+            }
+            return result;
+        }).exceptionally(e -> {
+            WheatMarket.LOGGER.error("Failed to cleanup completed buy order {}.", marketItemID, e);
+            return ServiceResult.<Void>failure("gui.wheatmarket.operation.failed");
         });
     }
 
@@ -573,6 +758,14 @@ public class MarketService {
         return tag == null ? null : tag.copy();
     }
 
+    private ItemStack parseMarketItemStack(MarketItem item, HolderLookup.Provider registryAccess) {
+        CompoundTag tag = item.getItemNBTCompound();
+        if (tag == null || tag.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+        return ItemStack.parseOptional(registryAccess, tag);
+    }
+
     private boolean isPositiveMoney(double amount) {
         return Double.isFinite(amount) && amount > 0;
     }
@@ -604,6 +797,13 @@ public class MarketService {
     }
 
     public record ListItemResult(MarketItem marketItem) {
+    }
+
+    public record BuyOrderFulfillmentResult(MarketItem originalItem, MarketItem updatedItem,
+                                            DeliveryItem deliveryItem, UUID purchaseRecordId,
+                                            UUID supplierId, UUID receiverId, double totalCost,
+                                            double supplierNewBalance, double receiverNewBalance,
+                                            boolean adminOrder, boolean cleanupRequired) {
     }
 
     public record RestockResult(int amount, MarketItem updatedItem) implements MarketItemMutationResult {

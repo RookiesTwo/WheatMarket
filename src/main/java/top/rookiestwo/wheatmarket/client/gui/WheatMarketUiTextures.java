@@ -1,6 +1,10 @@
 package top.rookiestwo.wheatmarket.client.gui;
 
 import com.lowdragmc.lowdraglib2.gui.texture.*;
+import com.lowdragmc.lowdraglib2.gui.ui.data.Horizontal;
+import com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap;
+import com.lowdragmc.lowdraglib2.gui.ui.data.Vertical;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
@@ -37,6 +41,14 @@ public final class WheatMarketUiTextures {
     private static final int WRINKLED_PAPER_BORDER = 4;
     private static final int SEARCH_FOCUS_BORDER_COLOR = 0x995A4024;
     private static final int SELECTED_OVERLAY_COLOR = 0x66000000;
+
+    public static final int BLUE_BUTTON_COLOR = 0xFF78C6EA;
+    public static final int BLUE_BUTTON_HOVER_COLOR = 0xFF8CD3F2;
+    public static final int BLUE_BUTTON_PRESSED_COLOR = 0xFF5BAFD6;
+    public static final int RED_BUTTON_COLOR = 0xFFE86276;
+    public static final int RED_BUTTON_HOVER_COLOR = 0xFFF07688;
+    public static final int RED_BUTTON_PRESSED_COLOR = 0xFFD84B61;
+    private static final int COLORED_BUTTON_BORDER = 0xFF3A332C;
 
     private WheatMarketUiTextures() {
     }
@@ -130,5 +142,26 @@ public final class WheatMarketUiTextures {
                 .setColor((alpha << 24) | 0x00FFFFFF)
                 .scale(scale)
                 .rotate(rotation);
+    }
+
+    public static IGuiTexture coloredButtonTexture(int fillColor, int borderSize) {
+        return GuiTextureGroup.of(
+                new ColorRectTexture(fillColor),
+                new ColorBorderTexture(borderSize, COLORED_BUTTON_BORDER)
+        );
+    }
+
+    public static void styleColoredActionButton(Button button, int baseColor, int hoverColor, int pressedColor,
+                                                int borderSize) {
+        button.buttonStyle(style -> style
+                .baseTexture(coloredButtonTexture(baseColor, borderSize))
+                .hoverTexture(coloredButtonTexture(hoverColor, borderSize))
+                .pressedTexture(coloredButtonTexture(pressedColor, borderSize)));
+        button.textStyle(style -> style
+                .textAlignHorizontal(Horizontal.CENTER)
+                .textAlignVertical(Vertical.CENTER)
+                .textWrap(TextWrap.HIDE)
+                .textColor(0x19140D)
+                .textShadow(false));
     }
 }

@@ -1,23 +1,17 @@
 package top.rookiestwo.wheatmarket.client.gui;
 
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
-import top.rookiestwo.wheatmarket.menu.ItemSelectionMode;
 import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
-import top.rookiestwo.wheatmarket.network.WheatMarketNetwork;
-import top.rookiestwo.wheatmarket.network.c2s.SetItemSelectionModeC2SPacket;
 import top.rookiestwo.wheatmarket.network.s2c.MarketListS2CPacket;
 
-public class WheatMarketMainScreen extends AbstractContainerScreen<WheatMarketMenu> {
+public class WheatMarketMainScreen extends WheatMarketBaseScreen {
     private final Inventory inventory;
     private final WheatMarketHomeUI.State initialState;
     private WheatMarketHomeUI homeUI;
-    private ModularUI modularUI;
 
     public WheatMarketMainScreen(WheatMarketMenu abstractContainerMenu, Inventory inventory, Component component) {
         this(abstractContainerMenu, inventory, component, null);
@@ -31,20 +25,19 @@ public class WheatMarketMainScreen extends AbstractContainerScreen<WheatMarketMe
     }
 
     @Override
-    protected void init() {
-        this.imageWidth = this.width;
-        this.imageHeight = this.height;
-        super.init();
-        this.leftPos = 0;
-        this.topPos = 0;
-        disableItemSelectionMode();
+    protected ModularUI createModularUI() {
         this.homeUI = new WheatMarketHomeUI(
                 this::showOrderConfirmation,
                 this::showItemSelection,
                 this::showDeliveryScreen,
                 this.initialState
         );
-        installModularUI(this.homeUI.create(this.inventory.player));
+        return this.homeUI.create(this.inventory.player);
+    }
+
+    @Override
+    protected void init() {
+        super.init();
         this.homeUI.requestCurrentPage();
     }
 
@@ -79,44 +72,14 @@ public class WheatMarketMainScreen extends AbstractContainerScreen<WheatMarketMe
         }
     }
 
-    private void disableItemSelectionMode() {
-        this.menu.setItemSelectionMode(ItemSelectionMode.DISABLED, this.inventory.player);
-        WheatMarketNetwork.sendToServer(new SetItemSelectionModeC2SPacket(ItemSelectionMode.DISABLED));
-    }
-
-    private void installModularUI(ModularUI modularUI) {
-        this.modularUI = modularUI;
-        this.modularUI.setMenu(this.menu);
-        this.modularUI.setScreenAndInit(this);
-        this.addRenderableWidget(this.modularUI.getWidget());
-    }
-
-    @Override
-    protected void renderBg(GuiGraphics guiGraphics, float f, int i, int j) {
-    }
-
-    @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        this.renderBackground(guiGraphics, mouseX, mouseY, delta);
-        super.render(guiGraphics, mouseX, mouseY, delta);
-    }
-
-    @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-    }
-
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        var minecraft = this.minecraft;
-        if (minecraft == null) {
+        if (this.minecraft == null) {
             return false;
         }
         if ((keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER)
                 && this.homeUI != null
                 && this.homeUI.submitSearchIfSearchFieldFocused()) {
-            return true;
-        }
-        if (minecraft.options.keyInventory.matches(keyCode, scanCode)) {
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);

@@ -321,13 +321,9 @@ public class WheatMarketItemSelectionScreen extends AbstractContainerScreen<Whea
 
     private void installItemSelectionModularUI(ModularUI modularUI) {
         this.itemSelectionModularUI = modularUI;
-        installModularUI(this.itemSelectionModularUI);
-    }
-
-    private void installModularUI(ModularUI modularUI) {
-        modularUI.setMenu(this.menu);
-        modularUI.setScreenAndInit(this);
-        this.addRenderableWidget(modularUI.getWidget());
+        this.itemSelectionModularUI.setMenu(this.menu);
+        this.itemSelectionModularUI.setScreenAndInit(this);
+        this.addRenderableWidget(this.itemSelectionModularUI.getWidget());
     }
 
     @Override

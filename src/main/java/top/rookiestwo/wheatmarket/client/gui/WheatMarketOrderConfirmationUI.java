@@ -41,12 +41,6 @@ public class WheatMarketOrderConfirmationUI {
     private static final int PROCESSING_TEXT_COLOR = 0x665A4D;
     private static final int SIGNATURE_TEXT_COLOR = 0x7A7468;
     private static final int FAILURE_TEXT_COLOR = 0xA33629;
-    private static final int BLUE_BUTTON = 0xFF78C6EA;
-    private static final int BLUE_BUTTON_HOVER = 0xFF8CD3F2;
-    private static final int BLUE_BUTTON_PRESSED = 0xFF5BAFD6;
-    private static final int RED_BUTTON = 0xFFE86276;
-    private static final int RED_BUTTON_HOVER = 0xFFF07688;
-    private static final int RED_BUTTON_PRESSED = 0xFFD84B61;
     private static final int BUTTON_BORDER = 0xFF3A332C;
     private static final int ITEM_PREVIEW_BORDER = 0xFF3A332C;
     private static final int STAMP_MAX_ALPHA = 235;
@@ -163,39 +157,39 @@ public class WheatMarketOrderConfirmationUI {
     }
 
     private void bindAndPopulate(UI ui, Player player) {
-        UIElement root = require(ui, "order-root", UIElement.class);
-        orderPaper = require(ui, "order-paper", UIElement.class);
-        stampOverlay = require(ui, "stamp-overlay", UIElement.class);
+        UIElement root = WheatMarketUiHelpers.require(ui, "order-root", UIElement.class);
+        orderPaper = WheatMarketUiHelpers.require(ui, "order-paper", UIElement.class);
+        stampOverlay = WheatMarketUiHelpers.require(ui, "stamp-overlay", UIElement.class);
         orderPaper.addEventListener(UIEvents.LAYOUT_CHANGED, event -> updateStampLayout());
         root.addEventListener(UIEvents.MOUSE_DOWN, event -> onRootMouseDown(event.x, event.y), true);
-        UIElement playerAvatar = require(ui, "player-avatar", UIElement.class);
-        UIElement itemPreview = require(ui, "item-preview", UIElement.class);
-        UIElement itemIcon = require(ui, "order-item-icon", UIElement.class);
-        UIElement restrictionPanel = require(ui, "restriction-panel", UIElement.class);
-        quantityRow = require(ui, "quantity-row", UIElement.class);
+        UIElement playerAvatar = WheatMarketUiHelpers.require(ui, "player-avatar", UIElement.class);
+        UIElement itemPreview = WheatMarketUiHelpers.require(ui, "item-preview", UIElement.class);
+        UIElement itemIcon = WheatMarketUiHelpers.require(ui, "order-item-icon", UIElement.class);
+        UIElement restrictionPanel = WheatMarketUiHelpers.require(ui, "restriction-panel", UIElement.class);
+        quantityRow = WheatMarketUiHelpers.require(ui, "quantity-row", UIElement.class);
 
-        Label orderTitle = require(ui, "order-title", Label.class);
-        Label ownerLabel = require(ui, "owner-label", Label.class);
-        Label unitPriceLabel = require(ui, "unit-price-label", Label.class);
-        Label itemNameLabel = require(ui, "item-name-label", Label.class);
-        Label listingTimeLabel = require(ui, "listing-time-label", Label.class);
-        Label stockLabel = require(ui, "stock-label", Label.class);
-        Label restrictionTimeLabel = require(ui, "restriction-time-label", Label.class);
-        Label restrictionAmountLabel = require(ui, "restriction-amount-label", Label.class);
-        playerBalanceLabel = require(ui, "player-balance", Label.class);
-        Label quantityCaption = require(ui, "quantity-caption", Label.class);
-        processingLabel = require(ui, "processing-label", Label.class);
-        signatureLabel = require(ui, "signature-label", Label.class);
-        feedbackLabel = require(ui, "feedback-label", Label.class);
-        errorProgressTrack = require(ui, "error-progress-track", UIElement.class);
-        errorProgressFill = require(ui, "error-progress-fill", UIElement.class);
+        Label orderTitle = WheatMarketUiHelpers.require(ui, "order-title", Label.class);
+        Label ownerLabel = WheatMarketUiHelpers.require(ui, "owner-label", Label.class);
+        Label unitPriceLabel = WheatMarketUiHelpers.require(ui, "unit-price-label", Label.class);
+        Label itemNameLabel = WheatMarketUiHelpers.require(ui, "item-name-label", Label.class);
+        Label listingTimeLabel = WheatMarketUiHelpers.require(ui, "listing-time-label", Label.class);
+        Label stockLabel = WheatMarketUiHelpers.require(ui, "stock-label", Label.class);
+        Label restrictionTimeLabel = WheatMarketUiHelpers.require(ui, "restriction-time-label", Label.class);
+        Label restrictionAmountLabel = WheatMarketUiHelpers.require(ui, "restriction-amount-label", Label.class);
+        playerBalanceLabel = WheatMarketUiHelpers.require(ui, "player-balance", Label.class);
+        Label quantityCaption = WheatMarketUiHelpers.require(ui, "quantity-caption", Label.class);
+        processingLabel = WheatMarketUiHelpers.require(ui, "processing-label", Label.class);
+        signatureLabel = WheatMarketUiHelpers.require(ui, "signature-label", Label.class);
+        feedbackLabel = WheatMarketUiHelpers.require(ui, "feedback-label", Label.class);
+        errorProgressTrack = WheatMarketUiHelpers.require(ui, "error-progress-track", UIElement.class);
+        errorProgressFill = WheatMarketUiHelpers.require(ui, "error-progress-fill", UIElement.class);
 
-        decreaseButton = require(ui, "decrease-button", Button.class);
-        increaseButton = require(ui, "increase-button", Button.class);
-        confirmButton = require(ui, "confirm-button", Button.class);
-        manageButton = require(ui, "manage-button", Button.class);
-        cancelButton = require(ui, "cancel-button", Button.class);
-        quantityField = require(ui, "quantity-field", TextField.class);
+        decreaseButton = WheatMarketUiHelpers.require(ui, "decrease-button", Button.class);
+        increaseButton = WheatMarketUiHelpers.require(ui, "increase-button", Button.class);
+        confirmButton = WheatMarketUiHelpers.require(ui, "confirm-button", Button.class);
+        manageButton = WheatMarketUiHelpers.require(ui, "manage-button", Button.class);
+        cancelButton = WheatMarketUiHelpers.require(ui, "cancel-button", Button.class);
+        quantityField = WheatMarketUiHelpers.require(ui, "quantity-field", TextField.class);
 
         root.style(style -> style.background(WheatMarketUiTextures.tradingBackgroundTexture()));
         orderPaper.style(style -> style.background(WheatMarketUiTextures.tradingPaperTexture()));
@@ -218,23 +212,23 @@ public class WheatMarketOrderConfirmationUI {
         errorProgressFill.setAllowHitTest(false);
         errorProgressFill.style(style -> style.background(new ColorRectTexture(FAILURE_PROGRESS_FILL)));
 
-        styleLabel(orderTitle, TEXT_COLOR);
-        styleLabel(ownerLabel, TEXT_COLOR);
-        styleLabel(unitPriceLabel, TEXT_COLOR);
-        styleLabel(itemNameLabel, TEXT_COLOR);
-        styleLabel(listingTimeLabel, TEXT_COLOR);
-        styleLabel(stockLabel, TEXT_COLOR);
-        styleLabel(restrictionTimeLabel, WARNING_TEXT_COLOR);
-        styleLabel(restrictionAmountLabel, WARNING_TEXT_COLOR);
-        styleLabel(playerBalanceLabel, TEXT_COLOR);
+        WheatMarketUiHelpers.styleLabel(orderTitle, TEXT_COLOR);
+        WheatMarketUiHelpers.styleLabel(ownerLabel, TEXT_COLOR);
+        WheatMarketUiHelpers.styleLabel(unitPriceLabel, TEXT_COLOR);
+        WheatMarketUiHelpers.styleLabel(itemNameLabel, TEXT_COLOR);
+        WheatMarketUiHelpers.styleLabel(listingTimeLabel, TEXT_COLOR);
+        WheatMarketUiHelpers.styleLabel(stockLabel, TEXT_COLOR);
+        WheatMarketUiHelpers.styleLabel(restrictionTimeLabel, WARNING_TEXT_COLOR);
+        WheatMarketUiHelpers.styleLabel(restrictionAmountLabel, WARNING_TEXT_COLOR);
+        WheatMarketUiHelpers.styleLabel(playerBalanceLabel, TEXT_COLOR);
         quantityCaption.textStyle(style -> style
                 .textAlignHorizontal(Horizontal.RIGHT)
                 .textAlignVertical(Vertical.CENTER)
                 .textWrap(TextWrap.HIDE)
                 .textColor(TEXT_COLOR)
                 .textShadow(false));
-        styleLabel(processingLabel, PROCESSING_TEXT_COLOR);
-        styleLabel(feedbackLabel, FAILURE_TEXT_COLOR);
+        WheatMarketUiHelpers.styleLabel(processingLabel, PROCESSING_TEXT_COLOR);
+        WheatMarketUiHelpers.styleLabel(feedbackLabel, FAILURE_TEXT_COLOR);
         signatureLabel.textStyle(style -> style
                 .textAlignHorizontal(Horizontal.CENTER)
                 .textAlignVertical(Vertical.CENTER)
@@ -243,11 +237,11 @@ public class WheatMarketOrderConfirmationUI {
                 .textShadow(false)
                 .fontSize(SIGNATURE_FONT_SIZE));
 
-        styleActionButton(decreaseButton, BLUE_BUTTON, BLUE_BUTTON_HOVER, BLUE_BUTTON_PRESSED);
-        styleActionButton(increaseButton, BLUE_BUTTON, BLUE_BUTTON_HOVER, BLUE_BUTTON_PRESSED);
-        styleActionButton(confirmButton, BLUE_BUTTON, BLUE_BUTTON_HOVER, BLUE_BUTTON_PRESSED);
-        styleActionButton(manageButton, BLUE_BUTTON, BLUE_BUTTON_HOVER, BLUE_BUTTON_PRESSED);
-        styleActionButton(cancelButton, RED_BUTTON, RED_BUTTON_HOVER, RED_BUTTON_PRESSED);
+        WheatMarketUiTextures.styleColoredActionButton(decreaseButton, WheatMarketUiTextures.BLUE_BUTTON_COLOR, WheatMarketUiTextures.BLUE_BUTTON_HOVER_COLOR, WheatMarketUiTextures.BLUE_BUTTON_PRESSED_COLOR, 1);
+        WheatMarketUiTextures.styleColoredActionButton(increaseButton, WheatMarketUiTextures.BLUE_BUTTON_COLOR, WheatMarketUiTextures.BLUE_BUTTON_HOVER_COLOR, WheatMarketUiTextures.BLUE_BUTTON_PRESSED_COLOR, 1);
+        WheatMarketUiTextures.styleColoredActionButton(confirmButton, WheatMarketUiTextures.BLUE_BUTTON_COLOR, WheatMarketUiTextures.BLUE_BUTTON_HOVER_COLOR, WheatMarketUiTextures.BLUE_BUTTON_PRESSED_COLOR, 1);
+        WheatMarketUiTextures.styleColoredActionButton(manageButton, WheatMarketUiTextures.BLUE_BUTTON_COLOR, WheatMarketUiTextures.BLUE_BUTTON_HOVER_COLOR, WheatMarketUiTextures.BLUE_BUTTON_PRESSED_COLOR, 1);
+        WheatMarketUiTextures.styleColoredActionButton(cancelButton, WheatMarketUiTextures.RED_BUTTON_COLOR, WheatMarketUiTextures.RED_BUTTON_HOVER_COLOR, WheatMarketUiTextures.RED_BUTTON_PRESSED_COLOR, 1);
         confirmButton.enableText();
         manageButton.enableText();
         styleQuantityField();
@@ -263,7 +257,7 @@ public class WheatMarketOrderConfirmationUI {
         ownerLabel.setText(Component.translatable(item.isIfSell()
                 ? "gui.wheatmarket.confirm.seller"
                 : "gui.wheatmarket.confirm.buyer", resolveOwnerName(player)));
-        unitPriceLabel.setText(Component.translatable("gui.wheatmarket.confirm.unit_price", formatMoney(item.getPrice())));
+        unitPriceLabel.setText(Component.translatable("gui.wheatmarket.confirm.unit_price", WheatMarketUiHelpers.formatMoney(item.getPrice())));
         itemNameLabel.setText(Component.translatable("gui.wheatmarket.confirm.item_name", stack.getHoverName()));
         listingTimeLabel.setText(Component.translatable("gui.wheatmarket.confirm.listing_time", formatListingTime(item.getListingTime())));
         stockLabel.setText(Component.translatable("gui.wheatmarket.confirm.stock", formatStock()));
@@ -271,8 +265,8 @@ public class WheatMarketOrderConfirmationUI {
         feedbackLabel.setText(Component.empty());
         updateConfirmButtonText();
         manageButton.setText(Component.translatable("gui.wheatmarket.confirm.manage"));
-        setShown(manageButton, showManageButton);
-        setShown(quantityRow, !ownListing);
+        WheatMarketUiHelpers.setShown(manageButton, showManageButton);
+        WheatMarketUiHelpers.setShown(quantityRow, !ownListing);
 
         populateRestriction(restrictionPanel, restrictionTimeLabel, restrictionAmountLabel);
         maxQuantity = calculateMaxQuantity();
@@ -333,11 +327,11 @@ public class WheatMarketOrderConfirmationUI {
         animationState = AnimationState.SUBMITTING;
         animationTick = 0;
         feedbackLabel.setText(Component.empty());
-        setShown(feedbackLabel, false);
-        setShown(confirmButton, false);
-        setShown(processingLabel, true);
-        setShown(signatureLabel, false);
-        setShown(errorProgressTrack, false);
+        WheatMarketUiHelpers.setShown(feedbackLabel, false);
+        WheatMarketUiHelpers.setShown(confirmButton, false);
+        WheatMarketUiHelpers.setShown(processingLabel, true);
+        WheatMarketUiHelpers.setShown(signatureLabel, false);
+        WheatMarketUiHelpers.setShown(errorProgressTrack, false);
         updateFailureProgress(0.0F);
         applyControlState();
         WheatMarketNetwork.sendToServer(new BuyItemC2SPacket(item.getMarketItemID(), quantity));
@@ -349,8 +343,8 @@ public class WheatMarketOrderConfirmationUI {
         shownSignatureLength = 0;
         signatureLabel.setText(Component.empty());
         updateSignatureLayout();
-        setShown(processingLabel, false);
-        setShown(signatureLabel, true);
+        WheatMarketUiHelpers.setShown(processingLabel, false);
+        WheatMarketUiHelpers.setShown(signatureLabel, true);
         playPencilWritingSound();
     }
 
@@ -363,11 +357,11 @@ public class WheatMarketOrderConfirmationUI {
         animationState = AnimationState.IDLE;
         animationTick = 0;
         shownSignatureLength = 0;
-        setShown(confirmButton, true);
-        setShown(processingLabel, false);
-        setShown(signatureLabel, false);
-        setShown(feedbackLabel, false);
-        setShown(errorProgressTrack, false);
+        WheatMarketUiHelpers.setShown(confirmButton, true);
+        WheatMarketUiHelpers.setShown(processingLabel, false);
+        WheatMarketUiHelpers.setShown(signatureLabel, false);
+        WheatMarketUiHelpers.setShown(feedbackLabel, false);
+        WheatMarketUiHelpers.setShown(errorProgressTrack, false);
         updateFailureProgress(0.0F);
         applyControlState();
     }
@@ -377,11 +371,11 @@ public class WheatMarketOrderConfirmationUI {
         animationTick = 0;
         shownSignatureLength = 0;
         feedbackLabel.setText(message);
-        setShown(confirmButton, false);
-        setShown(processingLabel, false);
-        setShown(signatureLabel, false);
-        setShown(feedbackLabel, true);
-        setShown(errorProgressTrack, true);
+        WheatMarketUiHelpers.setShown(confirmButton, false);
+        WheatMarketUiHelpers.setShown(processingLabel, false);
+        WheatMarketUiHelpers.setShown(signatureLabel, false);
+        WheatMarketUiHelpers.setShown(feedbackLabel, true);
+        WheatMarketUiHelpers.setShown(errorProgressTrack, true);
         updateFailureProgress(0.0F);
         applyControlState();
     }
@@ -465,7 +459,7 @@ public class WheatMarketOrderConfirmationUI {
             confirmButton.setText(Component.translatable("gui.wheatmarket.confirm.edit_item"));
             return;
         }
-        confirmButton.setText(Component.translatable("gui.wheatmarket.confirm.confirm_total", formatMoney(item.getPrice() * quantity)));
+        confirmButton.setText(Component.translatable("gui.wheatmarket.confirm.confirm_total", WheatMarketUiHelpers.formatMoney(item.getPrice() * quantity)));
     }
 
     private boolean isOwnListing(Player player) {
@@ -728,7 +722,7 @@ public class WheatMarketOrderConfirmationUI {
             return;
         }
         seenBalance = WheatMarket.CLIENT_BALANCE;
-        playerBalanceLabel.setText(Component.translatable("gui.wheatmarket.balance", formatMoney(seenBalance)));
+        playerBalanceLabel.setText(Component.translatable("gui.wheatmarket.balance", WheatMarketUiHelpers.formatMoney(seenBalance)));
     }
 
     private void playPaperFlippingSound() {
@@ -756,54 +750,12 @@ public class WheatMarketOrderConfirmationUI {
         minecraft.player.playSound(WheatMarketRegistry.ORDER_STAMP.get(), 1.0F, 1.0F);
     }
 
-    private void styleLabel(Label label, int color) {
-        label.textStyle(style -> style
-                .textAlignHorizontal(Horizontal.CENTER)
-                .textAlignVertical(Vertical.CENTER)
-                .textWrap(TextWrap.HIDE)
-                .textColor(color)
-                .textShadow(false));
-    }
 
-    private void styleActionButton(Button button, int baseColor, int hoverColor, int pressedColor) {
-        button.buttonStyle(style -> style
-                .baseTexture(buttonTexture(baseColor))
-                .hoverTexture(buttonTexture(hoverColor))
-                .pressedTexture(buttonTexture(pressedColor)));
-        button.textStyle(style -> style
-                .textAlignHorizontal(Horizontal.CENTER)
-                .textAlignVertical(Vertical.CENTER)
-                .textWrap(TextWrap.HIDE)
-                .textColor(TEXT_COLOR)
-                .textShadow(false));
-    }
-
-    private IGuiTexture buttonTexture(int color) {
-        return GuiTextureGroup.of(
-                new ColorRectTexture(color),
-                new ColorBorderTexture(1, BUTTON_BORDER)
-        );
-    }
-
-    private void setShown(UIElement element, boolean shown) {
-        element.setDisplay(shown);
-        element.setVisible(shown);
-    }
 
     private void setButtonShownPreserveLayout(UIElement element, boolean shown) {
         element.setDisplay(true);
         element.setVisible(shown);
         element.setAllowHitTest(shown);
-    }
-
-    private <T> T require(UI ui, String id, Class<T> type) {
-        return ui.selectId(id, type)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Missing UI element: " + id));
-    }
-
-    private String formatMoney(double value) {
-        return String.format(Locale.ROOT, "%.2f", value);
     }
 
     private enum AnimationState {

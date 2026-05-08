@@ -12,7 +12,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import top.rookiestwo.wheatmarket.network.s2c.MarketListS2CPacket;
 
-import java.util.Locale;
 import java.util.function.BiConsumer;
 
 public final class MarketListingCard {
@@ -59,7 +58,7 @@ public final class MarketListingCard {
 
         UIElement[] cardRootRef = new UIElement[1];
 
-        Label priceLabel = label(Component.literal(formatMoney(item.getPrice())));
+        Label priceLabel = label(Component.literal(WheatMarketUiHelpers.formatMoney(item.getPrice())));
         priceLabel.lss("align-self", "center");
         priceLabel.layout(layout -> layout.width(48).height(9).flexShrink(0));
         priceLabel.textStyle(style -> style.textColor(PRICE_COLOR));
@@ -116,10 +115,6 @@ public final class MarketListingCard {
                 .textColor(TEXT_COLOR)
                 .textShadow(false));
         return label;
-    }
-
-    private static String formatMoney(double value) {
-        return String.format(Locale.ROOT, "%.2f", value);
     }
 
 }

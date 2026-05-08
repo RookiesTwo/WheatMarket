@@ -150,7 +150,7 @@ public class WheatMarketHomeUI {
     }
 
     public void setBalance(double balance) {
-        balanceLabel.setText(Component.translatable("gui.wheatmarket.balance", formatMoney(balance)));
+        balanceLabel.setText(Component.translatable("gui.wheatmarket.balance", WheatMarketUiHelpers.formatMoney(balance)));
     }
 
     public State createState() {
@@ -166,31 +166,31 @@ public class WheatMarketHomeUI {
     }
 
     private void bindStaticElements(UI ui) {
-        rootElement = require(ui, "market-root", UIElement.class);
-        titleLogo = require(ui, "title-logo", UIElement.class);
-        topBar = require(ui, "top-bar", UIElement.class);
-        sideBar = require(ui, "side-bar", UIElement.class);
-        actionBar = require(ui, "action-bar", UIElement.class);
-        marketPanel = require(ui, "market-panel", UIElement.class);
-        paginationBar = require(ui, "pagination-bar", UIElement.class);
+        rootElement = WheatMarketUiHelpers.require(ui, "market-root", UIElement.class);
+        titleLogo = WheatMarketUiHelpers.require(ui, "title-logo", UIElement.class);
+        topBar = WheatMarketUiHelpers.require(ui, "top-bar", UIElement.class);
+        sideBar = WheatMarketUiHelpers.require(ui, "side-bar", UIElement.class);
+        actionBar = WheatMarketUiHelpers.require(ui, "action-bar", UIElement.class);
+        marketPanel = WheatMarketUiHelpers.require(ui, "market-panel", UIElement.class);
+        paginationBar = WheatMarketUiHelpers.require(ui, "pagination-bar", UIElement.class);
 
-        balanceLabel = require(ui, "balance-label", Label.class);
-        pageLabel = require(ui, "page-label", Label.class);
+        balanceLabel = WheatMarketUiHelpers.require(ui, "balance-label", Label.class);
+        pageLabel = WheatMarketUiHelpers.require(ui, "page-label", Label.class);
 
-        listingButton = require(ui, "listing-button", Button.class);
-        deliveryButton = require(ui, "delivery-button", Button.class);
-        sortButton = require(ui, "sort-button", Button.class);
-        myItemsButton = require(ui, "my-items-button", Button.class);
-        searchButton = require(ui, "search-button", Button.class);
-        refreshButton = require(ui, "refresh-button", Button.class);
-        previousButton = require(ui, "previous-button", Button.class);
-        nextButton = require(ui, "next-button", Button.class);
+        listingButton = WheatMarketUiHelpers.require(ui, "listing-button", Button.class);
+        deliveryButton = WheatMarketUiHelpers.require(ui, "delivery-button", Button.class);
+        sortButton = WheatMarketUiHelpers.require(ui, "sort-button", Button.class);
+        myItemsButton = WheatMarketUiHelpers.require(ui, "my-items-button", Button.class);
+        searchButton = WheatMarketUiHelpers.require(ui, "search-button", Button.class);
+        refreshButton = WheatMarketUiHelpers.require(ui, "refresh-button", Button.class);
+        previousButton = WheatMarketUiHelpers.require(ui, "previous-button", Button.class);
+        nextButton = WheatMarketUiHelpers.require(ui, "next-button", Button.class);
 
-        tradeSelector = requireSelector(ui, "trade-selector");
-        sourceSelector = requireSelector(ui, "source-selector");
-        sortSelector = requireSelector(ui, "sort-selector");
-        searchField = require(ui, "search-field", TextField.class);
-        productBoard = require(ui, "product-board", UIElement.class);
+        tradeSelector = WheatMarketUiHelpers.requireSelector(ui, "trade-selector");
+        sourceSelector = WheatMarketUiHelpers.requireSelector(ui, "source-selector");
+        sortSelector = WheatMarketUiHelpers.requireSelector(ui, "sort-selector");
+        searchField = WheatMarketUiHelpers.require(ui, "search-field", TextField.class);
+        productBoard = WheatMarketUiHelpers.require(ui, "product-board", UIElement.class);
     }
 
     private void applyTextures(Player player) {
@@ -412,16 +412,7 @@ public class WheatMarketHomeUI {
         element.style(style -> style.background(WheatMarketUiTextures.paperTexture()));
     }
 
-    private <T> T require(UI ui, String id, Class<T> type) {
-        return ui.selectId(id, type)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Missing UI element: " + id));
-    }
 
-    @SuppressWarnings("unchecked")
-    private <T> Selector<T> requireSelector(UI ui, String id) {
-        return (Selector<T>) require(ui, id, Selector.class);
-    }
 
     private ItemStack itemStackFromSummary(MarketListS2CPacket.MarketItemSummary item) {
         Minecraft minecraft = Minecraft.getInstance();
@@ -476,9 +467,6 @@ public class WheatMarketHomeUI {
         return HoverTooltips.empty().append(current, next);
     }
 
-    private String formatMoney(double value) {
-        return String.format(Locale.ROOT, "%.2f", value);
-    }
 
     private enum TradeFilter {
         ALL("gui.wheatmarket.filter.all", 0),

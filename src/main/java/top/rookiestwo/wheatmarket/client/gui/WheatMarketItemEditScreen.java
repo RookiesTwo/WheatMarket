@@ -1,26 +1,21 @@
 package top.rookiestwo.wheatmarket.client.gui;
 
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import top.rookiestwo.wheatmarket.menu.ItemSelectionMode;
 import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
 import top.rookiestwo.wheatmarket.network.WheatMarketNetwork;
 import top.rookiestwo.wheatmarket.network.c2s.ManageItemC2SPacket;
 import top.rookiestwo.wheatmarket.network.c2s.ReleaseItemEditLockC2SPacket;
-import top.rookiestwo.wheatmarket.network.c2s.SetItemSelectionModeC2SPacket;
 import top.rookiestwo.wheatmarket.network.s2c.MarketListS2CPacket;
 
-public class WheatMarketItemEditScreen extends AbstractContainerScreen<WheatMarketMenu> {
+public class WheatMarketItemEditScreen extends WheatMarketBaseScreen {
     private final Inventory inventory;
     private final MarketListS2CPacket.MarketItemSummary item;
     private final ItemStack stack;
     private WheatMarketItemEditUI.Draft draft;
     private WheatMarketItemEditUI itemEditUI;
-    private ModularUI modularUI;
     private boolean selectionReleased;
     private boolean editLockReleased;
     private boolean openingStockSelection;
@@ -41,13 +36,7 @@ public class WheatMarketItemEditScreen extends AbstractContainerScreen<WheatMark
     }
 
     @Override
-    protected void init() {
-        this.imageWidth = this.width;
-        this.imageHeight = this.height;
-        super.init();
-        this.leftPos = 0;
-        this.topPos = 0;
-
+    protected ModularUI createModularUI() {
         this.itemEditUI = new WheatMarketItemEditUI(
                 this.item,
                 this.stack,
@@ -56,7 +45,7 @@ public class WheatMarketItemEditScreen extends AbstractContainerScreen<WheatMark
                 this::submitAction,
                 this::returnToMain
         );
-        installModularUI(this.itemEditUI.create(this.inventory.player));
+        return this.itemEditUI.create(this.inventory.player);
     }
 
     @Override
@@ -186,8 +175,7 @@ public class WheatMarketItemEditScreen extends AbstractContainerScreen<WheatMark
             return;
         }
         selectionReleased = true;
-        this.menu.setItemSelectionMode(ItemSelectionMode.DISABLED, this.inventory.player);
-        WheatMarketNetwork.sendToServer(new SetItemSelectionModeC2SPacket(ItemSelectionMode.DISABLED));
+        disableItemSelectionMode();
     }
 
     private void releaseEditLock() {
@@ -212,34 +200,5 @@ public class WheatMarketItemEditScreen extends AbstractContainerScreen<WheatMark
             releaseEditLock();
         }
         super.removed();
-    }
-
-    private void installModularUI(ModularUI modularUI) {
-        this.modularUI = modularUI;
-        this.modularUI.setMenu(this.menu);
-        this.modularUI.setScreenAndInit(this);
-        this.addRenderableWidget(this.modularUI.getWidget());
-    }
-
-    @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-    }
-
-    @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        this.renderBackground(guiGraphics, mouseX, mouseY, delta);
-        super.render(guiGraphics, mouseX, mouseY, delta);
-    }
-
-    @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-    }
-
-    @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (this.minecraft != null && this.minecraft.options.keyInventory.matches(keyCode, scanCode)) {
-            return true;
-        }
-        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 }

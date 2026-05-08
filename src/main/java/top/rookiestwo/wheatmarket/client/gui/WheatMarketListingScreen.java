@@ -1,8 +1,6 @@
 package top.rookiestwo.wheatmarket.client.gui;
 
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
@@ -12,7 +10,7 @@ import top.rookiestwo.wheatmarket.network.WheatMarketNetwork;
 import top.rookiestwo.wheatmarket.network.c2s.ListItemC2SPacket;
 import top.rookiestwo.wheatmarket.network.c2s.SetItemSelectionModeC2SPacket;
 
-public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarketMenu> {
+public class WheatMarketListingScreen extends WheatMarketBaseScreen {
     private final Inventory inventory;
     private ItemStack stack;
     private int amount;
@@ -24,7 +22,6 @@ public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarke
     private int cooldownAmount;
     private int cooldownTimeInMinutes;
     private WheatMarketListingUI listingUI;
-    private ModularUI modularUI;
     private boolean selectionReleased;
 
     public WheatMarketListingScreen(WheatMarketMenu menu, Inventory inventory, Component title) {
@@ -60,13 +57,7 @@ public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarke
     }
 
     @Override
-    protected void init() {
-        this.imageWidth = this.width;
-        this.imageHeight = this.height;
-        super.init();
-        this.leftPos = 0;
-        this.topPos = 0;
-
+    protected ModularUI createModularUI() {
         this.listingUI = new WheatMarketListingUI(
                 this.stack,
                 this.amount,
@@ -82,7 +73,7 @@ public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarke
                 this::handleListingTypeChanged,
                 this::returnToMain
         );
-        installModularUI(this.listingUI.create(this.inventory.player));
+        return this.listingUI.create(this.inventory.player);
     }
 
     @Override
@@ -207,34 +198,5 @@ public class WheatMarketListingScreen extends AbstractContainerScreen<WheatMarke
     public void removed() {
         releaseSelection();
         super.removed();
-    }
-
-    private void installModularUI(ModularUI modularUI) {
-        this.modularUI = modularUI;
-        this.modularUI.setMenu(this.menu);
-        this.modularUI.setScreenAndInit(this);
-        this.addRenderableWidget(this.modularUI.getWidget());
-    }
-
-    @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-    }
-
-    @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        this.renderBackground(guiGraphics, mouseX, mouseY, delta);
-        super.render(guiGraphics, mouseX, mouseY, delta);
-    }
-
-    @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-    }
-
-    @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (this.minecraft != null && this.minecraft.options.keyInventory.matches(keyCode, scanCode)) {
-            return true;
-        }
-        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 }

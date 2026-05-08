@@ -7,8 +7,6 @@ import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.data.Horizontal;
-import com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap;
-import com.lowdragmc.lowdraglib2.gui.ui.data.Vertical;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.lowdragmc.lowdraglib2.gui.ui.event.HoverTooltips;
@@ -122,19 +120,19 @@ public class WheatMarketDeliveryUI {
     }
 
     private void bindStaticElements(UI ui) {
-        rootElement = require(ui, "delivery-root", UIElement.class);
-        titleBar = require(ui, "title-bar", UIElement.class);
-        listPanel = require(ui, "list-panel", UIElement.class);
-        paginationBar = require(ui, "pagination-bar", UIElement.class);
-        footerBar = require(ui, "footer-bar", UIElement.class);
-        deliveryBoard = require(ui, "delivery-board", UIElement.class);
-        titleLabel = require(ui, "title-label", Label.class);
-        pageLabel = require(ui, "page-label", Label.class);
-        statusLabel = require(ui, "status-label", Label.class);
-        refreshButton = require(ui, "refresh-button", Button.class);
-        backButton = require(ui, "back-button", Button.class);
-        previousButton = require(ui, "previous-button", Button.class);
-        nextButton = require(ui, "next-button", Button.class);
+        rootElement = WheatMarketUiHelpers.require(ui, "delivery-root", UIElement.class);
+        titleBar = WheatMarketUiHelpers.require(ui, "title-bar", UIElement.class);
+        listPanel = WheatMarketUiHelpers.require(ui, "list-panel", UIElement.class);
+        paginationBar = WheatMarketUiHelpers.require(ui, "pagination-bar", UIElement.class);
+        footerBar = WheatMarketUiHelpers.require(ui, "footer-bar", UIElement.class);
+        deliveryBoard = WheatMarketUiHelpers.require(ui, "delivery-board", UIElement.class);
+        titleLabel = WheatMarketUiHelpers.require(ui, "title-label", Label.class);
+        pageLabel = WheatMarketUiHelpers.require(ui, "page-label", Label.class);
+        statusLabel = WheatMarketUiHelpers.require(ui, "status-label", Label.class);
+        refreshButton = WheatMarketUiHelpers.require(ui, "refresh-button", Button.class);
+        backButton = WheatMarketUiHelpers.require(ui, "back-button", Button.class);
+        previousButton = WheatMarketUiHelpers.require(ui, "previous-button", Button.class);
+        nextButton = WheatMarketUiHelpers.require(ui, "next-button", Button.class);
     }
 
     private void applyTextures() {
@@ -156,9 +154,9 @@ public class WheatMarketDeliveryUI {
         pageLabel.setText(Component.translatable("gui.wheatmarket.delivery.page", 1, 1));
         showStatus(Component.translatable("gui.wheatmarket.delivery.loading"), INFO_TEXT_COLOR);
 
-        styleLabel(titleLabel, TEXT_COLOR, Horizontal.CENTER);
-        styleLabel(pageLabel, TEXT_COLOR, Horizontal.CENTER);
-        styleLabel(statusLabel, INFO_TEXT_COLOR, Horizontal.LEFT);
+        WheatMarketUiHelpers.styleLabel(titleLabel, TEXT_COLOR, Horizontal.CENTER);
+        WheatMarketUiHelpers.styleLabel(pageLabel, TEXT_COLOR, Horizontal.CENTER);
+        WheatMarketUiHelpers.styleLabel(statusLabel, INFO_TEXT_COLOR, Horizontal.LEFT);
 
         refreshButton.setOnClick(event -> requestCurrentPage());
         backButton.setOnClick(event -> onBack.run());
@@ -243,21 +241,21 @@ public class WheatMarketDeliveryUI {
         Label itemNameLabel = new Label();
         itemNameLabel.setText(itemName);
         itemNameLabel.layout(layout -> layout.widthPercent(100).height(16));
-        styleLabel(itemNameLabel, TEXT_COLOR, Horizontal.LEFT);
+        WheatMarketUiHelpers.styleLabel(itemNameLabel, TEXT_COLOR, Horizontal.LEFT);
         itemNameLabel.addEventListener(UIEvents.HOVER_TOOLTIPS,
                 event -> event.hoverTooltips = HoverTooltips.empty().append(itemName));
 
         Label sourceLabel = new Label();
         sourceLabel.setText(sourceText);
         sourceLabel.layout(layout -> layout.width(0).flex(1).height(14).minWidth(0));
-        styleLabel(sourceLabel, MUTED_TEXT_COLOR, Horizontal.LEFT);
+        WheatMarketUiHelpers.styleLabel(sourceLabel, MUTED_TEXT_COLOR, Horizontal.LEFT);
         sourceLabel.addEventListener(UIEvents.HOVER_TOOLTIPS,
                 event -> event.hoverTooltips = buildSourceTooltips(player, delivery));
 
         Label timeLabel = new Label();
         timeLabel.setText(timeText);
         timeLabel.layout(layout -> layout.width(0).flex(1).height(14).minWidth(0));
-        styleLabel(timeLabel, MUTED_TEXT_COLOR, Horizontal.LEFT);
+        WheatMarketUiHelpers.styleLabel(timeLabel, MUTED_TEXT_COLOR, Horizontal.LEFT);
         timeLabel.addEventListener(UIEvents.HOVER_TOOLTIPS,
                 event -> event.hoverTooltips = HoverTooltips.empty().append(timeText));
 
@@ -275,7 +273,7 @@ public class WheatMarketDeliveryUI {
         Label amountLabel = new Label();
         amountLabel.setText(amountText);
         amountLabel.layout(layout -> layout.width(72).height(18).flexShrink(0));
-        styleLabel(amountLabel, TEXT_COLOR, Horizontal.CENTER);
+        WheatMarketUiHelpers.styleLabel(amountLabel, TEXT_COLOR, Horizontal.CENTER);
 
         Button claimButton = new Button();
         claimButton.enableText();
@@ -404,16 +402,7 @@ public class WheatMarketDeliveryUI {
 
     private void showStatus(Component message, int color) {
         statusLabel.setText(message);
-        styleLabel(statusLabel, color, Horizontal.LEFT);
-    }
-
-    private void styleLabel(Label label, int color, Horizontal horizontal) {
-        label.textStyle(style -> style
-                .textAlignHorizontal(horizontal)
-                .textAlignVertical(Vertical.CENTER)
-                .textWrap(TextWrap.HIDE)
-                .textColor(color)
-                .textShadow(false));
+        WheatMarketUiHelpers.styleLabel(statusLabel, color, Horizontal.LEFT);
     }
 
     private void styleButton(Button button) {
@@ -424,9 +413,4 @@ public class WheatMarketDeliveryUI {
                 .pressedTexture(WheatMarketUiTextures.buttonPressedTexture()));
     }
 
-    private <T> T require(UI ui, String id, Class<T> type) {
-        return ui.selectId(id, type)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Missing UI element: " + id));
-    }
 }

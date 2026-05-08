@@ -110,30 +110,30 @@ public class WheatMarketItemSelectionUI {
         if (restrictionLabel == null) {
             return;
         }
-        styleLabel(restrictionLabel, FAILURE_TEXT_COLOR);
+        WheatMarketUiHelpers.styleLabel(restrictionLabel, FAILURE_TEXT_COLOR, Horizontal.LEFT);
         restrictionLabel.setText(message);
     }
 
     private void bindStaticElements(UI ui) {
-        rootElement = require(ui, "item-selection-root", UIElement.class);
-        dimOverlay = require(ui, "dim-overlay", UIElement.class);
-        panelElement = require(ui, "item-selection-panel", UIElement.class);
-        slotBackgroundLayer = require(ui, "slot-background-layer", UIElement.class);
+        rootElement = WheatMarketUiHelpers.require(ui, "item-selection-root", UIElement.class);
+        dimOverlay = WheatMarketUiHelpers.require(ui, "dim-overlay", UIElement.class);
+        panelElement = WheatMarketUiHelpers.require(ui, "item-selection-panel", UIElement.class);
+        slotBackgroundLayer = WheatMarketUiHelpers.require(ui, "slot-background-layer", UIElement.class);
         panelElement.layout(layout -> layout
                 .left(panelLeft)
                 .top(panelTop)
                 .width(GUI_WIDTH)
                 .height(GUI_HEIGHT));
 
-        Label titleLabel = require(ui, "title-label", Label.class);
-        modeLabel = require(ui, "mode-label", Label.class);
-        Label selectionSlotLabel = require(ui, "selection-slot-label", Label.class);
-        restrictionLabel = require(ui, "restriction-label", Label.class);
-        Label inventoryLabel = require(ui, "inventory-label", Label.class);
-        selectedItemLabel = require(ui, "selected-item-label", Label.class);
+        Label titleLabel = WheatMarketUiHelpers.require(ui, "title-label", Label.class);
+        modeLabel = WheatMarketUiHelpers.require(ui, "mode-label", Label.class);
+        Label selectionSlotLabel = WheatMarketUiHelpers.require(ui, "selection-slot-label", Label.class);
+        restrictionLabel = WheatMarketUiHelpers.require(ui, "restriction-label", Label.class);
+        Label inventoryLabel = WheatMarketUiHelpers.require(ui, "inventory-label", Label.class);
+        selectedItemLabel = WheatMarketUiHelpers.require(ui, "selected-item-label", Label.class);
 
-        confirmButton = require(ui, "confirm-button", Button.class);
-        backButton = require(ui, "back-button", Button.class);
+        confirmButton = WheatMarketUiHelpers.require(ui, "confirm-button", Button.class);
+        backButton = WheatMarketUiHelpers.require(ui, "back-button", Button.class);
 
         titleLabel.setText(titleText());
         modeLabel.setText(modeText(request.mode()));
@@ -141,12 +141,12 @@ public class WheatMarketItemSelectionUI {
         restrictionLabel.setText(restrictionText());
         inventoryLabel.setText(Component.translatable("container.inventory"));
 
-        styleLabel(titleLabel, TEXT_COLOR);
-        styleLabel(modeLabel, MUTED_TEXT_COLOR);
-        styleLabel(selectionSlotLabel, MUTED_TEXT_COLOR);
-        styleLabel(restrictionLabel, MUTED_TEXT_COLOR);
-        styleLabel(inventoryLabel, MUTED_TEXT_COLOR);
-        styleLabel(selectedItemLabel, TEXT_COLOR);
+        WheatMarketUiHelpers.styleLabel(titleLabel, TEXT_COLOR, Horizontal.LEFT);
+        WheatMarketUiHelpers.styleLabel(modeLabel, MUTED_TEXT_COLOR, Horizontal.LEFT);
+        WheatMarketUiHelpers.styleLabel(selectionSlotLabel, MUTED_TEXT_COLOR, Horizontal.LEFT);
+        WheatMarketUiHelpers.styleLabel(restrictionLabel, MUTED_TEXT_COLOR, Horizontal.LEFT);
+        WheatMarketUiHelpers.styleLabel(inventoryLabel, MUTED_TEXT_COLOR, Horizontal.LEFT);
+        WheatMarketUiHelpers.styleLabel(selectedItemLabel, TEXT_COLOR, Horizontal.LEFT);
         styleButton(confirmButton);
         styleButton(backButton);
         if (request.purpose() == ItemSelectionPurpose.STOCK_EDIT) {
@@ -264,14 +264,6 @@ public class WheatMarketItemSelectionUI {
         return Component.translatable("gui.wheatmarket.item_selection.unlocked");
     }
 
-    private void styleLabel(Label label, int color) {
-        label.textStyle(style -> style
-                .textAlignHorizontal(Horizontal.LEFT)
-                .textAlignVertical(Vertical.CENTER)
-                .textWrap(TextWrap.HIDE)
-                .textColor(color)
-                .textShadow(false));
-    }
 
     private void styleButton(Button button) {
         button.buttonStyle(style -> style
@@ -286,9 +278,4 @@ public class WheatMarketItemSelectionUI {
                 .textShadow(false));
     }
 
-    private <T> T require(UI ui, String id, Class<T> type) {
-        return ui.selectId(id, type)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Missing UI element: " + id));
-    }
 }

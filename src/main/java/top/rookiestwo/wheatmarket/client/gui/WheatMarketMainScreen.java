@@ -15,12 +15,19 @@ import top.rookiestwo.wheatmarket.network.s2c.MarketListS2CPacket;
 
 public class WheatMarketMainScreen extends AbstractContainerScreen<WheatMarketMenu> {
     private final Inventory inventory;
+    private final WheatMarketHomeUI.State initialState;
     private WheatMarketHomeUI homeUI;
     private ModularUI modularUI;
 
     public WheatMarketMainScreen(WheatMarketMenu abstractContainerMenu, Inventory inventory, Component component) {
+        this(abstractContainerMenu, inventory, component, null);
+    }
+
+    public WheatMarketMainScreen(WheatMarketMenu abstractContainerMenu, Inventory inventory, Component component,
+                                 WheatMarketHomeUI.State initialState) {
         super(abstractContainerMenu, inventory, component);
         this.inventory = inventory;
+        this.initialState = initialState;
     }
 
     @Override
@@ -31,7 +38,12 @@ public class WheatMarketMainScreen extends AbstractContainerScreen<WheatMarketMe
         this.leftPos = 0;
         this.topPos = 0;
         disableItemSelectionMode();
-        this.homeUI = new WheatMarketHomeUI(this::showOrderConfirmation, this::showItemSelection);
+        this.homeUI = new WheatMarketHomeUI(
+                this::showOrderConfirmation,
+                this::showItemSelection,
+                this::showDeliveryScreen,
+                this.initialState
+        );
         installModularUI(this.homeUI.create(this.inventory.player));
         this.homeUI.requestCurrentPage();
     }
@@ -53,6 +65,17 @@ public class WheatMarketMainScreen extends AbstractContainerScreen<WheatMarketMe
     private void showItemSelection() {
         if (this.minecraft != null) {
             this.minecraft.setScreen(new WheatMarketListingScreen(this.menu, this.inventory, this.title));
+        }
+    }
+
+    private void showDeliveryScreen() {
+        if (this.minecraft != null) {
+            this.minecraft.setScreen(new WheatMarketDeliveryScreen(
+                    this.menu,
+                    this.inventory,
+                    this.title,
+                    this.homeUI == null ? null : this.homeUI.createState()
+            ));
         }
     }
 

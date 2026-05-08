@@ -9,6 +9,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.network.c2s.*;
 import top.rookiestwo.wheatmarket.network.s2c.BalanceUpdateS2CPacket;
+import top.rookiestwo.wheatmarket.network.s2c.DeliveryListS2CPacket;
 import top.rookiestwo.wheatmarket.network.s2c.MarketListS2CPacket;
 import top.rookiestwo.wheatmarket.network.s2c.OperationResultS2CPacket;
 
@@ -24,7 +25,9 @@ public class WheatMarketNetwork {
         PayloadRegistrar registrar = event.registrar(NETWORK_VERSION);
 
         registrar.playToServer(RequestMarketListC2SPacket.TYPE, RequestMarketListC2SPacket.STREAM_CODEC, RequestMarketListC2SPacket::handle);
+        registrar.playToServer(RequestDeliveryListC2SPacket.TYPE, RequestDeliveryListC2SPacket.STREAM_CODEC, RequestDeliveryListC2SPacket::handle);
         registrar.playToServer(BuyItemC2SPacket.TYPE, BuyItemC2SPacket.STREAM_CODEC, BuyItemC2SPacket::handle);
+        registrar.playToServer(ClaimDeliveryC2SPacket.TYPE, ClaimDeliveryC2SPacket.STREAM_CODEC, ClaimDeliveryC2SPacket::handle);
         registrar.playToServer(FulfillBuyOrderC2SPacket.TYPE, FulfillBuyOrderC2SPacket.STREAM_CODEC, FulfillBuyOrderC2SPacket::handle);
         registrar.playToServer(ListItemC2SPacket.TYPE, ListItemC2SPacket.STREAM_CODEC, ListItemC2SPacket::handle);
         registrar.playToServer(ManageItemC2SPacket.TYPE, ManageItemC2SPacket.STREAM_CODEC, ManageItemC2SPacket::handle);
@@ -35,6 +38,7 @@ public class WheatMarketNetwork {
         registrar.playToServer(FinalizeStockEditC2SPacket.TYPE, FinalizeStockEditC2SPacket.STREAM_CODEC, FinalizeStockEditC2SPacket::handle);
 
         registrar.playToClient(MarketListS2CPacket.TYPE, MarketListS2CPacket.STREAM_CODEC, MarketListS2CPacket::handle);
+        registrar.playToClient(DeliveryListS2CPacket.TYPE, DeliveryListS2CPacket.STREAM_CODEC, DeliveryListS2CPacket::handle);
         registrar.playToClient(OperationResultS2CPacket.TYPE, OperationResultS2CPacket.STREAM_CODEC, OperationResultS2CPacket::handle);
         registrar.playToClient(BalanceUpdateS2CPacket.TYPE, BalanceUpdateS2CPacket.STREAM_CODEC, BalanceUpdateS2CPacket::handle);
 

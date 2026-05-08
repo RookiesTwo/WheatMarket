@@ -144,6 +144,15 @@
         flex-shrink: 1;
         }
 
+        #delivery-button {
+        width: 100%;
+        height: 28;
+        min-height: 28;
+        flex-shrink: 0;
+        margin-left: 3;
+        margin-right: 3;
+        }
+
         #listing-button > text:internal {
         width: 100%;
         height: 14;
@@ -241,6 +250,7 @@
                     <button id="sort-button" text=""/>
                 </element>
                 <button id="listing-button" text="gui.wheatmarket.nav.listing"/>
+                <button id="delivery-button" text="gui.wheatmarket.nav.delivery"/>
             </element>
             <element id="main-column">
                 <element id="action-bar" class="row-bar">

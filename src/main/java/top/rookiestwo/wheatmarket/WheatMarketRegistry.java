@@ -1,8 +1,10 @@
 package top.rookiestwo.wheatmarket;
 
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
@@ -78,7 +80,11 @@ public class WheatMarketRegistry {
 
     public static void registerClientScreens(RegisterMenuScreensEvent event) {
         WheatMarket.LOGGER.info("WheatMarket Client Registering...");
-        event.register(WHEAT_MARKET_MENU.get(), WheatMarketMainScreen::new);
+        event.register(WHEAT_MARKET_MENU.get(), WheatMarketRegistry::createMainScreen);
+    }
+
+    private static WheatMarketMainScreen createMainScreen(WheatMarketMenu menu, Inventory inventory, Component title) {
+        return new WheatMarketMainScreen(menu, inventory, title);
     }
 
     public static void registerEvents() {

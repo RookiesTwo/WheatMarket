@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ldlib2-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/Low-Drag-MC/LDLib2/refs/heads/1.21/ldlib2-ui.xsd">
+    <stylesheet location="ldlib2:lss/mc.lss"/>
+    <style>
+        #delivery-root {
+        width: 100%;
+        height: 100%;
+        flex-direction: column;
+        padding-all: 8;
+        gap-all: 6;
+        overflow: hidden;
+        }
+
+        .row-bar {
+        width: 100%;
+        flex-direction: row;
+        align-items: center;
+        gap-all: 6;
+        }
+
+        #title-bar {
+        height: 34;
+        padding-left: 10;
+        padding-right: 10;
+        }
+
+        #title-label {
+        width: 100%;
+        height: 20;
+        horizontal-align: CENTER;
+        vertical-align: CENTER;
+        text-wrap: HIDE;
+        text-shadow: false;
+        }
+
+        #list-panel {
+        width: 100%;
+        flex: 1;
+        padding-all: 8;
+        overflow: hidden;
+        }
+
+        #delivery-board {
+        width: 100%;
+        height: 100%;
+        flex-direction: column;
+        gap-all: 6;
+        overflow: hidden;
+        }
+
+        #pagination-bar {
+        height: 24;
+        padding-left: 8;
+        padding-right: 8;
+        }
+
+        .page-button {
+        width: 68;
+        height: 20;
+        }
+
+        #page-label {
+        width: 0;
+        flex: 1;
+        height: 18;
+        horizontal-align: CENTER;
+        vertical-align: CENTER;
+        }
+
+        #footer-bar {
+        height: 28;
+        padding-left: 8;
+        padding-right: 8;
+        }
+
+        #status-label {
+        width: 0;
+        flex: 1;
+        min-width: 0;
+        height: 20;
+        padding-left: 6;
+        padding-right: 6;
+        horizontal-align: LEFT;
+        vertical-align: CENTER;
+        text-wrap: HIDE;
+        text-shadow: false;
+        }
+
+        .action-button {
+        width: 68;
+        height: 20;
+        }
+    </style>
+    <root id="delivery-root" class="panel_bg">
+        <element id="title-bar" class="row-bar">
+            <label id="title-label"/>
+        </element>
+        <element id="list-panel">
+            <element id="delivery-board"/>
+        </element>
+        <element id="pagination-bar" class="row-bar">
+            <button id="previous-button" class="page-button" text="gui.wheatmarket.action.previous"/>
+            <label id="page-label"/>
+            <button id="next-button" class="page-button" text="gui.wheatmarket.action.next"/>
+        </element>
+        <element id="footer-bar" class="row-bar">
+            <label id="status-label"/>
+            <button id="refresh-button" class="action-button" text="gui.wheatmarket.action.refresh"/>
+            <button id="back-button" class="action-button" text="gui.wheatmarket.delivery.back"/>
+        </element>
+    </root>
+</ldlib2-ui>

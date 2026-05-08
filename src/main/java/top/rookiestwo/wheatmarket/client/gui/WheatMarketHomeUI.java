@@ -43,6 +43,8 @@ public class WheatMarketHomeUI {
 
     private final BiConsumer<MarketListS2CPacket.MarketItemSummary, ItemStack> orderRequestHandler;
     private final Runnable listingRequestHandler;
+    private final Runnable deliveryRequestHandler;
+    private final State initialState;
 
     private Selector<TradeFilter> tradeSelector;
     private Selector<SourceFilter> sourceSelector;
@@ -58,6 +60,7 @@ public class WheatMarketHomeUI {
     private UIElement paginationBar;
     private UIElement myItemsOverlay;
     private Button listingButton;
+    private Button deliveryButton;
     private Button sortButton;
     private Button myItemsButton;
     private Button searchButton;
@@ -76,14 +79,28 @@ public class WheatMarketHomeUI {
     }
 
     public WheatMarketHomeUI(BiConsumer<MarketListS2CPacket.MarketItemSummary, ItemStack> orderRequestHandler) {
-        this(orderRequestHandler, null);
+        this(orderRequestHandler, null, null, null);
     }
 
     public WheatMarketHomeUI(BiConsumer<MarketListS2CPacket.MarketItemSummary, ItemStack> orderRequestHandler,
                              Runnable listingRequestHandler) {
+        this(orderRequestHandler, listingRequestHandler, null, null);
+    }
+
+    public WheatMarketHomeUI(BiConsumer<MarketListS2CPacket.MarketItemSummary, ItemStack> orderRequestHandler,
+                             Runnable listingRequestHandler, Runnable deliveryRequestHandler) {
+        this(orderRequestHandler, listingRequestHandler, deliveryRequestHandler, null);
+    }
+
+    public WheatMarketHomeUI(BiConsumer<MarketListS2CPacket.MarketItemSummary, ItemStack> orderRequestHandler,
+                             Runnable listingRequestHandler, Runnable deliveryRequestHandler,
+                             State initialState) {
         this.orderRequestHandler = orderRequestHandler;
         this.listingRequestHandler = listingRequestHandler == null ? () -> {
         } : listingRequestHandler;
+        this.deliveryRequestHandler = deliveryRequestHandler == null ? () -> {
+        } : deliveryRequestHandler;
+        this.initialState = initialState;
     }
 
     public ModularUI create(Player player) {
@@ -136,6 +153,18 @@ public class WheatMarketHomeUI {
         balanceLabel.setText(Component.translatable("gui.wheatmarket.balance", formatMoney(balance)));
     }
 
+    public State createState() {
+        return new State(
+                sortAscending,
+                ownListingsOnly,
+                requestedPage,
+                searchField == null ? "" : searchField.getValue(),
+                selectedTradeFilter(),
+                selectedSourceFilter(),
+                selectedSortFilter()
+        );
+    }
+
     private void bindStaticElements(UI ui) {
         rootElement = require(ui, "market-root", UIElement.class);
         titleLogo = require(ui, "title-logo", UIElement.class);
@@ -149,6 +178,7 @@ public class WheatMarketHomeUI {
         pageLabel = require(ui, "page-label", Label.class);
 
         listingButton = require(ui, "listing-button", Button.class);
+        deliveryButton = require(ui, "delivery-button", Button.class);
         sortButton = require(ui, "sort-button", Button.class);
         myItemsButton = require(ui, "my-items-button", Button.class);
         searchButton = require(ui, "search-button", Button.class);
@@ -178,6 +208,7 @@ public class WheatMarketHomeUI {
                 WheatMarketUiTextures.SELL_ICON_TEXTURE,
                 WheatMarketUiTextures.SELL_HOVERED_ICON_TEXTURE
         );
+        stylePlainButton(deliveryButton);
         styleButton(sortButton, WheatMarketUiTextures.FILTER_ICON_TEXTURE);
         styleIconButton(myItemsButton, WheatMarketUiTextures.playerAvatarTexture(player));
         installMyItemsOverlay();
@@ -198,23 +229,23 @@ public class WheatMarketHomeUI {
                 .textWrap(TextWrap.HIDE)
                 .textColor(0x2B2116)
                 .textShadow(false));
+
+        State state = initialState == null ? State.DEFAULT : initialState;
+        sortAscending = state.sortAscending();
+        ownListingsOnly = state.ownListingsOnly();
+        requestedPage = Math.max(0, state.requestedPage());
+
         setBalance(WheatMarket.CLIENT_BALANCE);
         pageLabel.setText(Component.translatable("gui.wheatmarket.market.page", 1, 1));
 
         tradeSelector.setCandidates(List.of(TradeFilter.ALL, TradeFilter.SELL, TradeFilter.BUY))
-                .setSelected(TradeFilter.ALL)
-                .setOnValueChanged(value -> resetAndRequest());
+                .setSelected(state.tradeFilter() == null ? TradeFilter.ALL : state.tradeFilter());
         sourceSelector.setCandidates(List.of(SourceFilter.ALL, SourceFilter.SYSTEM, SourceFilter.PLAYER))
-                .setSelected(SourceFilter.ALL)
-                .setOnValueChanged(value -> resetAndRequest());
+                .setSelected(state.sourceFilter() == null ? SourceFilter.ALL : state.sourceFilter());
         sortSelector.setCandidates(List.of(SortFilter.LIST_TIME, SortFilter.ITEM_ID, SortFilter.LAST_TRADE))
-                .setSelected(SortFilter.LIST_TIME)
-                .setOnValueChanged(value -> {
-                    sortAscending = (value == null ? SortFilter.LIST_TIME : value).defaultAscending;
-                    resetAndRequest();
-                });
+                .setSelected(state.sortFilter() == null ? SortFilter.LIST_TIME : state.sortFilter());
 
-        searchField.setText("");
+        searchField.setText(state.searchQuery() == null ? "" : state.searchQuery());
         searchField.textFieldStyle(style -> style
                 .placeholder(Component.translatable("gui.wheatmarket.searchbar"))
                 .textColor(0x151515)
@@ -223,8 +254,15 @@ public class WheatMarketHomeUI {
                 .focusOverlay(WheatMarketUiTextures.searchFieldFocusTexture())
                 .textShadow(false));
 
+        tradeSelector.setOnValueChanged(value -> resetAndRequest());
+        sourceSelector.setOnValueChanged(value -> resetAndRequest());
+        sortSelector.setOnValueChanged(value -> {
+            sortAscending = (value == null ? SortFilter.LIST_TIME : value).defaultAscending;
+            resetAndRequest();
+        });
         searchButton.setOnClick(event -> resetAndRequest());
         listingButton.setOnClick(event -> listingRequestHandler.run());
+        deliveryButton.setOnClick(event -> deliveryRequestHandler.run());
         sortButton.setOnClick(event -> toggleSortDirection());
         myItemsButton.addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = myItemsTooltips());
         myItemsButton.setOnClick(event -> toggleOwnListingsOnly());
@@ -420,6 +458,14 @@ public class WheatMarketHomeUI {
         return sortSelector.getValue() == null ? SortFilter.LIST_TIME : sortSelector.getValue();
     }
 
+    private TradeFilter selectedTradeFilter() {
+        return tradeSelector.getValue() == null ? TradeFilter.ALL : tradeSelector.getValue();
+    }
+
+    private SourceFilter selectedSourceFilter() {
+        return sourceSelector.getValue() == null ? SourceFilter.ALL : sourceSelector.getValue();
+    }
+
     private HoverTooltips myItemsTooltips() {
         Component current = Component.translatable(ownListingsOnly
                 ? "gui.wheatmarket.my_items.current_own"
@@ -491,5 +537,11 @@ public class WheatMarketHomeUI {
         public String toString() {
             return Component.translatable(translationKey).getString();
         }
+    }
+
+    public record State(boolean sortAscending, boolean ownListingsOnly, int requestedPage, String searchQuery,
+                        TradeFilter tradeFilter, SourceFilter sourceFilter, SortFilter sortFilter) {
+        private static final State DEFAULT = new State(false, false, 0, "", TradeFilter.ALL, SourceFilter.ALL,
+                SortFilter.LIST_TIME);
     }
 }

@@ -21,26 +21,33 @@ public class SetItemSelectionModeC2SPacket implements CustomPacketPayload {
     private final int initialSelectionAmount;
     private final CompoundTag lockedTemplateNbt;
     private final boolean keepSelectionOnDisable;
+    private final int maxSelectionAmount;
 
     public SetItemSelectionModeC2SPacket(ItemSelectionMode mode) {
-        this(mode, null, 0, null, false);
+        this(mode, null, 0, null, false, 0);
     }
 
     public SetItemSelectionModeC2SPacket(ItemSelectionMode mode, boolean keepSelectionOnDisable) {
-        this(mode, null, 0, null, keepSelectionOnDisable);
+        this(mode, null, 0, null, keepSelectionOnDisable, 0);
     }
 
     public SetItemSelectionModeC2SPacket(ItemSelectionMode mode, CompoundTag initialSelectionNbt, int initialSelectionAmount, CompoundTag lockedTemplateNbt) {
-        this(mode, initialSelectionNbt, initialSelectionAmount, lockedTemplateNbt, false);
+        this(mode, initialSelectionNbt, initialSelectionAmount, lockedTemplateNbt, false, 0);
     }
 
     public SetItemSelectionModeC2SPacket(ItemSelectionMode mode, CompoundTag initialSelectionNbt, int initialSelectionAmount,
                                          CompoundTag lockedTemplateNbt, boolean keepSelectionOnDisable) {
+        this(mode, initialSelectionNbt, initialSelectionAmount, lockedTemplateNbt, keepSelectionOnDisable, 0);
+    }
+
+    public SetItemSelectionModeC2SPacket(ItemSelectionMode mode, CompoundTag initialSelectionNbt, int initialSelectionAmount,
+                                         CompoundTag lockedTemplateNbt, boolean keepSelectionOnDisable, int maxSelectionAmount) {
         this.mode = mode == null ? ItemSelectionMode.DISABLED : mode;
         this.initialSelectionNbt = initialSelectionNbt;
         this.initialSelectionAmount = Math.max(0, initialSelectionAmount);
         this.lockedTemplateNbt = lockedTemplateNbt;
         this.keepSelectionOnDisable = keepSelectionOnDisable;
+        this.maxSelectionAmount = Math.max(0, maxSelectionAmount);
     }
 
     public SetItemSelectionModeC2SPacket(FriendlyByteBuf buf) {
@@ -49,6 +56,7 @@ public class SetItemSelectionModeC2SPacket implements CustomPacketPayload {
         this.initialSelectionAmount = buf.readVarInt();
         this.lockedTemplateNbt = buf.readNbt();
         this.keepSelectionOnDisable = buf.readBoolean();
+        this.maxSelectionAmount = buf.readVarInt();
     }
 
     public void encode(FriendlyByteBuf buf) {
@@ -57,6 +65,7 @@ public class SetItemSelectionModeC2SPacket implements CustomPacketPayload {
         buf.writeVarInt(initialSelectionAmount);
         buf.writeNbt(lockedTemplateNbt);
         buf.writeBoolean(keepSelectionOnDisable);
+        buf.writeVarInt(maxSelectionAmount);
     }
 
     @Override
@@ -71,6 +80,7 @@ public class SetItemSelectionModeC2SPacket implements CustomPacketPayload {
                     wheatMarketMenu.deactivateItemSelection(player);
                     return;
                 }
+                wheatMarketMenu.setCustomMaxSelectionAmount(maxSelectionAmount);
                 ItemStack initialSelection = mode == ItemSelectionMode.TRANSFER
                         ? ItemStack.EMPTY
                         : stackFromNbt(player, initialSelectionNbt, initialSelectionAmount);

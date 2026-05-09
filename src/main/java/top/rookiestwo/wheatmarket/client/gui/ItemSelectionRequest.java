@@ -14,7 +14,8 @@ public record ItemSelectionRequest(
         ItemStack lockedStackTemplate,
         boolean allowEmpty,
         Consumer<ItemSelectionResult> onConfirm,
-        UUID marketItemId
+        UUID marketItemId,
+        int maxSelectionAmount
 ) {
     public ItemSelectionRequest {
         purpose = purpose == null ? ItemSelectionPurpose.LIST_SELL : purpose;
@@ -24,6 +25,7 @@ public record ItemSelectionRequest(
         lockedStackTemplate = templateCopy(lockedStackTemplate);
         onConfirm = onConfirm == null ? result -> {
         } : onConfirm;
+        maxSelectionAmount = Math.max(0, maxSelectionAmount);
     }
 
     public ItemSelectionRequest(ItemSelectionPurpose purpose,
@@ -33,7 +35,18 @@ public record ItemSelectionRequest(
                                 ItemStack lockedStackTemplate,
                                 boolean allowEmpty,
                                 Consumer<ItemSelectionResult> onConfirm) {
-        this(purpose, mode, initialSelection, baselineAmount, lockedStackTemplate, allowEmpty, onConfirm, null);
+        this(purpose, mode, initialSelection, baselineAmount, lockedStackTemplate, allowEmpty, onConfirm, null, 0);
+    }
+
+    public ItemSelectionRequest(ItemSelectionPurpose purpose,
+                                ItemSelectionMode mode,
+                                ItemStack initialSelection,
+                                int baselineAmount,
+                                ItemStack lockedStackTemplate,
+                                boolean allowEmpty,
+                                Consumer<ItemSelectionResult> onConfirm,
+                                int maxSelectionAmount) {
+        this(purpose, mode, initialSelection, baselineAmount, lockedStackTemplate, allowEmpty, onConfirm, null, maxSelectionAmount);
     }
 
     public static ItemSelectionRequest listSell(Consumer<ItemSelectionResult> onConfirm) {
@@ -45,7 +58,8 @@ public record ItemSelectionRequest(
                 ItemStack.EMPTY,
                 true,
                 onConfirm,
-                null
+                null,
+                0
         );
     }
 
@@ -66,7 +80,8 @@ public record ItemSelectionRequest(
                 stack,
                 true,
                 onConfirm,
-                marketItemId
+                marketItemId,
+                0
         );
     }
 

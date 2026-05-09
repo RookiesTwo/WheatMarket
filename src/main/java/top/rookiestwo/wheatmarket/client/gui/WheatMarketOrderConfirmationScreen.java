@@ -113,14 +113,16 @@ public class WheatMarketOrderConfirmationScreen extends WheatMarketBaseScreen {
 
         ItemSelectionPurpose purpose = ItemSelectionPurpose.LIST_BUY;
         int[] resultAmount = {0};
+        int maxAmount = item.isIfInfinite() ? 999 : Math.max(1, item.getAmount());
         ItemSelectionRequest request = new ItemSelectionRequest(
                 purpose,
                 ItemSelectionMode.TRANSFER,
-                this.stack.copy(),
+                ItemStack.EMPTY,
                 0,
                 this.stack.copy(),
                 false,
-                result -> resultAmount[0] = result.totalAmount()
+                result -> resultAmount[0] = result.totalAmount(),
+                maxAmount
         );
 
         this.minecraft.setScreen(new WheatMarketItemSelectionScreen(

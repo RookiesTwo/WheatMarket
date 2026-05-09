@@ -38,6 +38,7 @@ public class WheatMarketMenu extends AbstractContainerMenu {
     private ItemStack stockEditTemplate = ItemStack.EMPTY;
     private UUID editingMarketItemId;
     private Player player = null;
+    private int customMaxSelectionAmount;
 
     public WheatMarketMenu(int containerId, Inventory inventory) {
         super(WheatMarketRegistry.WHEAT_MARKET_MENU.get(), containerId);
@@ -210,6 +211,7 @@ public class WheatMarketMenu extends AbstractContainerMenu {
         if (stockEditActive) {
             itemSelectionMode = ItemSelectionMode.DISABLED;
             lockedItemSelectionTemplate = ItemStack.EMPTY;
+            customMaxSelectionAmount = 0;
             returnCarriedItem(player);
             broadcastChanges();
             return;
@@ -218,12 +220,14 @@ public class WheatMarketMenu extends AbstractContainerMenu {
             if (newMode == ItemSelectionMode.DISABLED) {
                 returnOrClearSelection(player);
                 lockedItemSelectionTemplate = ItemStack.EMPTY;
+                customMaxSelectionAmount = 0;
                 broadcastChanges();
             }
             return;
         }
 
         this.itemSelectionMode = newMode;
+        customMaxSelectionAmount = 0;
         returnOrClearSelection(player);
         if (newMode == ItemSelectionMode.DISABLED) {
             lockedItemSelectionTemplate = ItemStack.EMPTY;
@@ -233,6 +237,7 @@ public class WheatMarketMenu extends AbstractContainerMenu {
 
     public void deactivateItemSelection(Player player) {
         itemSelectionMode = ItemSelectionMode.DISABLED;
+        customMaxSelectionAmount = 0;
         returnCarriedItem(player);
         broadcastChanges();
     }
@@ -303,6 +308,14 @@ public class WheatMarketMenu extends AbstractContainerMenu {
         if (marketItemId == null || marketItemId.equals(this.editingMarketItemId)) {
             this.editingMarketItemId = null;
         }
+    }
+
+    public int getCustomMaxSelectionAmount() {
+        return customMaxSelectionAmount;
+    }
+
+    public void setCustomMaxSelectionAmount(int amount) {
+        this.customMaxSelectionAmount = Math.max(0, amount);
     }
 
     public void prepareClientStockEdit(UUID marketItemId, ItemStack lockedTemplate, Player player) {
@@ -513,9 +526,11 @@ public class WheatMarketMenu extends AbstractContainerMenu {
             return 0;
         }
 
+        int effectiveMax = customMaxSelectionAmount > 0 ? customMaxSelectionAmount : ITEM_SELECTION_MAX_AMOUNT;
+
         ItemStack selected = itemSelectionContainer.getItem(0);
         if (selected.isEmpty()) {
-            int moved = Math.min(requestedAmount, ITEM_SELECTION_MAX_AMOUNT);
+            int moved = Math.min(requestedAmount, effectiveMax);
             ItemStack copy = source.copy();
             copy.setCount(moved);
             itemSelectionContainer.setItem(0, copy);
@@ -531,7 +546,7 @@ public class WheatMarketMenu extends AbstractContainerMenu {
             return 0;
         }
 
-        int space = ITEM_SELECTION_MAX_AMOUNT - selected.getCount();
+        int space = effectiveMax - selected.getCount();
         if (space <= 0) {
             return 0;
         }
@@ -581,8 +596,9 @@ public class WheatMarketMenu extends AbstractContainerMenu {
         if (!selected.isEmpty() && !itemSelectionContainsRealItems) {
             return false;
         }
+        int effectiveMax = customMaxSelectionAmount > 0 ? customMaxSelectionAmount : ITEM_SELECTION_MAX_AMOUNT;
         return selected.isEmpty()
-                || (selected.getCount() < ITEM_SELECTION_MAX_AMOUNT && ItemStack.isSameItemSameComponents(selected, stack));
+                || (selected.getCount() < effectiveMax && ItemStack.isSameItemSameComponents(selected, stack));
     }
 
     private boolean canAddToStockEdit(ItemStack stack) {
@@ -861,22 +877,13 @@ public class WheatMarketMenu extends AbstractContainerMenu {
 
         @Override
         public int getMaxStackSize() {
-            return ITEM_SELECTION_MAX_AMOUNT;
+            return customMaxSelectionAmount > 0 ? Math.min(ITEM_SELECTION_MAX_AMOUNT, customMaxSelectionAmount) : ITEM_SELECTION_MAX_AMOUNT;
         }
 
         @Override
         public int getMaxStackSize(ItemStack stack) {
-            return ITEM_SELECTION_MAX_AMOUNT;
-        }
-
-        @Override
-        public boolean isActive() {
-            return isSlotInterfaceActive();
-        }
-
-        @Override
-        public boolean isFake() {
-            return !stockEditActive && !itemSelectionMode.consumesItems();
+            int baseMax = Math.max(1, Math.min(stack.getMaxStackSize(), ITEM_SELECTION_MAX_AMOUNT));
+            return customMaxSelectionAmount > 0 ? Math.min(baseMax, customMaxSelectionAmount) : baseMax;
         }
     }
 

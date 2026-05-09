@@ -164,6 +164,8 @@ public class WheatMarketOrderConfirmationUI {
         }
         if (success) {
             startSigning();
+        } else if (!item.isIfSell()) {
+            onCancel.run();
         } else {
             showFailure(message);
         }
@@ -288,7 +290,7 @@ public class WheatMarketOrderConfirmationUI {
         updateConfirmButtonText();
         manageButton.setText(Component.translatable("gui.wheatmarket.confirm.manage"));
         WheatMarketUiHelpers.setShown(manageButton, showManageButton);
-        WheatMarketUiHelpers.setShown(quantityRow, !ownListing);
+        WheatMarketUiHelpers.setShown(quantityRow, !ownListing && item.isIfSell());
         selectItemButton.setText(Component.translatable("gui.wheatmarket.confirm.select_supply_items"));
         selectItemButton.setOnClick(event -> onSelectItem.run());
         updateBuyOrderSupplyDisplay();
@@ -357,7 +359,7 @@ public class WheatMarketOrderConfirmationUI {
             WheatMarketUiHelpers.setShown(errorProgressTrack, false);
             updateFailureProgress(0.0F);
             applyControlState();
-            WheatMarketNetwork.sendToServer(new FulfillBuyOrderC2SPacket(item.getMarketItemID(), quantity));
+            WheatMarketNetwork.sendToServer(new FulfillBuyOrderC2SPacket(item.getMarketItemID(), buyOrderSuppliedAmount));
             return;
         }
 
@@ -482,7 +484,7 @@ public class WheatMarketOrderConfirmationUI {
         setButtonShownPreserveLayout(increaseButton, showIncrease);
         decreaseButton.setActive(showDecrease);
         increaseButton.setActive(showIncrease);
-        confirmButton.setActive(interactive && (ownListing || maxQuantity > 0));
+        confirmButton.setActive(interactive && (ownListing || (maxQuantity > 0 && (!item.isIfSell() ? buyOrderSuppliedAmount > 0 : true))));
         manageButton.setActive(interactive && showManageButton);
         cancelButton.setActive(interactive);
         quantityField.setActive(interactive && maxQuantity >= 0);
@@ -497,7 +499,8 @@ public class WheatMarketOrderConfirmationUI {
             confirmButton.setText(Component.translatable("gui.wheatmarket.confirm.edit_item"));
             return;
         }
-        confirmButton.setText(Component.translatable("gui.wheatmarket.confirm.confirm_total", WheatMarketUiHelpers.formatMoney(item.getPrice() * quantity)));
+        int displayQuantity = item.isIfSell() ? quantity : buyOrderSuppliedAmount;
+        confirmButton.setText(Component.translatable("gui.wheatmarket.confirm.confirm_total", WheatMarketUiHelpers.formatMoney(item.getPrice() * displayQuantity)));
     }
 
     private boolean isOwnListing(Player player) {

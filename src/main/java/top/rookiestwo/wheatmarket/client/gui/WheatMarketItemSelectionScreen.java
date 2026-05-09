@@ -130,12 +130,17 @@ public class WheatMarketItemSelectionScreen extends AbstractContainerScreen<Whea
             WheatMarketNetwork.sendToServer(new BeginStockEditC2SPacket(this.request.marketItemId()));
             return;
         }
+        if (this.request.maxSelectionAmount() > 0) {
+            this.menu.setCustomMaxSelectionAmount(this.request.maxSelectionAmount());
+        }
         this.menu.configureItemSelection(selectedMode, clientInitialSelection(), this.request.lockedStackTemplate(), this.inventory.player);
         WheatMarketNetwork.sendToServer(new SetItemSelectionModeC2SPacket(
                 selectedMode,
                 stackToNbt(this.request.initialSelection()),
                 stackAmount(this.request.initialSelection()),
-                stackToNbt(this.request.lockedStackTemplate())
+                stackToNbt(this.request.lockedStackTemplate()),
+                false,
+                this.request.maxSelectionAmount()
         ));
     }
 

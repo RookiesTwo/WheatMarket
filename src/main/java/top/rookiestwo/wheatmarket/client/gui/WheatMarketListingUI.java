@@ -405,6 +405,8 @@ public class WheatMarketListingUI {
                 .focusOverlay(EMPTY_OVERLAY));
         quantityField.registerValueListener(this::onQuantityFieldChanged);
         quantityField.addEventListener(UIEvents.BLUR, event -> normalizeQuantityFieldIfBlurred());
+        decreaseButton.setOnClick(event -> updateBuyQuantity(buyQuantity - 1));
+        increaseButton.setOnClick(event -> updateBuyQuantity(buyQuantity + 1));
     }
 
     private void configureCooldownField(TextField field, boolean amountField) {

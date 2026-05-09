@@ -62,6 +62,9 @@ public abstract class WheatMarketBaseScreen extends AbstractContainerScreen<Whea
     }
 
     protected void disableItemSelectionMode() {
+        if (this.menu.getItemSelectionMode() == ItemSelectionMode.DISABLED) {
+            return;
+        }
         this.menu.setItemSelectionMode(ItemSelectionMode.DISABLED, this.minecraft.player);
         WheatMarketNetwork.sendToServer(new SetItemSelectionModeC2SPacket(ItemSelectionMode.DISABLED));
     }

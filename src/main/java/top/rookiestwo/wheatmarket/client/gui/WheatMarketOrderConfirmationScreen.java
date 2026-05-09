@@ -1,12 +1,15 @@
 package top.rookiestwo.wheatmarket.client.gui;
 
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import top.rookiestwo.wheatmarket.menu.ItemSelectionMode;
 import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
 import top.rookiestwo.wheatmarket.network.WheatMarketNetwork;
 import top.rookiestwo.wheatmarket.network.c2s.AcquireItemEditLockC2SPacket;
+import top.rookiestwo.wheatmarket.network.c2s.SetItemSelectionModeC2SPacket;
 import top.rookiestwo.wheatmarket.network.s2c.MarketListS2CPacket;
 
 public class WheatMarketOrderConfirmationScreen extends WheatMarketBaseScreen {
@@ -17,6 +20,7 @@ public class WheatMarketOrderConfirmationScreen extends WheatMarketBaseScreen {
     private int selectedQuantity = 1;
     private boolean initializedOnce;
     private boolean openingManagement;
+    private boolean buyOrderSelectionActive;
 
     public WheatMarketOrderConfirmationScreen(WheatMarketMenu menu, Inventory inventory, Component title,
                                               MarketListS2CPacket.MarketItemSummary item, ItemStack stack) {
@@ -34,7 +38,7 @@ public class WheatMarketOrderConfirmationScreen extends WheatMarketBaseScreen {
     @Override
     protected void init() {
         super.init();
-        if (!initializedOnce) {
+        if (!initializedOnce && item.isIfSell()) {
             disableItemSelectionMode();
         }
 
@@ -52,6 +56,11 @@ public class WheatMarketOrderConfirmationScreen extends WheatMarketBaseScreen {
         );
         this.modularUI = this.orderConfirmationUI.create(this.inventory.player);
         installModularUI(this.modularUI);
+
+        if (!item.isIfSell() && !initializedOnce) {
+            configureBuyOrderSelection();
+        }
+
         this.initializedOnce = true;
     }
 
@@ -76,6 +85,7 @@ public class WheatMarketOrderConfirmationScreen extends WheatMarketBaseScreen {
     }
 
     private void returnToMain() {
+        releaseBuyOrderSelection();
         if (this.minecraft != null) {
             this.minecraft.setScreen(new WheatMarketMainScreen(this.menu, this.inventory, this.title));
         }
@@ -93,5 +103,51 @@ public class WheatMarketOrderConfirmationScreen extends WheatMarketBaseScreen {
         if (this.minecraft != null) {
             this.minecraft.setScreen(new WheatMarketItemEditScreen(this.menu, this.inventory, this.title, this.item, this.stack));
         }
+    }
+
+    private void configureBuyOrderSelection() {
+        if (item.isIfSell() || this.minecraft == null) {
+            return;
+        }
+        ItemStack template = this.stack.copy();
+        template.setCount(1);
+        this.menu.configureItemSelection(ItemSelectionMode.TRANSFER, ItemStack.EMPTY, template, this.inventory.player);
+        WheatMarketNetwork.sendToServer(new SetItemSelectionModeC2SPacket(
+                ItemSelectionMode.TRANSFER,
+                stackToNbt(template),
+                0,
+                stackToNbt(template)
+        ));
+        buyOrderSelectionActive = true;
+    }
+
+    private void releaseBuyOrderSelection() {
+        if (!buyOrderSelectionActive) {
+            return;
+        }
+        buyOrderSelectionActive = false;
+        this.menu.setItemSelectionMode(ItemSelectionMode.DISABLED, this.inventory.player);
+        WheatMarketNetwork.sendToServer(new SetItemSelectionModeC2SPacket(ItemSelectionMode.DISABLED));
+    }
+
+    private CompoundTag stackToNbt(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return null;
+        }
+        ItemStack template = stack.copy();
+        template.setCount(1);
+        return (CompoundTag) template.save(this.inventory.player.level().registryAccess());
+    }
+
+    @Override
+    public void onClose() {
+        releaseBuyOrderSelection();
+        super.onClose();
+    }
+
+    @Override
+    public void removed() {
+        releaseBuyOrderSelection();
+        super.removed();
     }
 }

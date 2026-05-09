@@ -24,6 +24,7 @@ import top.rookiestwo.wheatmarket.WheatMarket;
 import top.rookiestwo.wheatmarket.WheatMarketRegistry;
 import top.rookiestwo.wheatmarket.network.WheatMarketNetwork;
 import top.rookiestwo.wheatmarket.network.c2s.BuyItemC2SPacket;
+import top.rookiestwo.wheatmarket.network.c2s.FulfillBuyOrderC2SPacket;
 import top.rookiestwo.wheatmarket.network.s2c.MarketListS2CPacket;
 
 import java.time.Instant;
@@ -320,7 +321,17 @@ public class WheatMarketOrderConfirmationUI {
             return;
         }
         if (!item.isIfSell()) {
-            showFailure(Component.translatable("gui.wheatmarket.confirm.buy_order_unsupported"));
+            animationState = AnimationState.SUBMITTING;
+            animationTick = 0;
+            feedbackLabel.setText(Component.empty());
+            WheatMarketUiHelpers.setShown(feedbackLabel, false);
+            WheatMarketUiHelpers.setShown(confirmButton, false);
+            WheatMarketUiHelpers.setShown(processingLabel, true);
+            WheatMarketUiHelpers.setShown(signatureLabel, false);
+            WheatMarketUiHelpers.setShown(errorProgressTrack, false);
+            updateFailureProgress(0.0F);
+            applyControlState();
+            WheatMarketNetwork.sendToServer(new FulfillBuyOrderC2SPacket(item.getMarketItemID(), quantity));
             return;
         }
 

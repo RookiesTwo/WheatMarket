@@ -48,6 +48,9 @@ runs {
 
     client {
         systemProperty 'forge.enabledGameTestNamespaces', mod_id
+        if (project.hasProperty('run_username') && project.property('run_username')?.toString()?.trim()) {
+            programArguments.addAll('--username', project.property('run_username').toString().trim())
+        }
     }
 
     server {

@@ -145,12 +145,21 @@
         }
 
         #delivery-button {
-        width: 100%;
+        align-self: stretch;
         height: 28;
         min-height: 28;
         flex-shrink: 0;
+        padding-all: 6;
+        margin-top: 0;
+        margin-bottom: 3;
         margin-left: 3;
         margin-right: 3;
+        horizontal-align: CENTER;
+        vertical-align: CENTER;
+        }
+
+        #delivery-button > text:internal {
+        margin-all: 0;
         }
 
         #listing-button > text:internal {

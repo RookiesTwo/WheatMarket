@@ -213,7 +213,7 @@ public class WheatMarketListingUI {
         chooseItemButton = new Button();
         chooseItemButton.enableText();
         chooseItemButton.layout(layout -> layout.widthPercent(88).maxWidthPercent(100).height(22).flexShrink(0));
-        WheatMarketUiTextures.styleColoredActionButton(chooseItemButton, WheatMarketUiTextures.BLUE_BUTTON_COLOR, WheatMarketUiTextures.BLUE_BUTTON_HOVER_COLOR, WheatMarketUiTextures.BLUE_BUTTON_PRESSED_COLOR, 1);
+        WheatMarketUiTextures.styleColoredActionButton(chooseItemButton, WheatMarketUiTextures.BLUE_BUTTON_COLOR, WheatMarketUiTextures.BLUE_BUTTON_HOVER_COLOR, WheatMarketUiTextures.BLUE_BUTTON_PRESSED_COLOR, -1);
         chooseItemButton.setText(Component.translatable("gui.wheatmarket.listing.select_item"));
         chooseItemButton.setOnClick(event -> onSelectItem.run());
 
@@ -277,6 +277,7 @@ public class WheatMarketListingUI {
     private void buildBottomBar(PaperFormFactory.SharedPaperForm shared) {
         confirmButton = new Button();
         confirmButton.enableText();
+        confirmButton.setText(Component.translatable("gui.wheatmarket.listing.submit"));
         confirmButton.layout(layout -> layout.widthPercent(100).height(28).flexShrink(0));
         WheatMarketUiTextures.styleColoredActionButton(confirmButton, WheatMarketUiTextures.BLUE_BUTTON_COLOR, WheatMarketUiTextures.BLUE_BUTTON_HOVER_COLOR, WheatMarketUiTextures.BLUE_BUTTON_PRESSED_COLOR, 1);
         confirmButton.setOnClick(event -> submitListing());
@@ -298,6 +299,8 @@ public class WheatMarketListingUI {
 
     private void buildActionColumn(PaperFormFactory.SharedPaperForm shared) {
         cancelButton = new Button();
+        cancelButton.enableText();
+        cancelButton.setText(Component.translatable("gui.wheatmarket.confirm.cancel"));
         cancelButton.layout(layout -> layout.widthPercent(100).minWidth(64).maxWidth(96).height(76).flexShrink(0));
         WheatMarketUiTextures.styleColoredActionButton(cancelButton, WheatMarketUiTextures.RED_BUTTON_COLOR, WheatMarketUiTextures.RED_BUTTON_HOVER_COLOR, WheatMarketUiTextures.RED_BUTTON_PRESSED_COLOR, 1);
         cancelButton.setOnClick(event -> onCancel.run());

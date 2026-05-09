@@ -20,6 +20,7 @@ public class ListItemC2SPacket implements CustomPacketPayload {
     public static final Type<ListItemC2SPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "list_item"));
     public static final StreamCodec<FriendlyByteBuf, ListItemC2SPacket> STREAM_CODEC = CustomPacketPayload.codec(ListItemC2SPacket::encode, ListItemC2SPacket::new);
     private static final int MAX_BUY_ORDER_AMOUNT = 999;
+    private static final long DEFAULT_TIME_TO_EXPIRE_MS = 7L * 24 * 3600 * 1000;
 
     private int slotIndex;
     private int amount;
@@ -29,17 +30,24 @@ public class ListItemC2SPacket implements CustomPacketPayload {
     private boolean ifInfinite;
     private int cooldownAmount;
     private int cooldownTimeInMinutes;
+    private long timeToExpire;
 
     public ListItemC2SPacket(int amount, double price, boolean ifSell,
                              boolean ifAdmin, boolean ifInfinite,
                              int cooldownAmount, int cooldownTimeInMinutes) {
         this(WheatMarketMenu.ITEM_SELECTION_SLOT_INDEX, amount, price, ifSell, ifAdmin, ifInfinite,
-                cooldownAmount, cooldownTimeInMinutes);
+                cooldownAmount, cooldownTimeInMinutes, DEFAULT_TIME_TO_EXPIRE_MS);
     }
 
     public ListItemC2SPacket(int slotIndex, int amount, double price, boolean ifSell,
                              boolean ifAdmin, boolean ifInfinite,
                              int cooldownAmount, int cooldownTimeInMinutes) {
+        this(slotIndex, amount, price, ifSell, ifAdmin, ifInfinite, cooldownAmount, cooldownTimeInMinutes, DEFAULT_TIME_TO_EXPIRE_MS);
+    }
+
+    public ListItemC2SPacket(int slotIndex, int amount, double price, boolean ifSell,
+                             boolean ifAdmin, boolean ifInfinite,
+                             int cooldownAmount, int cooldownTimeInMinutes, long timeToExpire) {
         this.slotIndex = slotIndex;
         this.amount = amount;
         this.price = price;
@@ -48,6 +56,7 @@ public class ListItemC2SPacket implements CustomPacketPayload {
         this.ifInfinite = ifInfinite;
         this.cooldownAmount = cooldownAmount;
         this.cooldownTimeInMinutes = cooldownTimeInMinutes;
+        this.timeToExpire = timeToExpire;
     }
 
     public ListItemC2SPacket(FriendlyByteBuf buf) {
@@ -59,6 +68,7 @@ public class ListItemC2SPacket implements CustomPacketPayload {
         this.ifInfinite = buf.readBoolean();
         this.cooldownAmount = buf.readVarInt();
         this.cooldownTimeInMinutes = buf.readVarInt();
+        this.timeToExpire = buf.readLong();
     }
 
     public void encode(FriendlyByteBuf buf) {
@@ -70,6 +80,7 @@ public class ListItemC2SPacket implements CustomPacketPayload {
         buf.writeBoolean(ifInfinite);
         buf.writeVarInt(cooldownAmount);
         buf.writeVarInt(cooldownTimeInMinutes);
+        buf.writeLong(timeToExpire);
     }
 
     @Override
@@ -164,7 +175,7 @@ public class ListItemC2SPacket implements CustomPacketPayload {
             marketItem.setIfSell(ifSell);
             marketItem.setCooldownAmount(cooldownAmount);
             marketItem.setCooldownTimeInMinutes(cooldownTimeInMinutes);
-            marketItem.setTimeToExpire(0);
+            marketItem.setTimeToExpire(timeToExpire);
             marketItem.setLastTradeTime(null);
 
             WheatMarket.DATABASE.getMarketService().listItem(marketItem).thenAccept(result ->

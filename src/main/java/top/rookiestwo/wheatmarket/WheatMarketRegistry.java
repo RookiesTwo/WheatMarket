@@ -19,6 +19,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import top.rookiestwo.wheatmarket.blocks.LaptopBlock;
@@ -87,10 +88,24 @@ public class WheatMarketRegistry {
         return new WheatMarketMainScreen(menu, inventory, title);
     }
 
+    private static final int CLEANUP_INTERVAL_TICKS = 20 * 60 * 5;
+    private static int cleanupTickCounter;
+
     public static void registerEvents() {
         NeoForge.EVENT_BUS.addListener(WheatMarketRegistry::onServerStarting);
         NeoForge.EVENT_BUS.addListener(WheatMarketRegistry::onServerStopping);
         NeoForge.EVENT_BUS.addListener(WheatMarketRegistry::onPlayerLoggedIn);
+        NeoForge.EVENT_BUS.addListener(WheatMarketRegistry::onServerTick);
+    }
+
+    private static void onServerTick(ServerTickEvent.Post event) {
+        if (++cleanupTickCounter < CLEANUP_INTERVAL_TICKS) {
+            return;
+        }
+        cleanupTickCounter = 0;
+        if (WheatMarket.DATABASE != null) {
+            WheatMarket.DATABASE.getMarketService().cleanupExpiredOrders();
+        }
     }
 
     private static void onServerStarting(ServerStartingEvent event) {

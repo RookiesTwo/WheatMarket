@@ -24,6 +24,7 @@ public class MarketItem {
     private int cooldownTimeInMinutes;
     private long timeToExpire;
     private Timestamp lastTradeTime;
+    private Double frozenBalance;
 
     // 默认构造函数
     public MarketItem() {
@@ -33,7 +34,7 @@ public class MarketItem {
     public MarketItem(UUID marketItemID, String itemID, CompoundTag itemNBTCompound, UUID sellerID, Double price,
                       int amount, Boolean ifInfinite, Timestamp listingTime, Boolean ifAdmin, Boolean ifSell,
                       int cooldownAmount, int cooldownTimeInMinutes, long timeToExpire,
-                      Timestamp lastTradeTime) {
+                      Timestamp lastTradeTime, Double frozenBalance) {
         this.marketItemID = marketItemID;
         this.itemID = itemID;
         this.itemNBTCompound = itemNBTCompound;
@@ -48,6 +49,7 @@ public class MarketItem {
         this.cooldownTimeInMinutes = cooldownTimeInMinutes;
         this.timeToExpire = timeToExpire;
         this.lastTradeTime = lastTradeTime;
+        this.frozenBalance = frozenBalance;
     }
 
     // 快速创建构造函数（常用字段）
@@ -174,6 +176,14 @@ public class MarketItem {
 
     public void setLastTradeTime(Timestamp lastTradeTime) {
         this.lastTradeTime = lastTradeTime;
+    }
+
+    public Double getFrozenBalance() {
+        return frozenBalance;
+    }
+
+    public void setFrozenBalance(Double frozenBalance) {
+        this.frozenBalance = frozenBalance;
     }
 
     public CompoundTag getItemNBTCompound() {

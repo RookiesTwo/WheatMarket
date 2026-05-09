@@ -207,6 +207,7 @@ public class WheatMarketListingUI {
 
     private void buildLeftExtra(PaperFormFactory.SharedPaperForm shared) {
         selectedItemLabel = createLabel();
+        selectedItemLabel.layout(layout -> layout.widthPercent(100).height(24).flexShrink(0));
         WheatMarketUiHelpers.styleLabel(selectedItemLabel, TEXT_COLOR, Horizontal.CENTER);
 
         chooseItemButton = new Button();
@@ -326,6 +327,7 @@ public class WheatMarketListingUI {
 
     private Label createLabel() {
         Label label = new Label();
+        label.layout(layout -> layout.widthPercent(100).height(18).flexShrink(0));
         label.lss("flex-shrink", "0");
         return label;
     }

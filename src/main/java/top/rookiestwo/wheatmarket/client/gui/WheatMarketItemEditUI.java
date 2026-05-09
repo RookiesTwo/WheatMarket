@@ -213,17 +213,17 @@ public class WheatMarketItemEditUI {
     }
 
     private void buildLeftExtra(PaperFormFactory.SharedPaperForm shared, Player player) {
-        Label itemNameLabel = createLabel(Horizontal.CENTER);
+        Label itemNameLabel = createSummaryLabel();
         WheatMarketUiHelpers.styleLabel(itemNameLabel, TEXT_COLOR, Horizontal.CENTER);
         itemNameLabel.setText(Component.translatable("gui.wheatmarket.confirm.item_name", stack.getHoverName()));
 
-        Label typeLabel = createLabel(Horizontal.CENTER);
+        Label typeLabel = createSummaryLabel();
         WheatMarketUiHelpers.styleLabel(typeLabel, TEXT_COLOR, Horizontal.CENTER);
         typeLabel.setText(Component.translatable(item.isIfSell()
                 ? "gui.wheatmarket.market.sell"
                 : "gui.wheatmarket.market.buy_order"));
 
-        stockLabel = createLabel(Horizontal.CENTER);
+        stockLabel = createSummaryLabel();
         WheatMarketUiHelpers.styleLabel(stockLabel, TEXT_COLOR, Horizontal.CENTER);
 
         shared.leftExtra().addChildren(itemNameLabel, typeLabel, stockLabel);
@@ -322,12 +322,14 @@ public class WheatMarketItemEditUI {
 
     private void buildActionColumn(PaperFormFactory.SharedPaperForm shared) {
         delistButton = new Button();
+        delistButton.enableText();
         delistButton.layout(layout -> layout.widthPercent(100).minWidth(64).maxWidth(96).height(36).flexShrink(0));
         WheatMarketUiTextures.styleColoredActionButton(delistButton, WheatMarketUiTextures.RED_BUTTON_COLOR, WheatMarketUiTextures.RED_BUTTON_HOVER_COLOR, WheatMarketUiTextures.RED_BUTTON_PRESSED_COLOR, -1);
         delistButton.setText(Component.translatable("gui.wheatmarket.edit.delist"));
         delistButton.setOnClick(event -> submitDelist());
 
         cancelButton = new Button();
+        cancelButton.enableText();
         cancelButton.layout(layout -> layout.widthPercent(100).minWidth(64).maxWidth(96).height(52).flexShrink(0));
         WheatMarketUiTextures.styleColoredActionButton(cancelButton, WheatMarketUiTextures.RED_BUTTON_COLOR, WheatMarketUiTextures.RED_BUTTON_HOVER_COLOR, WheatMarketUiTextures.RED_BUTTON_PRESSED_COLOR, -1);
         cancelButton.setText(Component.translatable("gui.wheatmarket.edit.back"));
@@ -338,11 +340,21 @@ public class WheatMarketItemEditUI {
 
     private Label createLabel(Horizontal horizontal) {
         Label label = new Label();
+        label.layout(layout -> layout.widthPercent(100).height(18).flexShrink(0));
         label.lss("horizontal-align", horizontal.name());
         label.lss("vertical-align", "CENTER");
         label.lss("text-wrap", "HIDE");
         label.lss("text-shadow", "false");
-        label.lss("flex-shrink", "0");
+        return label;
+    }
+
+    private Label createSummaryLabel() {
+        Label label = new Label();
+        label.layout(layout -> layout.widthPercent(100).height(21).flexShrink(0));
+        label.lss("horizontal-align", "CENTER");
+        label.lss("vertical-align", "CENTER");
+        label.lss("text-wrap", "HIDE");
+        label.lss("text-shadow", "false");
         return label;
     }
 

@@ -72,8 +72,10 @@ public class WheatMarketOrderConfirmationUI {
     private final ItemStack stack;
     private final Runnable onCancel;
     private final Runnable onManage;
+    private final Runnable onSelectItem;
     private final boolean playEntrySound;
     private final int initialQuantity;
+    private final int buyOrderSuppliedAmount;
 
     private UIElement orderPaper;
     private UIElement stampOverlay;
@@ -90,6 +92,8 @@ public class WheatMarketOrderConfirmationUI {
     private Button manageButton;
     private Button cancelButton;
     private TextField quantityField;
+    private Button selectItemButton;
+    private Label suppliedItemLabel;
     private int quantity = 1;
     private int maxQuantity = 1;
     private double seenBalance = Double.NaN;
@@ -109,14 +113,23 @@ public class WheatMarketOrderConfirmationUI {
     public WheatMarketOrderConfirmationUI(MarketListS2CPacket.MarketItemSummary item, ItemStack stack,
                                           Runnable onCancel, Runnable onManage,
                                           boolean playEntrySound, int initialQuantity) {
+        this(item, stack, onCancel, onManage, null, playEntrySound, initialQuantity, 0);
+    }
+
+    public WheatMarketOrderConfirmationUI(MarketListS2CPacket.MarketItemSummary item, ItemStack stack,
+                                          Runnable onCancel, Runnable onManage, Runnable onSelectItem,
+                                          boolean playEntrySound, int initialQuantity, int buyOrderSuppliedAmount) {
         this.item = item;
         this.stack = stack.copy();
         this.stack.setCount(1);
         this.onCancel = onCancel;
         this.onManage = onManage == null ? () -> {
         } : onManage;
+        this.onSelectItem = onSelectItem == null ? () -> {
+        } : onSelectItem;
         this.playEntrySound = playEntrySound;
         this.initialQuantity = Math.max(1, initialQuantity);
+        this.buyOrderSuppliedAmount = Math.max(0, buyOrderSuppliedAmount);
     }
 
     public ModularUI create(Player player) {
@@ -190,6 +203,8 @@ public class WheatMarketOrderConfirmationUI {
         confirmButton = WheatMarketUiHelpers.require(ui, "confirm-button", Button.class);
         manageButton = WheatMarketUiHelpers.require(ui, "manage-button", Button.class);
         cancelButton = WheatMarketUiHelpers.require(ui, "cancel-button", Button.class);
+        selectItemButton = WheatMarketUiHelpers.require(ui, "buy-order-select-item", Button.class);
+        suppliedItemLabel = WheatMarketUiHelpers.require(ui, "buy-order-supplied-label", Label.class);
         quantityField = WheatMarketUiHelpers.require(ui, "quantity-field", TextField.class);
 
         root.style(style -> style.background(WheatMarketUiTextures.tradingBackgroundTexture()));
@@ -243,8 +258,10 @@ public class WheatMarketOrderConfirmationUI {
         WheatMarketUiTextures.styleColoredActionButton(confirmButton, WheatMarketUiTextures.BLUE_BUTTON_COLOR, WheatMarketUiTextures.BLUE_BUTTON_HOVER_COLOR, WheatMarketUiTextures.BLUE_BUTTON_PRESSED_COLOR, 1);
         WheatMarketUiTextures.styleColoredActionButton(manageButton, WheatMarketUiTextures.BLUE_BUTTON_COLOR, WheatMarketUiTextures.BLUE_BUTTON_HOVER_COLOR, WheatMarketUiTextures.BLUE_BUTTON_PRESSED_COLOR, 1);
         WheatMarketUiTextures.styleColoredActionButton(cancelButton, WheatMarketUiTextures.RED_BUTTON_COLOR, WheatMarketUiTextures.RED_BUTTON_HOVER_COLOR, WheatMarketUiTextures.RED_BUTTON_PRESSED_COLOR, 1);
+        WheatMarketUiTextures.styleColoredActionButton(selectItemButton, WheatMarketUiTextures.BLUE_BUTTON_COLOR, WheatMarketUiTextures.BLUE_BUTTON_HOVER_COLOR, WheatMarketUiTextures.BLUE_BUTTON_PRESSED_COLOR, 1);
         confirmButton.enableText();
         manageButton.enableText();
+        selectItemButton.enableText();
         styleQuantityField();
 
         signerName = player.getName().getString();
@@ -261,6 +278,10 @@ public class WheatMarketOrderConfirmationUI {
         unitPriceLabel.setText(Component.translatable("gui.wheatmarket.confirm.unit_price", WheatMarketUiHelpers.formatMoney(item.getPrice())));
         itemNameLabel.setText(Component.translatable("gui.wheatmarket.confirm.item_name", stack.getHoverName()));
         listingTimeLabel.setText(Component.translatable("gui.wheatmarket.confirm.listing_time", formatListingTime(item.getListingTime())));
+        suppliedItemLabel.textStyle(style -> style
+                .textAlignHorizontal(Horizontal.CENTER)
+                .textColor(TEXT_COLOR)
+                .textShadow(false));
         stockLabel.setText(Component.translatable("gui.wheatmarket.confirm.stock", formatStock()));
         processingLabel.setText(Component.translatable("gui.wheatmarket.confirm.processing"));
         feedbackLabel.setText(Component.empty());
@@ -268,6 +289,11 @@ public class WheatMarketOrderConfirmationUI {
         manageButton.setText(Component.translatable("gui.wheatmarket.confirm.manage"));
         WheatMarketUiHelpers.setShown(manageButton, showManageButton);
         WheatMarketUiHelpers.setShown(quantityRow, !ownListing);
+        selectItemButton.setText(Component.translatable("gui.wheatmarket.confirm.select_supply_items"));
+        selectItemButton.setOnClick(event -> onSelectItem.run());
+        updateBuyOrderSupplyDisplay();
+        WheatMarketUiHelpers.setShown(selectItemButton, !item.isIfSell() && !ownListing && buyOrderSuppliedAmount == 0);
+        WheatMarketUiHelpers.setShown(suppliedItemLabel, !item.isIfSell() && !ownListing && buyOrderSuppliedAmount > 0);
 
         populateRestriction(restrictionPanel, restrictionTimeLabel, restrictionAmountLabel);
         maxQuantity = calculateMaxQuantity();
@@ -460,6 +486,7 @@ public class WheatMarketOrderConfirmationUI {
         manageButton.setActive(interactive && showManageButton);
         cancelButton.setActive(interactive);
         quantityField.setActive(interactive && maxQuantity >= 0);
+        selectItemButton.setActive(interactive && !item.isIfSell() && !ownListing && buyOrderSuppliedAmount == 0);
     }
 
     private void updateConfirmButtonText() {
@@ -525,6 +552,9 @@ public class WheatMarketOrderConfirmationUI {
         }
         if (item.isHasCooldown() && item.getCooldownAmount() <= 0) {
             return 0;
+        }
+        if (!item.isIfSell() && buyOrderSuppliedAmount > 0) {
+            stockLimit = Math.min(stockLimit, buyOrderSuppliedAmount);
         }
         return Math.max(0, stockLimit);
     }
@@ -767,6 +797,21 @@ public class WheatMarketOrderConfirmationUI {
         element.setDisplay(true);
         element.setVisible(shown);
         element.setAllowHitTest(shown);
+    }
+
+    private void updateBuyOrderSupplyDisplay() {
+        if (suppliedItemLabel == null) {
+            return;
+        }
+        if (!item.isIfSell() && buyOrderSuppliedAmount > 0) {
+            suppliedItemLabel.setText(Component.translatable(
+                    "gui.wheatmarket.confirm.supplied_items",
+                    stack.getHoverName(),
+                    buyOrderSuppliedAmount
+            ));
+        } else {
+            suppliedItemLabel.setText(Component.empty());
+        }
     }
 
     private enum AnimationState {

@@ -74,6 +74,8 @@
   "gui.wheatmarket.confirm.cancel": "取消订单",
   "gui.wheatmarket.confirm.unknown_time": "未知",
   "gui.wheatmarket.confirm.buy_order_unsupported": "收购订单暂不能在此确认界面成交。",
+  "gui.wheatmarket.confirm.select_supply_items": "选择供货物品",
+  "gui.wheatmarket.confirm.supplied_items": "已选择：%1$s x %2$s",
   "gui.wheatmarket.confirm.processing": "确认中...",
   "gui.wheatmarket.confirm.empty": "Empty",
   "gui.wheatmarket.confirm.quantity_label": "交易数量：",

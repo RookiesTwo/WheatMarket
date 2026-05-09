@@ -1,7 +1,6 @@
 package top.rookiestwo.wheatmarket.client.gui;
 
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
@@ -9,7 +8,6 @@ import top.rookiestwo.wheatmarket.menu.ItemSelectionMode;
 import top.rookiestwo.wheatmarket.menu.WheatMarketMenu;
 import top.rookiestwo.wheatmarket.network.WheatMarketNetwork;
 import top.rookiestwo.wheatmarket.network.c2s.AcquireItemEditLockC2SPacket;
-import top.rookiestwo.wheatmarket.network.c2s.SetItemSelectionModeC2SPacket;
 import top.rookiestwo.wheatmarket.network.s2c.MarketListS2CPacket;
 
 public class WheatMarketOrderConfirmationScreen extends WheatMarketBaseScreen {
@@ -20,14 +18,21 @@ public class WheatMarketOrderConfirmationScreen extends WheatMarketBaseScreen {
     private int selectedQuantity = 1;
     private boolean initializedOnce;
     private boolean openingManagement;
-    private boolean buyOrderSelectionActive;
+    private int buyOrderSuppliedAmount;
 
     public WheatMarketOrderConfirmationScreen(WheatMarketMenu menu, Inventory inventory, Component title,
                                               MarketListS2CPacket.MarketItemSummary item, ItemStack stack) {
+        this(menu, inventory, title, item, stack, 0);
+    }
+
+    WheatMarketOrderConfirmationScreen(WheatMarketMenu menu, Inventory inventory, Component title,
+                                       MarketListS2CPacket.MarketItemSummary item, ItemStack stack,
+                                       int buyOrderSuppliedAmount) {
         super(menu, inventory, title);
         this.inventory = inventory;
         this.item = item;
         this.stack = stack.copy();
+        this.buyOrderSuppliedAmount = buyOrderSuppliedAmount;
     }
 
     @Override
@@ -38,7 +43,7 @@ public class WheatMarketOrderConfirmationScreen extends WheatMarketBaseScreen {
     @Override
     protected void init() {
         super.init();
-        if (!initializedOnce && item.isIfSell()) {
+        if (!initializedOnce) {
             disableItemSelectionMode();
         }
 
@@ -51,16 +56,13 @@ public class WheatMarketOrderConfirmationScreen extends WheatMarketBaseScreen {
                 this.stack,
                 this::returnToMain,
                 this::openManagementEntry,
+                this::openBuyOrderItemSelection,
                 !this.initializedOnce,
-                this.selectedQuantity
+                this.selectedQuantity,
+                buyOrderSuppliedAmount
         );
         this.modularUI = this.orderConfirmationUI.create(this.inventory.player);
         installModularUI(this.modularUI);
-
-        if (!item.isIfSell() && !initializedOnce) {
-            configureBuyOrderSelection();
-        }
-
         this.initializedOnce = true;
     }
 
@@ -85,7 +87,6 @@ public class WheatMarketOrderConfirmationScreen extends WheatMarketBaseScreen {
     }
 
     private void returnToMain() {
-        releaseBuyOrderSelection();
         if (this.minecraft != null) {
             this.minecraft.setScreen(new WheatMarketMainScreen(this.menu, this.inventory, this.title));
         }
@@ -105,49 +106,32 @@ public class WheatMarketOrderConfirmationScreen extends WheatMarketBaseScreen {
         }
     }
 
-    private void configureBuyOrderSelection() {
-        if (item.isIfSell() || this.minecraft == null) {
+    private void openBuyOrderItemSelection() {
+        if (this.minecraft == null || item.isIfSell()) {
             return;
         }
-        ItemStack template = this.stack.copy();
-        template.setCount(1);
-        this.menu.configureItemSelection(ItemSelectionMode.TRANSFER, ItemStack.EMPTY, template, this.inventory.player);
-        WheatMarketNetwork.sendToServer(new SetItemSelectionModeC2SPacket(
+
+        ItemSelectionPurpose purpose = ItemSelectionPurpose.LIST_BUY;
+        int[] resultAmount = {0};
+        ItemSelectionRequest request = new ItemSelectionRequest(
+                purpose,
                 ItemSelectionMode.TRANSFER,
-                stackToNbt(template),
+                this.stack.copy(),
                 0,
-                stackToNbt(template)
+                this.stack.copy(),
+                false,
+                result -> resultAmount[0] = result.totalAmount()
+        );
+
+        this.minecraft.setScreen(new WheatMarketItemSelectionScreen(
+                this.menu,
+                this.inventory,
+                this.title,
+                request,
+                null,
+                (menu, inv, title) -> new WheatMarketOrderConfirmationScreen(
+                        menu, inv, title, item, stack, resultAmount[0]
+                )
         ));
-        buyOrderSelectionActive = true;
-    }
-
-    private void releaseBuyOrderSelection() {
-        if (!buyOrderSelectionActive) {
-            return;
-        }
-        buyOrderSelectionActive = false;
-        this.menu.setItemSelectionMode(ItemSelectionMode.DISABLED, this.inventory.player);
-        WheatMarketNetwork.sendToServer(new SetItemSelectionModeC2SPacket(ItemSelectionMode.DISABLED));
-    }
-
-    private CompoundTag stackToNbt(ItemStack stack) {
-        if (stack == null || stack.isEmpty()) {
-            return null;
-        }
-        ItemStack template = stack.copy();
-        template.setCount(1);
-        return (CompoundTag) template.save(this.inventory.player.level().registryAccess());
-    }
-
-    @Override
-    public void onClose() {
-        releaseBuyOrderSelection();
-        super.onClose();
-    }
-
-    @Override
-    public void removed() {
-        releaseBuyOrderSelection();
-        super.removed();
     }
 }

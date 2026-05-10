@@ -61,11 +61,12 @@ public class MarketItemCache {
                 long timeToExpire = rs.getLong("timeToExpire");
                 Timestamp lastTradeTime = rs.getTimestamp("lastTradeTime");
                 Double frozenBalance = rs.getDouble("frozenBalance");
+                Boolean ifInfiniteDuration = rs.getBoolean("ifInfiniteDuration");
 
                 MarketItem item = new MarketItem(
                         marketItemID, itemID, itemNBTCompound, sellerID, price, amount, ifInfinite, listingTime,
                         ifAdmin, ifSell, cooldownAmount, cooldownTimeInMinutes,
-                        timeToExpire, lastTradeTime, frozenBalance
+                        timeToExpire, lastTradeTime, frozenBalance, ifInfiniteDuration
                 );
 
                 cache.put(marketItemID, item);

@@ -279,7 +279,7 @@ public class WheatMarketOrderConfirmationUI {
                 : "gui.wheatmarket.confirm.buyer", resolveOwnerName(player)));
         unitPriceLabel.setText(Component.translatable("gui.wheatmarket.confirm.unit_price", WheatMarketUiHelpers.formatMoney(item.getPrice())));
         itemNameLabel.setText(Component.translatable("gui.wheatmarket.confirm.item_name", stack.getHoverName()));
-        listingTimeLabel.setText(Component.translatable("gui.wheatmarket.confirm.listing_time", formatListingTime(item.getListingTime())));
+        listingTimeLabel.setText(formatRemainingTime(item.getListingTime(), item.getTimeToExpire(), item.isIfInfiniteDuration()));
         suppliedItemLabel.textStyle(style -> style
                 .textAlignHorizontal(Horizontal.CENTER)
                 .textColor(TEXT_COLOR)
@@ -759,6 +759,24 @@ public class WheatMarketOrderConfirmationUI {
         return Component.literal(Instant.ofEpochMilli(listingTime)
                 .atZone(ZoneId.systemDefault())
                 .format(LISTING_TIME_FORMAT));
+    }
+
+    private Component formatRemainingTime(long listingTime, long timeToExpire, boolean ifInfiniteDuration) {
+        if (ifInfiniteDuration) {
+            return Component.translatable("gui.wheatmarket.confirm.infinite_duration");
+        }
+        if (listingTime <= 0 || timeToExpire <= 0) {
+            return Component.translatable("gui.wheatmarket.confirm.unknown_time");
+        }
+        long expiryTime = listingTime + timeToExpire;
+        long remaining = expiryTime - System.currentTimeMillis();
+        if (remaining <= 0) {
+            return Component.translatable("gui.wheatmarket.confirm.expired");
+        }
+        long days = remaining / (24L * 3600 * 1000);
+        long hours = (remaining % (24L * 3600 * 1000)) / (3600 * 1000);
+        long minutes = (remaining % (3600 * 1000)) / (60 * 1000);
+        return Component.translatable("gui.wheatmarket.confirm.remaining_time", days, hours, minutes);
     }
 
     private void updateBalanceLabel() {

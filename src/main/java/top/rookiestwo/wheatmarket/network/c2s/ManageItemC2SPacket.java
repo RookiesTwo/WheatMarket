@@ -25,6 +25,7 @@ public class ManageItemC2SPacket implements CustomPacketPayload {
     public static final int ACTION_TOGGLE_ADMIN = 4;
     public static final int ACTION_TOGGLE_INFINITE = 5;
     public static final int ACTION_SET_COOLDOWN = 6;
+    public static final int ACTION_TOGGLE_INFINITE_DURATION = 7;
     public static final int ITEM_SELECTION_SLOT_INDEX = -1;
 
     private UUID marketItemID;
@@ -34,9 +35,15 @@ public class ManageItemC2SPacket implements CustomPacketPayload {
     private int slotIndex;
     private int cooldownAmount;
     private int cooldownTimeInMinutes;
+    private long timeToExpire;
 
     public ManageItemC2SPacket(UUID marketItemID, int action, int amount, double price,
                                int slotIndex, int cooldownAmount, int cooldownTimeInMinutes) {
+        this(marketItemID, action, amount, price, slotIndex, cooldownAmount, cooldownTimeInMinutes, 0);
+    }
+
+    public ManageItemC2SPacket(UUID marketItemID, int action, int amount, double price,
+                               int slotIndex, int cooldownAmount, int cooldownTimeInMinutes, long timeToExpire) {
         this.marketItemID = marketItemID;
         this.action = action;
         this.amount = amount;
@@ -44,6 +51,7 @@ public class ManageItemC2SPacket implements CustomPacketPayload {
         this.slotIndex = slotIndex;
         this.cooldownAmount = cooldownAmount;
         this.cooldownTimeInMinutes = cooldownTimeInMinutes;
+        this.timeToExpire = timeToExpire;
     }
 
     public ManageItemC2SPacket(FriendlyByteBuf buf) {
@@ -54,6 +62,7 @@ public class ManageItemC2SPacket implements CustomPacketPayload {
         this.slotIndex = buf.readVarInt();
         this.cooldownAmount = buf.readVarInt();
         this.cooldownTimeInMinutes = buf.readVarInt();
+        this.timeToExpire = buf.readLong();
     }
 
     public void encode(FriendlyByteBuf buf) {
@@ -64,6 +73,7 @@ public class ManageItemC2SPacket implements CustomPacketPayload {
         buf.writeVarInt(slotIndex);
         buf.writeVarInt(cooldownAmount);
         buf.writeVarInt(cooldownTimeInMinutes);
+        buf.writeLong(timeToExpire);
     }
 
     @Override
@@ -85,6 +95,7 @@ public class ManageItemC2SPacket implements CustomPacketPayload {
                 case ACTION_TOGGLE_ADMIN -> handleToggleAdmin(player, isOp);
                 case ACTION_TOGGLE_INFINITE -> handleToggleInfinite(player, isOp);
                 case ACTION_SET_COOLDOWN -> handleSetCooldown(player, isOp);
+                case ACTION_TOGGLE_INFINITE_DURATION -> handleToggleInfiniteDuration(player, isOp);
                 default -> WheatMarketNetwork.sendToPlayer(player,
                         new OperationResultS2CPacket(false, "gui.wheatmarket.operation.invalid_action"));
             }
@@ -327,8 +338,22 @@ public class ManageItemC2SPacket implements CustomPacketPayload {
             return;
         }
 
-        WheatMarket.DATABASE.getMarketService().setCooldown(player.getUUID(), isOp, marketItemID, cooldownAmount, cooldownTimeInMinutes).thenAccept(result ->
-                player.server.execute(() -> sendSimpleResult(player, result, "gui.wheatmarket.operation.cooldown_set_success"))
+        WheatMarket.DATABASE.getMarketService().setCooldown(player.getUUID(), isOp, marketItemID, cooldownAmount, cooldownTimeInMinutes)
+                .thenCompose(result -> {
+                    if (!result.isSuccess() || timeToExpire <= 0) {
+                        return java.util.concurrent.CompletableFuture.completedFuture(result);
+                    }
+                    return WheatMarket.DATABASE.getMarketService().setTimeToExpire(player.getUUID(), isOp, marketItemID, timeToExpire)
+                            .thenApply(r -> result);
+                })
+                .thenAccept(result ->
+                    player.server.execute(() -> sendSimpleResult(player, result, "gui.wheatmarket.operation.save_settings_success"))
+                );
+    }
+
+    private void handleToggleInfiniteDuration(ServerPlayer player, boolean isOp) {
+        WheatMarket.DATABASE.getMarketService().toggleInfiniteDuration(player.getUUID(), isOp, marketItemID).thenAccept(result ->
+                player.server.execute(() -> sendSimpleResult(player, result, "gui.wheatmarket.operation.toggle_infinite_duration_success"))
         );
     }
 

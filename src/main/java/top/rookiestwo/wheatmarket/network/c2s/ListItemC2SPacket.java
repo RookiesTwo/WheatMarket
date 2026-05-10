@@ -20,7 +20,7 @@ public class ListItemC2SPacket implements CustomPacketPayload {
     public static final Type<ListItemC2SPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(WheatMarket.MOD_ID, "list_item"));
     public static final StreamCodec<FriendlyByteBuf, ListItemC2SPacket> STREAM_CODEC = CustomPacketPayload.codec(ListItemC2SPacket::encode, ListItemC2SPacket::new);
     private static final int MAX_BUY_ORDER_AMOUNT = 999;
-    private static final long DEFAULT_TIME_TO_EXPIRE_MS = 7L * 24 * 3600 * 1000;
+    public static final long DEFAULT_TIME_TO_EXPIRE_MS = 7L * 24 * 3600 * 1000;
 
     private int slotIndex;
     private int amount;
@@ -31,23 +31,24 @@ public class ListItemC2SPacket implements CustomPacketPayload {
     private int cooldownAmount;
     private int cooldownTimeInMinutes;
     private long timeToExpire;
+    private boolean ifInfiniteDuration;
 
     public ListItemC2SPacket(int amount, double price, boolean ifSell,
                              boolean ifAdmin, boolean ifInfinite,
                              int cooldownAmount, int cooldownTimeInMinutes) {
         this(WheatMarketMenu.ITEM_SELECTION_SLOT_INDEX, amount, price, ifSell, ifAdmin, ifInfinite,
-                cooldownAmount, cooldownTimeInMinutes, DEFAULT_TIME_TO_EXPIRE_MS);
+                cooldownAmount, cooldownTimeInMinutes, DEFAULT_TIME_TO_EXPIRE_MS, false);
     }
 
     public ListItemC2SPacket(int slotIndex, int amount, double price, boolean ifSell,
                              boolean ifAdmin, boolean ifInfinite,
                              int cooldownAmount, int cooldownTimeInMinutes) {
-        this(slotIndex, amount, price, ifSell, ifAdmin, ifInfinite, cooldownAmount, cooldownTimeInMinutes, DEFAULT_TIME_TO_EXPIRE_MS);
+        this(slotIndex, amount, price, ifSell, ifAdmin, ifInfinite, cooldownAmount, cooldownTimeInMinutes, DEFAULT_TIME_TO_EXPIRE_MS, false);
     }
 
     public ListItemC2SPacket(int slotIndex, int amount, double price, boolean ifSell,
                              boolean ifAdmin, boolean ifInfinite,
-                             int cooldownAmount, int cooldownTimeInMinutes, long timeToExpire) {
+                             int cooldownAmount, int cooldownTimeInMinutes, long timeToExpire, boolean ifInfiniteDuration) {
         this.slotIndex = slotIndex;
         this.amount = amount;
         this.price = price;
@@ -57,6 +58,7 @@ public class ListItemC2SPacket implements CustomPacketPayload {
         this.cooldownAmount = cooldownAmount;
         this.cooldownTimeInMinutes = cooldownTimeInMinutes;
         this.timeToExpire = timeToExpire;
+        this.ifInfiniteDuration = ifInfiniteDuration;
     }
 
     public ListItemC2SPacket(FriendlyByteBuf buf) {
@@ -69,6 +71,7 @@ public class ListItemC2SPacket implements CustomPacketPayload {
         this.cooldownAmount = buf.readVarInt();
         this.cooldownTimeInMinutes = buf.readVarInt();
         this.timeToExpire = buf.readLong();
+        this.ifInfiniteDuration = buf.readBoolean();
     }
 
     public void encode(FriendlyByteBuf buf) {
@@ -81,6 +84,7 @@ public class ListItemC2SPacket implements CustomPacketPayload {
         buf.writeVarInt(cooldownAmount);
         buf.writeVarInt(cooldownTimeInMinutes);
         buf.writeLong(timeToExpire);
+        buf.writeBoolean(ifInfiniteDuration);
     }
 
     @Override
@@ -105,6 +109,12 @@ public class ListItemC2SPacket implements CustomPacketPayload {
             }
 
             if (ifInfinite && !player.hasPermissions(2)) {
+                WheatMarketNetwork.sendToPlayer(player,
+                        new OperationResultS2CPacket(false, "gui.wheatmarket.operation.no_permission"));
+                return;
+            }
+
+            if (ifInfiniteDuration && !player.hasPermissions(2)) {
                 WheatMarketNetwork.sendToPlayer(player,
                         new OperationResultS2CPacket(false, "gui.wheatmarket.operation.no_permission"));
                 return;
@@ -175,7 +185,8 @@ public class ListItemC2SPacket implements CustomPacketPayload {
             marketItem.setIfSell(ifSell);
             marketItem.setCooldownAmount(cooldownAmount);
             marketItem.setCooldownTimeInMinutes(cooldownTimeInMinutes);
-            marketItem.setTimeToExpire(timeToExpire);
+            marketItem.setTimeToExpire(ifInfiniteDuration ? 0 : timeToExpire);
+            marketItem.setIfInfiniteDuration(ifInfiniteDuration);
             marketItem.setLastTradeTime(null);
 
             WheatMarket.DATABASE.getMarketService().listItem(marketItem).thenAccept(result ->

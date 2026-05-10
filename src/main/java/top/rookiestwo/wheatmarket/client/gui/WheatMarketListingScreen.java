@@ -19,8 +19,14 @@ public class WheatMarketListingScreen extends WheatMarketBaseScreen {
     private int buyQuantity;
     private boolean ifAdmin;
     private boolean ifInfinite;
+    private boolean ifInfiniteDuration;
     private int cooldownAmount;
-    private int cooldownTimeInMinutes;
+    private int cooldownDays;
+    private int cooldownHours;
+    private int cooldownMinutes;
+    private int orderDays;
+    private int orderHours;
+    private int orderMinutes;
     private WheatMarketListingUI listingUI;
     private boolean selectionReleased;
 
@@ -34,15 +40,24 @@ public class WheatMarketListingScreen extends WheatMarketBaseScreen {
     }
 
     private WheatMarketListingScreen(WheatMarketMenu menu, Inventory inventory, Component title,
-                                     ItemStack stack, int amount, WheatMarketListingUI.ListingType listingType,
-                                     String priceText, int buyQuantity) {
-        this(menu, inventory, title, stack, amount, listingType, priceText, buyQuantity, false, false, 0, 0);
+                                      ItemStack stack, int amount, WheatMarketListingUI.ListingType listingType,
+                                      String priceText, int buyQuantity) {
+        this(menu, inventory, title, stack, amount, listingType, priceText, buyQuantity, false, false, 0, 0, 0, 0, false, 0, 0, 0);
     }
 
     private WheatMarketListingScreen(WheatMarketMenu menu, Inventory inventory, Component title,
-                                     ItemStack stack, int amount, WheatMarketListingUI.ListingType listingType,
-                                     String priceText, int buyQuantity, boolean ifAdmin, boolean ifInfinite,
-                                     int cooldownAmount, int cooldownTimeInMinutes) {
+                                      ItemStack stack, int amount, WheatMarketListingUI.ListingType listingType,
+                                      String priceText, int buyQuantity, boolean ifAdmin, boolean ifInfinite,
+                                      int cooldownAmount, int cooldownDays, int cooldownHours, int cooldownMinutes) {
+        this(menu, inventory, title, stack, amount, listingType, priceText, buyQuantity, ifAdmin, ifInfinite,
+                cooldownAmount, cooldownDays, cooldownHours, cooldownMinutes, false, 0, 0, 0);
+    }
+
+    private WheatMarketListingScreen(WheatMarketMenu menu, Inventory inventory, Component title,
+                                      ItemStack stack, int amount, WheatMarketListingUI.ListingType listingType,
+                                      String priceText, int buyQuantity, boolean ifAdmin, boolean ifInfinite,
+                                      int cooldownAmount, int cooldownDays, int cooldownHours, int cooldownMinutes,
+                                      boolean ifInfiniteDuration, int orderDays, int orderHours, int orderMinutes) {
         super(menu, inventory, title);
         this.inventory = inventory;
         this.stack = stack == null ? ItemStack.EMPTY : stack.copy();
@@ -53,7 +68,13 @@ public class WheatMarketListingScreen extends WheatMarketBaseScreen {
         this.ifAdmin = ifAdmin;
         this.ifInfinite = ifAdmin && this.listingType == WheatMarketListingUI.ListingType.SELL && ifInfinite;
         this.cooldownAmount = Math.max(0, cooldownAmount);
-        this.cooldownTimeInMinutes = Math.max(0, cooldownTimeInMinutes);
+        this.cooldownDays = Math.max(0, cooldownDays);
+        this.cooldownHours = Math.max(0, cooldownHours);
+        this.cooldownMinutes = Math.max(0, cooldownMinutes);
+        this.ifInfiniteDuration = ifInfiniteDuration;
+        this.orderDays = Math.max(0, orderDays);
+        this.orderHours = Math.max(0, orderHours);
+        this.orderMinutes = Math.max(0, orderMinutes);
     }
 
     @Override
@@ -67,11 +88,17 @@ public class WheatMarketListingScreen extends WheatMarketBaseScreen {
                 this.ifAdmin,
                 this.ifInfinite,
                 this.cooldownAmount,
-                this.cooldownTimeInMinutes,
+                this.cooldownDays,
+                this.cooldownHours,
+                this.cooldownMinutes,
                 this::openItemSelection,
                 this::submitListing,
                 this::handleListingTypeChanged,
-                this::returnToMain
+                this::returnToMain,
+                this.ifInfiniteDuration,
+                this.orderDays,
+                this.orderHours,
+                this.orderMinutes
         );
         return this.listingUI.create(this.inventory.player);
     }
@@ -85,13 +112,13 @@ public class WheatMarketListingScreen extends WheatMarketBaseScreen {
     }
 
     private void openItemSelection() {
-        if (this.minecraft == null) {
-            return;
-        }
+        if (this.minecraft == null) return;
 
         WheatMarketListingUI.Draft draft = this.listingUI == null
                 ? new WheatMarketListingUI.Draft(this.stack, this.amount, this.listingType, this.priceText, this.buyQuantity,
-                this.ifAdmin, this.ifInfinite, this.cooldownAmount, this.cooldownTimeInMinutes)
+                this.ifAdmin, this.ifInfinite, this.ifInfiniteDuration, this.cooldownAmount,
+                this.cooldownDays, this.cooldownHours, this.cooldownMinutes,
+                this.orderDays, this.orderHours, this.orderMinutes)
                 : this.listingUI.createDraft();
         ItemSelectionPurpose purpose = draft.listingType() == WheatMarketListingUI.ListingType.BUY || draft.ifAdmin()
                 ? ItemSelectionPurpose.LIST_BUY
@@ -121,18 +148,14 @@ public class WheatMarketListingScreen extends WheatMarketBaseScreen {
                 request,
                 this.modularUI,
                 (menu, inventory, title) -> new WheatMarketListingScreen(
-                        menu,
-                        inventory,
-                        title,
-                        selectedStack[0],
-                        selectedAmount[0],
-                        draft.listingType(),
-                        draft.priceText(),
-                        draft.buyQuantity(),
-                        draft.ifAdmin(),
-                        draft.ifInfinite(),
+                        menu, inventory, title,
+                        selectedStack[0], selectedAmount[0],
+                        draft.listingType(), draft.priceText(), draft.buyQuantity(),
+                        draft.ifAdmin(), draft.ifInfinite(),
                         draft.cooldownAmount(),
-                        draft.cooldownTimeInMinutes()
+                        draft.cooldownDays(), draft.cooldownHours(), draft.cooldownMinutes(),
+                        draft.ifInfiniteDuration(),
+                        draft.orderDays(), draft.orderHours(), draft.orderMinutes()
                 )));
     }
 
@@ -145,13 +168,16 @@ public class WheatMarketListingScreen extends WheatMarketBaseScreen {
 
     private void submitListing(WheatMarketListingUI.Submission submission) {
         WheatMarketNetwork.sendToServer(new ListItemC2SPacket(
+                WheatMarketMenu.ITEM_SELECTION_SLOT_INDEX,
                 submission.amount(),
                 submission.price(),
                 submission.listingType() == WheatMarketListingUI.ListingType.SELL,
                 submission.ifAdmin(),
                 submission.ifInfinite(),
                 submission.cooldownAmount(),
-                submission.cooldownTimeInMinutes()
+                submission.cooldownTimeInMinutes(),
+                submission.timeToExpireMs(),
+                submission.ifInfiniteDuration()
         ));
     }
 
@@ -163,40 +189,31 @@ public class WheatMarketListingScreen extends WheatMarketBaseScreen {
         this.buyQuantity = draft.buyQuantity();
         this.ifAdmin = draft.ifAdmin();
         this.ifInfinite = draft.ifInfinite();
+        this.ifInfiniteDuration = draft.ifInfiniteDuration();
         this.cooldownAmount = draft.cooldownAmount();
-        this.cooldownTimeInMinutes = draft.cooldownTimeInMinutes();
+        this.cooldownDays = draft.cooldownDays();
+        this.cooldownHours = draft.cooldownHours();
+        this.cooldownMinutes = draft.cooldownMinutes();
+        this.orderDays = draft.orderDays();
+        this.orderHours = draft.orderHours();
+        this.orderMinutes = draft.orderMinutes();
         this.menu.setItemSelectionMode(ItemSelectionMode.DISABLED, this.inventory.player);
         WheatMarketNetwork.sendToServer(new SetItemSelectionModeC2SPacket(ItemSelectionMode.DISABLED));
     }
 
     public boolean handleOperationResult(boolean success, Component message) {
-        if (this.listingUI == null || !this.listingUI.handleOperationResult(success, message)) {
-            return false;
-        }
-        if (success) {
-            returnToMain();
-        }
+        if (this.listingUI == null || !this.listingUI.handleOperationResult(success, message)) return false;
+        if (success) returnToMain();
         return true;
     }
 
     private void releaseSelection() {
-        if (selectionReleased) {
-            return;
-        }
+        if (selectionReleased) return;
         selectionReleased = true;
         this.menu.setItemSelectionMode(ItemSelectionMode.DISABLED, this.inventory.player);
         WheatMarketNetwork.sendToServer(new SetItemSelectionModeC2SPacket(ItemSelectionMode.DISABLED));
     }
 
-    @Override
-    public void onClose() {
-        releaseSelection();
-        super.onClose();
-    }
-
-    @Override
-    public void removed() {
-        releaseSelection();
-        super.removed();
-    }
+    @Override public void onClose() { releaseSelection(); super.onClose(); }
+    @Override public void removed() { releaseSelection(); super.removed(); }
 }

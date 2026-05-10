@@ -25,6 +25,7 @@ public class MarketItem {
     private long timeToExpire;
     private Timestamp lastTradeTime;
     private Double frozenBalance;
+    private Boolean ifInfiniteDuration;
 
     // 默认构造函数
     public MarketItem() {
@@ -34,7 +35,7 @@ public class MarketItem {
     public MarketItem(UUID marketItemID, String itemID, CompoundTag itemNBTCompound, UUID sellerID, Double price,
                       int amount, Boolean ifInfinite, Timestamp listingTime, Boolean ifAdmin, Boolean ifSell,
                       int cooldownAmount, int cooldownTimeInMinutes, long timeToExpire,
-                      Timestamp lastTradeTime, Double frozenBalance) {
+                      Timestamp lastTradeTime, Double frozenBalance, Boolean ifInfiniteDuration) {
         this.marketItemID = marketItemID;
         this.itemID = itemID;
         this.itemNBTCompound = itemNBTCompound;
@@ -50,6 +51,7 @@ public class MarketItem {
         this.timeToExpire = timeToExpire;
         this.lastTradeTime = lastTradeTime;
         this.frozenBalance = frozenBalance;
+        this.ifInfiniteDuration = ifInfiniteDuration;
     }
 
     // 快速创建构造函数（常用字段）
@@ -186,6 +188,30 @@ public class MarketItem {
         this.frozenBalance = frozenBalance;
     }
 
+    public Boolean getIfInfiniteDuration() {
+        return ifInfiniteDuration;
+    }
+
+    public void setIfInfiniteDuration(Boolean ifInfiniteDuration) {
+        this.ifInfiniteDuration = ifInfiniteDuration;
+    }
+
+    public boolean isInfiniteDuration() {
+        return Boolean.TRUE.equals(ifInfiniteDuration);
+    }
+
+    // 实用方法
+
+    /**
+     * 检查商品是否已过期
+     */
+    public boolean isExpired() {
+        if (timeToExpire <= 0 || isInfiniteDuration()) {
+            return false; // 永不过期
+        }
+        return System.currentTimeMillis() > (listingTime.getTime() + timeToExpire);
+    }
+
     public CompoundTag getItemNBTCompound() {
         return this.itemNBTCompound;
     }
@@ -195,16 +221,6 @@ public class MarketItem {
     }
 
     // 实用方法
-
-    /**
-     * 检查商品是否已过期
-     */
-    public boolean isExpired() {
-        if (timeToExpire <= 0) {
-            return false; // 永不过期
-        }
-        return System.currentTimeMillis() > (listingTime.getTime() + timeToExpire);
-    }
 
     /**
      * 获取商品总价值

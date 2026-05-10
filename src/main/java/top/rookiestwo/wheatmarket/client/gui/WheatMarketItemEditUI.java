@@ -47,12 +47,18 @@ public class WheatMarketItemEditUI {
     private UIElement opPanel;
     private TextField priceField;
     private TextField cooldownAmountField;
-    private TextField cooldownTimeField;
+    private TextField cooldownDaysField;
+    private TextField cooldownHoursField;
+    private TextField cooldownMinutesField;
+    private TextField orderDaysField;
+    private TextField orderHoursField;
+    private TextField orderMinutesField;
     private Button priceApplyButton;
     private Button stockEditButton;
     private Button delistButton;
     private Button toggleAdminButton;
     private Button toggleInfiniteButton;
+    private Button toggleInfiniteDurationButton;
     private Button cooldownApplyButton;
     private Button cancelButton;
 
@@ -60,23 +66,36 @@ public class WheatMarketItemEditUI {
     private int currentStock;
     private boolean currentAdmin;
     private boolean currentInfinite;
+    private boolean currentInfiniteDuration;
     private int currentCooldownAmount;
-    private int currentCooldownTime;
+    private int currentCooldownDays;
+    private int currentCooldownHours;
+    private int currentCooldownMinutes;
+    private int currentOrderDays;
+    private int currentOrderHours;
+    private int currentOrderMinutes;
     private double seenBalance = Double.NaN;
     private boolean operator;
     private boolean submitting;
     private boolean syncingPriceField;
     private boolean syncingCooldownAmountField;
-    private boolean syncingCooldownTimeField;
+    private boolean syncingCooldownDaysField;
+    private boolean syncingCooldownHoursField;
+    private boolean syncingCooldownMinutesField;
+    private boolean syncingOrderDaysField;
+    private boolean syncingOrderHoursField;
+    private boolean syncingOrderMinutesField;
     private boolean awaitingDelistConfirmation;
     private Action pendingAction = Action.NONE;
     private double submittedPrice;
     private int submittedCooldownAmount;
-    private int submittedCooldownTime;
+    private int submittedCooldownDays;
+    private int submittedCooldownHours;
+    private int submittedCooldownMinutes;
     private UIElement root;
 
     public WheatMarketItemEditUI(MarketListS2CPacket.MarketItemSummary item, ItemStack stack, Draft draft,
-                                 Runnable onSelectStock, Consumer<ActionRequest> onSubmit, Runnable onCancel) {
+                                  Runnable onSelectStock, Consumer<ActionRequest> onSubmit, Runnable onCancel) {
         this.item = item;
         this.stack = WheatMarketUiHelpers.templateCopy(stack);
         this.onSelectStock = onSelectStock == null ? () -> {
@@ -91,8 +110,14 @@ public class WheatMarketItemEditUI {
         this.currentStock = Math.max(0, initialDraft.currentStock());
         this.currentAdmin = initialDraft.ifAdmin();
         this.currentInfinite = initialDraft.ifInfinite();
+        this.currentInfiniteDuration = initialDraft.ifInfiniteDuration();
         this.currentCooldownAmount = Math.max(0, initialDraft.cooldownAmount());
-        this.currentCooldownTime = Math.max(0, initialDraft.cooldownTimeInMinutes());
+        this.currentCooldownDays = Math.max(0, initialDraft.cooldownDays());
+        this.currentCooldownHours = Math.max(0, initialDraft.cooldownHours());
+        this.currentCooldownMinutes = Math.max(0, initialDraft.cooldownMinutes());
+        this.currentOrderDays = Math.max(0, initialDraft.orderDays());
+        this.currentOrderHours = Math.max(0, initialDraft.orderHours());
+        this.currentOrderMinutes = Math.max(0, initialDraft.orderMinutes());
     }
 
     public ModularUI create(Player player) {
@@ -105,7 +130,12 @@ public class WheatMarketItemEditUI {
         updateBalanceLabel();
         normalizePriceFieldIfBlurred();
         normalizeCooldownFieldIfBlurred(cooldownAmountField, currentCooldownAmount, true);
-        normalizeCooldownFieldIfBlurred(cooldownTimeField, currentCooldownTime, false);
+        normalizeCooldownFieldIfBlurred(cooldownDaysField, currentCooldownDays, false);
+        normalizeCooldownFieldIfBlurred(cooldownHoursField, currentCooldownHours, false);
+        normalizeCooldownFieldIfBlurred(cooldownMinutesField, currentCooldownMinutes, false);
+        normalizeCooldownFieldIfBlurred(orderDaysField, currentOrderDays, false);
+        normalizeCooldownFieldIfBlurred(orderHoursField, currentOrderHours, false);
+        normalizeCooldownFieldIfBlurred(orderMinutesField, currentOrderMinutes, false);
     }
 
     public Draft createDraft() {
@@ -115,33 +145,27 @@ public class WheatMarketItemEditUI {
                 currentStock,
                 currentAdmin,
                 currentInfinite,
+                currentInfiniteDuration,
                 WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(cooldownAmountField), currentCooldownAmount),
-                WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(cooldownTimeField), currentCooldownTime),
-                WheatMarketUiHelpers.rawText(cooldownAmountField),
-                WheatMarketUiHelpers.rawText(cooldownTimeField)
+                WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(cooldownDaysField), currentCooldownDays),
+                WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(cooldownHoursField), currentCooldownHours),
+                WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(cooldownMinutesField), currentCooldownMinutes),
+                WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(orderDaysField), currentOrderDays),
+                WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(orderHoursField), currentOrderHours),
+                WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(orderMinutesField), currentOrderMinutes)
         );
     }
 
-    public Action pendingAction() {
-        return pendingAction;
-    }
-
-    public int currentStock() {
-        return currentStock;
-    }
+    public Action pendingAction() { return pendingAction; }
+    public int currentStock() { return currentStock; }
 
     public boolean handleOperationResult(boolean success, Component message) {
-        if (pendingAction == Action.NONE) {
-            return false;
-        }
-
+        if (pendingAction == Action.NONE) return false;
         Action completedAction = pendingAction;
         pendingAction = Action.NONE;
         submitting = false;
         awaitingDelistConfirmation = false;
-        if (success) {
-            applySuccessfulAction(completedAction);
-        }
+        if (success) applySuccessfulAction(completedAction);
         showFeedback(message, success ? NOTICE_TEXT_COLOR : FAILURE_TEXT_COLOR);
         updateDynamicText();
         updateControlState();
@@ -154,7 +178,6 @@ public class WheatMarketItemEditUI {
 
         playerBalanceLabel = shared.playerBalanceLabel();
         WheatMarketUiHelpers.styleLabel(playerBalanceLabel, TEXT_COLOR, Horizontal.CENTER);
-
         shared.itemIcon().style(style -> style.background(new ItemStackTexture(stack)));
         shared.itemPreview().addEventListener(UIEvents.HOVER_TOOLTIPS, event -> event.hoverTooltips = WheatMarketItemTooltips.forStack(stack));
 
@@ -164,12 +187,24 @@ public class WheatMarketItemEditUI {
         opPanel = shared.opPanel();
         toggleAdminButton = shared.toggleAdminButton();
         toggleInfiniteButton = shared.toggleInfiniteButton();
+        toggleInfiniteDurationButton = shared.toggleInfiniteDurationButton();
         cooldownAmountField = shared.cooldownAmountField();
-        cooldownTimeField = shared.cooldownTimeField();
+        cooldownDaysField = shared.cooldownDaysField();
+        cooldownHoursField = shared.cooldownHoursField();
+        cooldownMinutesField = shared.cooldownMinutesField();
+        orderDaysField = shared.orderDaysField();
+        orderHoursField = shared.orderHoursField();
+        orderMinutesField = shared.orderMinutesField();
 
         WheatMarketUiHelpers.styleLabel(shared.opTitle(), NOTICE_TEXT_COLOR, Horizontal.CENTER);
         WheatMarketUiHelpers.styleFormCaption(shared.cooldownAmountCaption());
-        WheatMarketUiHelpers.styleFormCaption(shared.cooldownTimeCaption());
+        WheatMarketUiHelpers.styleFormCaption(shared.cooldownDaysCaption());
+        WheatMarketUiHelpers.styleFormCaption(shared.cooldownHoursCaption());
+        WheatMarketUiHelpers.styleFormCaption(shared.cooldownMinutesCaption());
+        WheatMarketUiHelpers.styleLabel(shared.orderTimeSectionTitle(), NOTICE_TEXT_COLOR, Horizontal.CENTER);
+        WheatMarketUiHelpers.styleFormCaption(shared.orderDaysCaption());
+        WheatMarketUiHelpers.styleFormCaption(shared.orderHoursCaption());
+        WheatMarketUiHelpers.styleFormCaption(shared.orderMinutesCaption());
 
         operator = player.hasPermissions(2);
         shared.title().setText(Component.translatable("gui.wheatmarket.edit.title"));
@@ -178,16 +213,29 @@ public class WheatMarketItemEditUI {
                 : "gui.wheatmarket.confirm.buyer", resolveOwnerName(player)));
         shared.opTitle().setText(Component.translatable("gui.wheatmarket.edit.op_options"));
         shared.cooldownAmountCaption().setText(Component.translatable("gui.wheatmarket.edit.cooldown_amount"));
-        shared.cooldownTimeCaption().setText(Component.translatable("gui.wheatmarket.edit.cooldown_time"));
+        shared.cooldownDaysCaption().setText(Component.translatable("gui.wheatmarket.edit.cooldown_days"));
+        shared.cooldownHoursCaption().setText(Component.translatable("gui.wheatmarket.edit.cooldown_hours"));
+        shared.cooldownMinutesCaption().setText(Component.translatable("gui.wheatmarket.edit.cooldown_mins"));
+        shared.orderTimeSectionTitle().setText(Component.translatable("gui.wheatmarket.edit.order_duration_section"));
+        shared.orderDaysCaption().setText(Component.translatable("gui.wheatmarket.edit.order_days"));
+        shared.orderHoursCaption().setText(Component.translatable("gui.wheatmarket.edit.order_hours"));
+        shared.orderMinutesCaption().setText(Component.translatable("gui.wheatmarket.edit.order_mins"));
 
         configureCooldownField(cooldownAmountField, true);
-        configureCooldownField(cooldownTimeField, false);
+        configureCooldownField(cooldownDaysField, false);
+        configureCooldownField(cooldownHoursField, false);
+        configureCooldownField(cooldownMinutesField, false);
+        configureCooldownField(orderDaysField, false);
+        configureCooldownField(orderHoursField, false);
+        configureCooldownField(orderMinutesField, false);
 
-        enableButtonText(toggleAdminButton, toggleInfiniteButton);
+        enableButtonText(toggleAdminButton, toggleInfiniteButton, toggleInfiniteDurationButton);
         WheatMarketUiTextures.styleColoredActionButton(toggleAdminButton, WheatMarketUiTextures.BLUE_BUTTON_COLOR, WheatMarketUiTextures.BLUE_BUTTON_HOVER_COLOR, WheatMarketUiTextures.BLUE_BUTTON_PRESSED_COLOR, -1);
         WheatMarketUiTextures.styleColoredActionButton(toggleInfiniteButton, WheatMarketUiTextures.BLUE_BUTTON_COLOR, WheatMarketUiTextures.BLUE_BUTTON_HOVER_COLOR, WheatMarketUiTextures.BLUE_BUTTON_PRESSED_COLOR, -1);
+        WheatMarketUiTextures.styleColoredActionButton(toggleInfiniteDurationButton, WheatMarketUiTextures.BLUE_BUTTON_COLOR, WheatMarketUiTextures.BLUE_BUTTON_HOVER_COLOR, WheatMarketUiTextures.BLUE_BUTTON_PRESSED_COLOR, -1);
         toggleAdminButton.setOnClick(event -> submitSimpleAction(Action.TOGGLE_ADMIN));
         toggleInfiniteButton.setOnClick(event -> submitSimpleAction(Action.TOGGLE_INFINITE));
+        toggleInfiniteDurationButton.setOnClick(event -> submitSimpleAction(Action.TOGGLE_INFINITE_DURATION));
 
         buildLeftExtra(shared, player);
         buildRightContent(shared);
@@ -198,13 +246,18 @@ public class WheatMarketItemEditUI {
         cooldownApplyButton.enableText();
         cooldownApplyButton.layout(layout -> layout.widthPercent(70).minWidth(74).maxWidth(120).height(22).flexShrink(0));
         WheatMarketUiTextures.styleColoredActionButton(cooldownApplyButton, WheatMarketUiTextures.BLUE_BUTTON_COLOR, WheatMarketUiTextures.BLUE_BUTTON_HOVER_COLOR, WheatMarketUiTextures.BLUE_BUTTON_PRESSED_COLOR, -1);
-        cooldownApplyButton.setText(Component.translatable("gui.wheatmarket.edit.apply_cooldown"));
-        cooldownApplyButton.setOnClick(event -> submitCooldownChange());
+        cooldownApplyButton.setText(Component.translatable("gui.wheatmarket.edit.save_settings"));
+        cooldownApplyButton.setOnClick(event -> submitSave());
         shared.opPanel().addChild(cooldownApplyButton);
 
         syncPriceFieldText(WheatMarketUiHelpers.formatMoney(currentPrice));
         syncCooldownAmountText(String.valueOf(currentCooldownAmount));
-        syncCooldownTimeText(String.valueOf(currentCooldownTime));
+        syncCooldownDaysText(String.valueOf(currentCooldownDays));
+        syncCooldownHoursText(String.valueOf(currentCooldownHours));
+        syncCooldownMinutesText(String.valueOf(currentCooldownMinutes));
+        syncOrderDaysText(String.valueOf(currentOrderDays));
+        syncOrderHoursText(String.valueOf(currentOrderHours));
+        syncOrderMinutesText(String.valueOf(currentOrderMinutes));
         feedbackLabel.setText(Component.empty());
 
         updateBalanceLabel();
@@ -216,16 +269,11 @@ public class WheatMarketItemEditUI {
         Label itemNameLabel = createSummaryLabel();
         WheatMarketUiHelpers.styleLabel(itemNameLabel, TEXT_COLOR, Horizontal.CENTER);
         itemNameLabel.setText(Component.translatable("gui.wheatmarket.confirm.item_name", stack.getHoverName()));
-
         Label typeLabel = createSummaryLabel();
         WheatMarketUiHelpers.styleLabel(typeLabel, TEXT_COLOR, Horizontal.CENTER);
-        typeLabel.setText(Component.translatable(item.isIfSell()
-                ? "gui.wheatmarket.market.sell"
-                : "gui.wheatmarket.market.buy_order"));
-
+        typeLabel.setText(Component.translatable(item.isIfSell() ? "gui.wheatmarket.market.sell" : "gui.wheatmarket.market.buy_order"));
         stockLabel = createSummaryLabel();
         WheatMarketUiHelpers.styleLabel(stockLabel, TEXT_COLOR, Horizontal.CENTER);
-
         shared.leftExtra().addChildren(itemNameLabel, typeLabel, stockLabel);
     }
 
@@ -252,20 +300,12 @@ public class WheatMarketItemEditUI {
         priceField.style(style -> style.background(FIELD_TEXTURE));
         priceField.layout(layout -> layout.width(0).flex(1).minWidth(48).maxWidth(86).height(22).paddingLeft(6).paddingRight(6).flexShrink(1));
 
-        UIElement priceGroup = new UIElement()
-                .layout(layout -> layout.maxWidthPercent(100).height(22).gapAll(4).flexShrink(1));
-        priceGroup.lss("flex-direction", "row");
-        priceGroup.lss("align-items", "center");
-        priceGroup.lss("justify-content", "center");
-        priceGroup.lss("overflow", "hidden");
+        UIElement priceGroup = new UIElement().layout(layout -> layout.maxWidthPercent(100).height(22).gapAll(4).flexShrink(1));
+        priceGroup.lss("flex-direction", "row"); priceGroup.lss("align-items", "center"); priceGroup.lss("justify-content", "center"); priceGroup.lss("overflow", "hidden");
         priceGroup.addChildren(priceCaption, priceField);
 
-        UIElement priceRow = new UIElement()
-                .layout(layout -> layout.widthPercent(100).maxWidthPercent(100).height(22).flexShrink(0));
-        priceRow.lss("flex-direction", "row");
-        priceRow.lss("align-items", "center");
-        priceRow.lss("justify-content", "center");
-        priceRow.lss("overflow", "hidden");
+        UIElement priceRow = new UIElement().layout(layout -> layout.widthPercent(100).maxWidthPercent(100).height(22).flexShrink(0));
+        priceRow.lss("flex-direction", "row"); priceRow.lss("align-items", "center"); priceRow.lss("justify-content", "center"); priceRow.lss("overflow", "hidden");
         priceRow.addChild(priceGroup);
 
         configurePriceField();
@@ -286,20 +326,12 @@ public class WheatMarketItemEditUI {
         WheatMarketUiHelpers.styleLabel(currentStockLabel, TEXT_COLOR, Horizontal.CENTER);
         currentStockLabel.layout(layout -> layout.width(0).flex(1).minWidth(48).maxWidth(86).height(22).flexShrink(1));
 
-        UIElement stockGroup = new UIElement()
-                .layout(layout -> layout.maxWidthPercent(100).height(22).gapAll(4).flexShrink(1));
-        stockGroup.lss("flex-direction", "row");
-        stockGroup.lss("align-items", "center");
-        stockGroup.lss("justify-content", "center");
-        stockGroup.lss("overflow", "hidden");
+        UIElement stockGroup = new UIElement().layout(layout -> layout.maxWidthPercent(100).height(22).gapAll(4).flexShrink(1));
+        stockGroup.lss("flex-direction", "row"); stockGroup.lss("align-items", "center"); stockGroup.lss("justify-content", "center"); stockGroup.lss("overflow", "hidden");
         stockGroup.addChildren(stockCaption, currentStockLabel);
 
-        UIElement stockRow = new UIElement()
-                .layout(layout -> layout.widthPercent(100).maxWidthPercent(100).height(22).flexShrink(0));
-        stockRow.lss("flex-direction", "row");
-        stockRow.lss("align-items", "center");
-        stockRow.lss("justify-content", "center");
-        stockRow.lss("overflow", "hidden");
+        UIElement stockRow = new UIElement().layout(layout -> layout.widthPercent(100).maxWidthPercent(100).height(22).flexShrink(0));
+        stockRow.lss("flex-direction", "row"); stockRow.lss("align-items", "center"); stockRow.lss("justify-content", "center"); stockRow.lss("overflow", "hidden");
         stockRow.addChild(stockGroup);
 
         stockEditButton = new Button();
@@ -334,7 +366,6 @@ public class WheatMarketItemEditUI {
         WheatMarketUiTextures.styleColoredActionButton(cancelButton, WheatMarketUiTextures.RED_BUTTON_COLOR, WheatMarketUiTextures.RED_BUTTON_HOVER_COLOR, WheatMarketUiTextures.RED_BUTTON_PRESSED_COLOR, -1);
         cancelButton.setText(Component.translatable("gui.wheatmarket.edit.back"));
         cancelButton.setOnClick(event -> onCancel.run());
-
         shared.actionContent().addChildren(delistButton, cancelButton);
     }
 
@@ -362,20 +393,8 @@ public class WheatMarketItemEditUI {
         priceField.setAnyString();
         priceField.setCharValidator(character -> Character.isDigit(character) || character == '.');
         priceField.setTextValidator(WheatMarketUiHelpers::isPriceInputValid);
-        priceField.textFieldStyle(style -> style
-                .placeholder(Component.translatable("gui.wheatmarket.listing.price_placeholder"))
-                .textColor(TEXT_COLOR)
-                .cursorColor(0xFF19140D)
-                .errorColor(FAILURE_TEXT_COLOR)
-                .textShadow(false)
-                .focusOverlay(EMPTY_OVERLAY));
-        priceField.registerValueListener(rawValue -> {
-            if (!syncingPriceField) {
-                awaitingDelistConfirmation = false;
-                hideFeedback();
-                updateControlState();
-            }
-        });
+        priceField.textFieldStyle(style -> style.placeholder(Component.translatable("gui.wheatmarket.listing.price_placeholder")).textColor(TEXT_COLOR).cursorColor(0xFF19140D).errorColor(FAILURE_TEXT_COLOR).textShadow(false).focusOverlay(EMPTY_OVERLAY));
+        priceField.registerValueListener(rawValue -> { if (!syncingPriceField) { awaitingDelistConfirmation = false; hideFeedback(); updateControlState(); } });
         priceField.addEventListener(UIEvents.BLUR, event -> normalizePriceFieldIfBlurred());
     }
 
@@ -384,120 +403,87 @@ public class WheatMarketItemEditUI {
         field.setCharValidator(Character::isDigit);
         field.setTextValidator(text -> text.isBlank() || text.chars().allMatch(Character::isDigit));
         field.style(style -> style.background(FIELD_TEXTURE));
-        field.textFieldStyle(style -> style
-                .placeholder(Component.translatable("gui.wheatmarket.confirm.empty"))
-                .textColor(TEXT_COLOR)
-                .cursorColor(0xFF19140D)
-                .errorColor(FAILURE_TEXT_COLOR)
-                .textShadow(false)
-                .focusOverlay(EMPTY_OVERLAY));
+        field.textFieldStyle(style -> style.placeholder(Component.translatable("gui.wheatmarket.confirm.empty")).textColor(TEXT_COLOR).cursorColor(0xFF19140D).errorColor(FAILURE_TEXT_COLOR).textShadow(false).focusOverlay(EMPTY_OVERLAY));
         field.registerValueListener(rawValue -> {
-            if (amountField ? !syncingCooldownAmountField : !syncingCooldownTimeField) {
-                awaitingDelistConfirmation = false;
-                hideFeedback();
-                updateControlState();
-            }
+            boolean syncing = amountField ? syncingCooldownAmountField
+                    : field == cooldownDaysField ? syncingCooldownDaysField
+                    : field == cooldownHoursField ? syncingCooldownHoursField
+                    : field == cooldownMinutesField ? syncingCooldownMinutesField
+                    : field == orderDaysField ? syncingOrderDaysField
+                    : field == orderHoursField ? syncingOrderHoursField : syncingOrderMinutesField;
+            if (!syncing) { awaitingDelistConfirmation = false; hideFeedback(); updateControlState(); }
         });
-        field.addEventListener(UIEvents.BLUR, event -> normalizeCooldownFieldIfBlurred(field,
-                amountField ? currentCooldownAmount : currentCooldownTime,
-                amountField));
+        field.addEventListener(UIEvents.BLUR, event -> normalizeCooldownFieldIfBlurred(field, 0, amountField));
     }
 
     private void submitPriceChange() {
-        if (submitting) {
-            return;
-        }
+        if (submitting) return;
         double price = WheatMarketUiHelpers.parsePrice(WheatMarketUiHelpers.rawText(priceField), 0.0D);
-        if (price <= 0.0D || !Double.isFinite(price)) {
-            showFeedback(Component.translatable("gui.wheatmarket.operation.invalid_price"), FAILURE_TEXT_COLOR);
-            return;
-        }
+        if (price <= 0.0D || !Double.isFinite(price)) { showFeedback(Component.translatable("gui.wheatmarket.operation.invalid_price"), FAILURE_TEXT_COLOR); return; }
         submittedPrice = price;
         beginSubmit(Action.CHANGE_PRICE, Component.translatable("gui.wheatmarket.edit.updating"));
-        onSubmit.accept(new ActionRequest(Action.CHANGE_PRICE, 0, price, 0, 0));
+        onSubmit.accept(new ActionRequest(Action.CHANGE_PRICE, 0, price, 0, 0, 0));
     }
 
     private void submitDelist() {
-        if (submitting) {
-            return;
-        }
-        if (!item.isIfSell()) {
-            showFeedback(Component.translatable("gui.wheatmarket.edit.buy_order_delist_unsupported"), FAILURE_TEXT_COLOR);
-            return;
-        }
-        if (!awaitingDelistConfirmation) {
-            awaitingDelistConfirmation = true;
-            delistButton.setText(Component.translatable("gui.wheatmarket.edit.confirm_delist"));
-            showFeedback(Component.translatable("gui.wheatmarket.edit.delist_warning"), FAILURE_TEXT_COLOR);
-            return;
-        }
+        if (submitting) return;
+        if (!item.isIfSell()) { showFeedback(Component.translatable("gui.wheatmarket.edit.buy_order_delist_unsupported"), FAILURE_TEXT_COLOR); return; }
+        if (!awaitingDelistConfirmation) { awaitingDelistConfirmation = true; delistButton.setText(Component.translatable("gui.wheatmarket.edit.confirm_delist")); showFeedback(Component.translatable("gui.wheatmarket.edit.delist_warning"), FAILURE_TEXT_COLOR); return; }
         beginSubmit(Action.DELIST, Component.translatable("gui.wheatmarket.edit.updating"));
-        onSubmit.accept(new ActionRequest(Action.DELIST, 0, 0.0D, 0, 0));
+        onSubmit.accept(new ActionRequest(Action.DELIST, 0, 0.0D, 0, 0, 0));
     }
 
     private void submitSimpleAction(Action action) {
-        if (submitting || !operator) {
-            return;
-        }
+        if (submitting || !operator) return;
         beginSubmit(action, Component.translatable("gui.wheatmarket.edit.updating"));
-        onSubmit.accept(new ActionRequest(action, 0, 0.0D, 0, 0));
+        onSubmit.accept(new ActionRequest(action, 0, 0.0D, 0, 0, 0));
     }
 
-    private void submitCooldownChange() {
-        if (submitting || !operator) {
-            return;
-        }
+    private void submitSave() {
+        if (submitting || !operator) return;
         int amount = WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(cooldownAmountField), -1);
-        int time = WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(cooldownTimeField), -1);
-        if (amount < 0 || time < 0) {
-            showFeedback(Component.translatable("gui.wheatmarket.operation.invalid_amount"), FAILURE_TEXT_COLOR);
-            return;
+        int days = WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(cooldownDaysField), -1);
+        int hours = WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(cooldownHoursField), -1);
+        int minutes = WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(cooldownMinutesField), -1);
+        int ordDays = WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(orderDaysField), -1);
+        int ordHours = WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(orderHoursField), -1);
+        int ordMinutes = WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(orderMinutesField), -1);
+        if (amount < 0 || days < 0 || hours < 0 || minutes < 0 || ordDays < 0 || ordHours < 0 || ordMinutes < 0) {
+            showFeedback(Component.translatable("gui.wheatmarket.operation.invalid_amount"), FAILURE_TEXT_COLOR); return;
         }
         submittedCooldownAmount = amount;
-        submittedCooldownTime = time;
+        submittedCooldownDays = days;
+        submittedCooldownHours = hours;
+        submittedCooldownMinutes = minutes;
+        int cooldownTimeInMinutes = days * 24 * 60 + hours * 60 + minutes;
+        long timeToExpireMs = (ordDays * 86400L + ordHours * 3600L + ordMinutes * 60L) * 1000L;
         beginSubmit(Action.SET_COOLDOWN, Component.translatable("gui.wheatmarket.edit.updating"));
-        onSubmit.accept(new ActionRequest(Action.SET_COOLDOWN, 0, 0.0D, amount, time));
+        onSubmit.accept(new ActionRequest(Action.SET_COOLDOWN, 0, 0.0D, amount, cooldownTimeInMinutes, timeToExpireMs));
     }
 
     private void beginSubmit(Action action, Component message) {
-        pendingAction = action;
-        submitting = true;
-        awaitingDelistConfirmation = false;
-        showFeedback(message, NOTICE_TEXT_COLOR);
-        updateControlState();
+        pendingAction = action; submitting = true; awaitingDelistConfirmation = false;
+        showFeedback(message, NOTICE_TEXT_COLOR); updateControlState();
     }
 
     private void applySuccessfulAction(Action action) {
         switch (action) {
             case CHANGE_PRICE -> currentPrice = submittedPrice;
             case TOGGLE_ADMIN -> currentAdmin = !currentAdmin;
-            case TOGGLE_INFINITE -> {
-                currentInfinite = !currentInfinite;
-                if (!currentInfinite && currentStock <= 0) {
-                    currentStock = 1;
-                }
-            }
-            case SET_COOLDOWN -> {
-                currentCooldownAmount = submittedCooldownAmount;
-                currentCooldownTime = submittedCooldownTime;
-            }
-            default -> {
-            }
+            case TOGGLE_INFINITE -> { currentInfinite = !currentInfinite; if (!currentInfinite && currentStock <= 0) currentStock = 1; }
+            case TOGGLE_INFINITE_DURATION -> currentInfiniteDuration = !currentInfiniteDuration;
+            case SET_COOLDOWN -> { currentCooldownAmount = submittedCooldownAmount; currentCooldownDays = submittedCooldownDays; currentCooldownHours = submittedCooldownHours; currentCooldownMinutes = submittedCooldownMinutes; }
+            default -> {}
         }
     }
 
     private void updateDynamicText() {
         stockLabel.setText(Component.translatable("gui.wheatmarket.confirm.stock", formatStock(currentStock, currentInfinite)));
         currentStockLabel.setText(formatStock(currentStock, currentInfinite));
-        toggleAdminButton.setText(Component.translatable(currentAdmin
-                ? "gui.wheatmarket.edit.system_shop_on"
-                : "gui.wheatmarket.edit.system_shop_off"));
-        toggleInfiniteButton.setText(Component.translatable(currentInfinite
-                ? "gui.wheatmarket.edit.infinite_on"
-                : "gui.wheatmarket.edit.infinite_off"));
-        if (!awaitingDelistConfirmation) {
-            delistButton.setText(Component.translatable("gui.wheatmarket.edit.delist"));
-        }
+        toggleAdminButton.setText(Component.translatable(currentAdmin ? "gui.wheatmarket.edit.system_shop_on" : "gui.wheatmarket.edit.system_shop_off"));
+        toggleInfiniteButton.setText(Component.translatable(currentInfinite ? "gui.wheatmarket.edit.infinite_on" : "gui.wheatmarket.edit.infinite_off"));
+        toggleInfiniteDurationButton.setText(Component.translatable(currentInfiniteDuration ? "gui.wheatmarket.edit.infinite_duration_on" : "gui.wheatmarket.edit.infinite_duration_off"));
+        if (!awaitingDelistConfirmation) delistButton.setText(Component.translatable("gui.wheatmarket.edit.delist"));
     }
 
     private void updateControlState() {
@@ -505,178 +491,147 @@ public class WheatMarketItemEditUI {
         boolean sellOrder = item.isIfSell();
         boolean stockEditable = sellOrder && !currentInfinite;
         double price = WheatMarketUiHelpers.parsePrice(WheatMarketUiHelpers.rawText(priceField), 0.0D);
-        int cooldownAmount = WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(cooldownAmountField), -1);
-        int cooldownTime = WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(cooldownTimeField), -1);
-
+        int cdAmt = WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(cooldownAmountField), -1);
+        int cdDays = WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(cooldownDaysField), -1);
+        int cdHrs = WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(cooldownHoursField), -1);
+        int cdMin = WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(cooldownMinutesField), -1);
         priceApplyButton.setActive(idle && price > 0.0D && Double.isFinite(price));
         stockEditButton.setActive(idle && stockEditable);
         delistButton.setActive(idle && sellOrder);
         toggleAdminButton.setActive(idle && operator);
         toggleInfiniteButton.setActive(idle && operator);
-        cooldownApplyButton.setActive(idle && operator && cooldownAmount >= 0 && cooldownTime >= 0);
+        toggleInfiniteDurationButton.setActive(idle && operator);
+        cooldownApplyButton.setActive(idle && operator && cdAmt >= 0 && cdDays >= 0 && cdHrs >= 0 && cdMin >= 0);
         cancelButton.setActive(idle);
         priceField.setActive(idle);
-        cooldownAmountField.setActive(idle && operator);
-        cooldownTimeField.setActive(idle && operator);
+        boolean showOpFields = idle && operator;
+        cooldownAmountField.setActive(showOpFields);
+        cooldownDaysField.setActive(showOpFields);
+        cooldownHoursField.setActive(showOpFields);
+        cooldownMinutesField.setActive(showOpFields);
+        orderDaysField.setActive(showOpFields);
+        orderHoursField.setActive(showOpFields);
+        orderMinutesField.setActive(showOpFields);
         WheatMarketUiHelpers.setShown(opPanel, operator);
     }
 
     private void updateBalanceLabel() {
-        if (playerBalanceLabel == null || Double.compare(seenBalance, WheatMarket.CLIENT_BALANCE) == 0) {
-            return;
-        }
+        if (playerBalanceLabel == null || Double.compare(seenBalance, WheatMarket.CLIENT_BALANCE) == 0) return;
         seenBalance = WheatMarket.CLIENT_BALANCE;
         playerBalanceLabel.setText(Component.translatable("gui.wheatmarket.balance", WheatMarketUiHelpers.formatMoney(seenBalance)));
     }
 
     private void normalizePriceFieldIfBlurred() {
-        if (priceField == null || priceField.isFocused()) {
-            return;
-        }
+        if (priceField == null || priceField.isFocused()) return;
         double price = WheatMarketUiHelpers.parsePrice(WheatMarketUiHelpers.rawText(priceField), currentPrice);
-        if (price <= 0.0D || !Double.isFinite(price)) {
-            price = currentPrice;
-        }
+        if (price <= 0.0D || !Double.isFinite(price)) price = currentPrice;
         syncPriceFieldText(WheatMarketUiHelpers.formatMoney(price));
     }
 
     private void normalizeCooldownFieldIfBlurred(TextField field, int fallback, boolean amountField) {
-        if (field == null || field.isFocused()) {
-            return;
-        }
-        int value = WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(field), fallback);
-        if (amountField) {
-            syncCooldownAmountText(String.valueOf(Math.max(0, value)));
-        } else {
-            syncCooldownTimeText(String.valueOf(Math.max(0, value)));
-        }
+        if (field == null || field.isFocused()) return;
+        int value = Math.max(0, WheatMarketUiHelpers.parseNonNegativeInt(WheatMarketUiHelpers.rawText(field), fallback));
+        if (amountField) syncCooldownAmountText(String.valueOf(value));
+        else if (field == cooldownDaysField) syncCooldownDaysText(String.valueOf(value));
+        else if (field == cooldownHoursField) syncCooldownHoursText(String.valueOf(value));
+        else if (field == cooldownMinutesField) syncCooldownMinutesText(String.valueOf(value));
+        else if (field == orderDaysField) syncOrderDaysText(String.valueOf(value));
+        else if (field == orderHoursField) syncOrderHoursText(String.valueOf(value));
+        else syncOrderMinutesText(String.valueOf(value));
     }
 
     private void onRootMouseDown(float mouseX, float mouseY) {
         blurIfOutside(priceField, mouseX, mouseY);
         blurIfOutside(cooldownAmountField, mouseX, mouseY);
-        blurIfOutside(cooldownTimeField, mouseX, mouseY);
+        blurIfOutside(cooldownDaysField, mouseX, mouseY);
+        blurIfOutside(cooldownHoursField, mouseX, mouseY);
+        blurIfOutside(cooldownMinutesField, mouseX, mouseY);
+        blurIfOutside(orderDaysField, mouseX, mouseY);
+        blurIfOutside(orderHoursField, mouseX, mouseY);
+        blurIfOutside(orderMinutesField, mouseX, mouseY);
     }
 
-    private void blurIfOutside(TextField field, float mouseX, float mouseY) {
-        if (field != null && !field.isMouseOver(mouseX, mouseY)) {
-            field.blur();
-        }
-    }
+    private void blurIfOutside(TextField field, float mouseX, float mouseY) { if (field != null && !field.isMouseOver(mouseX, mouseY)) field.blur(); }
 
     private void syncPriceFieldText(String value) {
-        if (priceField != null && !value.equals(priceField.getRawText())) {
-            syncingPriceField = true;
-            priceField.setValue(value, false);
-            syncingPriceField = false;
-        }
+        if (priceField != null && !value.equals(priceField.getRawText())) { syncingPriceField = true; priceField.setValue(value, false); syncingPriceField = false; }
     }
 
     private void syncCooldownAmountText(String value) {
-        if (cooldownAmountField != null && !value.equals(cooldownAmountField.getRawText())) {
-            syncingCooldownAmountField = true;
-            cooldownAmountField.setValue(value, false);
-            syncingCooldownAmountField = false;
-        }
+        if (cooldownAmountField != null && !value.equals(cooldownAmountField.getRawText())) { syncingCooldownAmountField = true; cooldownAmountField.setValue(value, false); syncingCooldownAmountField = false; }
     }
 
-    private void syncCooldownTimeText(String value) {
-        if (cooldownTimeField != null && !value.equals(cooldownTimeField.getRawText())) {
-            syncingCooldownTimeField = true;
-            cooldownTimeField.setValue(value, false);
-            syncingCooldownTimeField = false;
-        }
+    private void syncCooldownDaysText(String value) {
+        if (cooldownDaysField != null && !value.equals(cooldownDaysField.getRawText())) { syncingCooldownDaysField = true; cooldownDaysField.setValue(value, false); syncingCooldownDaysField = false; }
+    }
+
+    private void syncCooldownHoursText(String value) {
+        if (cooldownHoursField != null && !value.equals(cooldownHoursField.getRawText())) { syncingCooldownHoursField = true; cooldownHoursField.setValue(value, false); syncingCooldownHoursField = false; }
+    }
+
+    private void syncCooldownMinutesText(String value) {
+        if (cooldownMinutesField != null && !value.equals(cooldownMinutesField.getRawText())) { syncingCooldownMinutesField = true; cooldownMinutesField.setValue(value, false); syncingCooldownMinutesField = false; }
+    }
+
+    private void syncOrderDaysText(String value) {
+        if (orderDaysField != null && !value.equals(orderDaysField.getRawText())) { syncingOrderDaysField = true; orderDaysField.setValue(value, false); syncingOrderDaysField = false; }
+    }
+
+    private void syncOrderHoursText(String value) {
+        if (orderHoursField != null && !value.equals(orderHoursField.getRawText())) { syncingOrderHoursField = true; orderHoursField.setValue(value, false); syncingOrderHoursField = false; }
+    }
+
+    private void syncOrderMinutesText(String value) {
+        if (orderMinutesField != null && !value.equals(orderMinutesField.getRawText())) { syncingOrderMinutesField = true; orderMinutesField.setValue(value, false); syncingOrderMinutesField = false; }
     }
 
     private Component resolveOwnerName(Player player) {
-        if (currentAdmin) {
-            return Component.translatable("gui.wheatmarket.market.system_shop");
-        }
+        if (currentAdmin) return Component.translatable("gui.wheatmarket.market.system_shop");
         UUID ownerId = item.getSellerID();
-        if (ownerId.equals(player.getUUID())) {
-            return player.getName();
-        }
+        if (ownerId.equals(player.getUUID())) return player.getName();
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level != null) {
-            Player owner = minecraft.level.getPlayerByUUID(ownerId);
-            if (owner != null) {
-                return owner.getName();
-            }
-        }
+        if (minecraft.level != null) { Player owner = minecraft.level.getPlayerByUUID(ownerId); if (owner != null) return owner.getName(); }
         return Component.literal(ownerId.toString().substring(0, 8));
     }
 
     private Component formatStock(int amount, boolean infinite) {
-        if (infinite) {
-            return Component.translatable("gui.wheatmarket.market.infinite");
-        }
-        return Component.literal(String.valueOf(amount));
+        return infinite ? Component.translatable("gui.wheatmarket.market.infinite") : Component.literal(String.valueOf(amount));
     }
 
     private Component formatTime(long time) {
-        if (time <= 0) {
-            return Component.translatable("gui.wheatmarket.confirm.unknown_time");
-        }
-        return Component.literal(Instant.ofEpochMilli(time)
-                .atZone(ZoneId.systemDefault())
-                .format(TIME_FORMAT));
+        if (time <= 0) return Component.translatable("gui.wheatmarket.confirm.unknown_time");
+        return Component.literal(Instant.ofEpochMilli(time).atZone(ZoneId.systemDefault()).format(TIME_FORMAT));
     }
 
-    private void showFeedback(Component message, int color) {
-        WheatMarketUiHelpers.styleLabel(feedbackLabel, color, Horizontal.CENTER);
-        feedbackLabel.setText(message);
-        WheatMarketUiHelpers.setShown(feedbackLabel, true);
-    }
+    private void showFeedback(Component message, int color) { WheatMarketUiHelpers.styleLabel(feedbackLabel, color, Horizontal.CENTER); feedbackLabel.setText(message); WheatMarketUiHelpers.setShown(feedbackLabel, true); }
+    private void hideFeedback() { if (feedbackLabel != null) feedbackLabel.setText(Component.empty()); }
+    private void enableButtonText(Button... buttons) { for (Button button : buttons) button.enableText(); }
 
-    private void hideFeedback() {
-        if (feedbackLabel != null) {
-            feedbackLabel.setText(Component.empty());
-        }
-    }
-
-    private void enableButtonText(Button... buttons) {
-        for (Button button : buttons) {
-            button.enableText();
-        }
-    }
-
-    public enum Action {
-        NONE,
-        CHANGE_PRICE,
-        DELIST,
-        TOGGLE_ADMIN,
-        TOGGLE_INFINITE,
-        SET_COOLDOWN
-    }
+    public enum Action { NONE, CHANGE_PRICE, DELIST, TOGGLE_ADMIN, TOGGLE_INFINITE, TOGGLE_INFINITE_DURATION, SET_COOLDOWN }
 
     public record Draft(double price, String priceText, int currentStock,
-                        boolean ifAdmin, boolean ifInfinite, int cooldownAmount, int cooldownTimeInMinutes,
-                        String cooldownAmountText, String cooldownTimeText) {
+                        boolean ifAdmin, boolean ifInfinite, boolean ifInfiniteDuration,
+                        int cooldownAmount, int cooldownDays, int cooldownHours, int cooldownMinutes,
+                        int orderDays, int orderHours, int orderMinutes) {
         public static Draft from(MarketListS2CPacket.MarketItemSummary item) {
-            String priceText = String.format(Locale.ROOT, "%.2f", item.getPrice());
-            String cooldownAmountText = String.valueOf(Math.max(0, item.getCooldownAmount()));
-            String cooldownTimeText = String.valueOf(Math.max(0, item.getCooldownTimeInMinutes()));
+            int cdMinutes = item.getCooldownTimeInMinutes();
+            long ttExpire = item.getTimeToExpire();
             return new Draft(
-                    item.getPrice(),
-                    priceText,
-                    Math.max(0, item.getAmount()),
-                    item.isIfAdmin(),
-                    item.isIfInfinite(),
-                    Math.max(0, item.getCooldownAmount()),
-                    Math.max(0, item.getCooldownTimeInMinutes()),
-                    cooldownAmountText,
-                    cooldownTimeText
+                    item.getPrice(), String.format(Locale.ROOT, "%.2f", item.getPrice()),
+                    item.getAmount(),
+                    item.isIfAdmin(), item.isIfInfinite(), item.isIfInfiniteDuration(),
+                    item.getCooldownAmount(),
+                    cdMinutes / (24 * 60), (cdMinutes % (24 * 60)) / 60, cdMinutes % 60,
+                    (int)(ttExpire / (86400L * 1000)), (int)((ttExpire % (86400L * 1000)) / (3600L * 1000)), (int)((ttExpire % (3600L * 1000)) / (60L * 1000))
             );
         }
 
         public Draft withStock(int stock) {
-            int safeStock = Math.max(0, stock);
-            return new Draft(price, priceText, safeStock, ifAdmin, ifInfinite,
-                    cooldownAmount, cooldownTimeInMinutes, cooldownAmountText, cooldownTimeText);
+            return new Draft(price, priceText, Math.max(0, stock), ifAdmin, ifInfinite, ifInfiniteDuration,
+                    cooldownAmount, cooldownDays, cooldownHours, cooldownMinutes, orderDays, orderHours, orderMinutes);
         }
     }
 
     public record ActionRequest(Action action, int amount, double price, int cooldownAmount,
-                                int cooldownTimeInMinutes) {
-    }
+                                 int cooldownTimeInMinutes, long timeToExpireMs) {}
 }

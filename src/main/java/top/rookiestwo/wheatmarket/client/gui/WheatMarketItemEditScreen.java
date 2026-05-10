@@ -132,6 +132,15 @@ public class WheatMarketItemEditScreen extends WheatMarketBaseScreen {
                     0,
                     0
             ));
+            case TOGGLE_INFINITE_DURATION -> WheatMarketNetwork.sendToServer(new ManageItemC2SPacket(
+                    item.getMarketItemID(),
+                    ManageItemC2SPacket.ACTION_TOGGLE_INFINITE_DURATION,
+                    0,
+                    0.0D,
+                    0,
+                    0,
+                    0
+            ));
             case SET_COOLDOWN -> WheatMarketNetwork.sendToServer(new ManageItemC2SPacket(
                     item.getMarketItemID(),
                     ManageItemC2SPacket.ACTION_SET_COOLDOWN,
@@ -139,7 +148,8 @@ public class WheatMarketItemEditScreen extends WheatMarketBaseScreen {
                     0.0D,
                     0,
                     request.cooldownAmount(),
-                    request.cooldownTimeInMinutes()
+                    request.cooldownTimeInMinutes(),
+                    request.timeToExpireMs()
             ));
             default -> {
             }

@@ -611,8 +611,19 @@ public class MarketService {
         });
     }
 
+    public CompletableFuture<ServiceResult<MarketItemResult>> toggleInfiniteDuration(UUID actorId, boolean isOp, UUID marketItemID) {
+        return updateExistingItem(actorId, isOp, marketItemID, item -> {
+            if (!isOp) {
+                return ServiceResult.failure("gui.wheatmarket.operation.no_permission");
+            }
+            MarketItem updated = copyOf(item);
+            updated.setIfInfiniteDuration(!item.isInfiniteDuration());
+            return ServiceResult.success(new MarketItemResult(updated));
+        });
+    }
+
     public CompletableFuture<ServiceResult<MarketItemResult>> setCooldown(UUID actorId, boolean isOp, UUID marketItemID,
-                                                                          int cooldownAmount, int cooldownTimeInMinutes) {
+                                                                           int cooldownAmount, int cooldownTimeInMinutes) {
         return updateExistingItem(actorId, isOp, marketItemID, item -> {
             if (!isOp) {
                 return ServiceResult.failure("gui.wheatmarket.operation.no_permission");
@@ -620,6 +631,17 @@ public class MarketService {
             MarketItem updated = copyOf(item);
             updated.setCooldownAmount(cooldownAmount);
             updated.setCooldownTimeInMinutes(cooldownTimeInMinutes);
+            return ServiceResult.success(new MarketItemResult(updated));
+        });
+    }
+
+    public CompletableFuture<ServiceResult<MarketItemResult>> setTimeToExpire(UUID actorId, boolean isOp, UUID marketItemID, long timeToExpire) {
+        return updateExistingItem(actorId, isOp, marketItemID, item -> {
+            if (!isOp) {
+                return ServiceResult.failure("gui.wheatmarket.operation.no_permission");
+            }
+            MarketItem updated = copyOf(item);
+            updated.setTimeToExpire(timeToExpire);
             return ServiceResult.success(new MarketItemResult(updated));
         });
     }
@@ -683,7 +705,8 @@ public class MarketService {
                 item.getCooldownTimeInMinutes(),
                 item.getTimeToExpire(),
                 item.getLastTradeTime(),
-                item.getFrozenBalance()
+                item.getFrozenBalance(),
+                item.isInfiniteDuration()
         );
     }
 

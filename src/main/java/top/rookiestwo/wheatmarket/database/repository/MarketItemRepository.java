@@ -26,6 +26,7 @@ public class MarketItemRepository {
                 "timeToExpire BIGINT DEFAULT 0," +
                 "lastTradeTime DATETIME," +
                 "frozenBalance DOUBLE DEFAULT 0," +
+                "ifInfiniteDuration BOOLEAN DEFAULT FALSE," +
                 "FOREIGN KEY (sellerID) REFERENCES player_info(uuid)" +
                 ");";
         try (Statement stmt = connection.createStatement()) {
@@ -39,13 +40,14 @@ public class MarketItemRepository {
             stmt.execute("ALTER TABLE market_item ADD COLUMN IF NOT EXISTS ifInfinite BOOLEAN DEFAULT FALSE");
             stmt.executeUpdate("UPDATE market_item SET ifInfinite = TRUE, amount = 1 WHERE amount = " + LEGACY_INFINITE_AMOUNT);
             stmt.execute("ALTER TABLE market_item ADD COLUMN IF NOT EXISTS frozenBalance DOUBLE DEFAULT 0");
+            stmt.execute("ALTER TABLE market_item ADD COLUMN IF NOT EXISTS ifInfiniteDuration BOOLEAN DEFAULT FALSE");
         }
     }
 
     public void insert(Connection connection, MarketItem item) throws SQLException {
         String sql = "INSERT INTO market_item (MarketItemID, itemID, itemNBTCompound, sellerID, price, amount, " +
-                "ifInfinite, listingTime, ifAdmin, ifSell, cooldownAmount, cooldownTimeInMinutes, timeToExpire, lastTradeTime, frozenBalance) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "ifInfinite, listingTime, ifAdmin, ifSell, cooldownAmount, cooldownTimeInMinutes, timeToExpire, lastTradeTime, frozenBalance, ifInfiniteDuration) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             bindMarketItem(stmt, item);
             stmt.executeUpdate();
@@ -55,7 +57,7 @@ public class MarketItemRepository {
     public void update(Connection connection, MarketItem item) throws SQLException {
         String sql = "UPDATE market_item SET itemID=?, itemNBTCompound=?, sellerID=?, price=?, amount=?, " +
                 "ifInfinite=?, listingTime=?, ifAdmin=?, ifSell=?, cooldownAmount=?, cooldownTimeInMinutes=?, " +
-                "timeToExpire=?, lastTradeTime=?, frozenBalance=? WHERE MarketItemID=?";
+                "timeToExpire=?, lastTradeTime=?, frozenBalance=?, ifInfiniteDuration=? WHERE MarketItemID=?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, item.getItemID());
             stmt.setString(2, item.getItemNBTCompound() != null ? item.getItemNBTCompound().toString() : null);
@@ -71,7 +73,8 @@ public class MarketItemRepository {
             stmt.setLong(12, item.getTimeToExpire());
             stmt.setTimestamp(13, item.getLastTradeTime());
             stmt.setDouble(14, item.getFrozenBalance() != null ? item.getFrozenBalance() : 0.0);
-            stmt.setString(15, item.getMarketItemID().toString());
+            stmt.setBoolean(15, item.isInfiniteDuration());
+            stmt.setString(16, item.getMarketItemID().toString());
             requireUpdated(stmt.executeUpdate(), "No market item row for " + item.getMarketItemID());
         }
     }
@@ -112,6 +115,7 @@ public class MarketItemRepository {
         stmt.setLong(13, item.getTimeToExpire());
         stmt.setTimestamp(14, item.getLastTradeTime());
         stmt.setDouble(15, item.getFrozenBalance() != null ? item.getFrozenBalance() : 0.0);
+        stmt.setBoolean(16, item.isInfiniteDuration());
     }
 
     private MarketItem resultSetToMarketItem(ResultSet rs) throws SQLException {
@@ -140,7 +144,8 @@ public class MarketItemRepository {
                 rs.getInt("cooldownTimeInMinutes"),
                 rs.getLong("timeToExpire"),
                 rs.getTimestamp("lastTradeTime"),
-                rs.getDouble("frozenBalance")
+                rs.getDouble("frozenBalance"),
+                rs.getBoolean("ifInfiniteDuration")
         );
     }
 

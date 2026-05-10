@@ -53,10 +53,22 @@ public final class PaperFormFactory {
         UIElement itemIcon = WheatMarketUiHelpers.require(ui, "form-item-icon", UIElement.class);
         Button toggleAdminButton = WheatMarketUiHelpers.require(ui, "toggle-admin-button", Button.class);
         Button toggleInfiniteButton = WheatMarketUiHelpers.require(ui, "toggle-infinite-button", Button.class);
+        Button toggleInfiniteDurationButton = WheatMarketUiHelpers.require(ui, "toggle-infinite-duration-button", Button.class);
         TextField cooldownAmountField = WheatMarketUiHelpers.require(ui, "cooldown-amount-field", TextField.class);
-        TextField cooldownTimeField = WheatMarketUiHelpers.require(ui, "cooldown-time-field", TextField.class);
+        TextField cooldownDaysField = WheatMarketUiHelpers.require(ui, "cooldown-days-field", TextField.class);
+        TextField cooldownHoursField = WheatMarketUiHelpers.require(ui, "cooldown-hours-field", TextField.class);
+        TextField cooldownMinutesField = WheatMarketUiHelpers.require(ui, "cooldown-minutes-field", TextField.class);
         Label cooldownAmountCaption = WheatMarketUiHelpers.require(ui, "cooldown-amount-caption", Label.class);
-        Label cooldownTimeCaption = WheatMarketUiHelpers.require(ui, "cooldown-time-caption", Label.class);
+        Label cooldownDaysCaption = WheatMarketUiHelpers.require(ui, "cooldown-days-caption", Label.class);
+        Label cooldownHoursCaption = WheatMarketUiHelpers.require(ui, "cooldown-hours-caption", Label.class);
+        Label cooldownMinutesCaption = WheatMarketUiHelpers.require(ui, "cooldown-minutes-caption", Label.class);
+        Label orderTimeSectionTitle = WheatMarketUiHelpers.require(ui, "order-time-section-title", Label.class);
+        TextField orderDaysField = WheatMarketUiHelpers.require(ui, "order-days-field", TextField.class);
+        TextField orderHoursField = WheatMarketUiHelpers.require(ui, "order-hours-field", TextField.class);
+        TextField orderMinutesField = WheatMarketUiHelpers.require(ui, "order-minutes-field", TextField.class);
+        Label orderDaysCaption = WheatMarketUiHelpers.require(ui, "order-days-caption", Label.class);
+        Label orderHoursCaption = WheatMarketUiHelpers.require(ui, "order-hours-caption", Label.class);
+        Label orderMinutesCaption = WheatMarketUiHelpers.require(ui, "order-minutes-caption", Label.class);
 
         root.style(style -> style.background(WheatMarketUiTextures.tradingBackgroundTexture()));
         paperPanel.style(style -> style.background(WheatMarketUiTextures.tradingPaperTexture()));
@@ -68,9 +80,12 @@ public final class PaperFormFactory {
         return new SharedPaperForm(
                 ui, leftExtra, rightContent, bottomBar, actionContent,
                 title, playerBalanceLabel, playerAvatar, itemPreview, itemIcon,
-                opPanel, opTitle, toggleAdminButton, toggleInfiniteButton,
-                cooldownAmountField, cooldownTimeField,
-                cooldownAmountCaption, cooldownTimeCaption,
+                opPanel, opTitle, toggleAdminButton, toggleInfiniteButton, toggleInfiniteDurationButton,
+                cooldownAmountField, cooldownDaysField, cooldownHoursField, cooldownMinutesField,
+                cooldownAmountCaption, cooldownDaysCaption, cooldownHoursCaption, cooldownMinutesCaption,
+                orderTimeSectionTitle,
+                orderDaysField, orderHoursField, orderMinutesField,
+                orderDaysCaption, orderHoursCaption, orderMinutesCaption,
                 scroller, paperPanel, root, ownerLabel
         );
     }
@@ -151,10 +166,22 @@ public final class PaperFormFactory {
             Label opTitle,
             Button toggleAdminButton,
             Button toggleInfiniteButton,
+            Button toggleInfiniteDurationButton,
             TextField cooldownAmountField,
-            TextField cooldownTimeField,
+            TextField cooldownDaysField,
+            TextField cooldownHoursField,
+            TextField cooldownMinutesField,
             Label cooldownAmountCaption,
-            Label cooldownTimeCaption,
+            Label cooldownDaysCaption,
+            Label cooldownHoursCaption,
+            Label cooldownMinutesCaption,
+            Label orderTimeSectionTitle,
+            TextField orderDaysField,
+            TextField orderHoursField,
+            TextField orderMinutesField,
+            Label orderDaysCaption,
+            Label orderHoursCaption,
+            Label orderMinutesCaption,
             ScrollerView scroller,
             UIElement paperPanel,
             UIElement root,

@@ -46,7 +46,9 @@ public class MarketListS2CPacket implements CustomPacketPayload {
                     item.getLastTradeTime() != null ? item.getLastTradeTime().getTime() : -1,
                     item.hasCooldownRestriction(),
                     entry.remainingCooldownAmount(),
-                    item.getCooldownTimeInMinutes()
+                    item.getCooldownTimeInMinutes(),
+                    item.isInfiniteDuration(),
+                    item.getTimeToExpire()
             ));
         }
         this.totalPages = totalPages;
@@ -122,18 +124,29 @@ public class MarketListS2CPacket implements CustomPacketPayload {
         private final boolean hasCooldown;
         private final int cooldownAmount;
         private final int cooldownTimeInMinutes;
+        private final boolean ifInfiniteDuration;
+        private final long timeToExpire;
 
         public MarketItemSummary(UUID marketItemID, CompoundTag itemNBT, double price, int amount,
                                  UUID sellerID, boolean ifAdmin, boolean ifSell,
                                  long listingTime, long lastTradeTime, boolean hasCooldown) {
             this(marketItemID, itemNBT, price, amount, false, sellerID, ifAdmin, ifSell, listingTime, lastTradeTime,
-                    hasCooldown, 0, 0);
+                    hasCooldown, 0, 0, false, 0);
         }
 
         public MarketItemSummary(UUID marketItemID, CompoundTag itemNBT, double price, int amount, boolean ifInfinite,
                                  UUID sellerID, boolean ifAdmin, boolean ifSell,
                                  long listingTime, long lastTradeTime, boolean hasCooldown,
                                  int cooldownAmount, int cooldownTimeInMinutes) {
+            this(marketItemID, itemNBT, price, amount, ifInfinite, sellerID, ifAdmin, ifSell, listingTime, lastTradeTime,
+                    hasCooldown, cooldownAmount, cooldownTimeInMinutes, false, 0);
+        }
+
+        public MarketItemSummary(UUID marketItemID, CompoundTag itemNBT, double price, int amount, boolean ifInfinite,
+                                 UUID sellerID, boolean ifAdmin, boolean ifSell,
+                                 long listingTime, long lastTradeTime, boolean hasCooldown,
+                                 int cooldownAmount, int cooldownTimeInMinutes, boolean ifInfiniteDuration,
+                                 long timeToExpire) {
             this.marketItemID = marketItemID;
             this.itemNBT = itemNBT;
             this.price = price;
@@ -147,6 +160,8 @@ public class MarketListS2CPacket implements CustomPacketPayload {
             this.hasCooldown = hasCooldown;
             this.cooldownAmount = cooldownAmount;
             this.cooldownTimeInMinutes = cooldownTimeInMinutes;
+            this.ifInfiniteDuration = ifInfiniteDuration;
+            this.timeToExpire = timeToExpire;
         }
 
         public static MarketItemSummary read(FriendlyByteBuf buf) {
@@ -163,8 +178,10 @@ public class MarketListS2CPacket implements CustomPacketPayload {
             boolean hasCooldown = buf.readBoolean();
             int cooldownAmount = buf.readVarInt();
             int cooldownTimeInMinutes = buf.readVarInt();
+            boolean ifInfiniteDuration = buf.readBoolean();
+            long timeToExpire = buf.readLong();
             return new MarketItemSummary(id, nbt, price, amount, ifInfinite, sellerID, ifAdmin, ifSell, listingTime, lastTradeTime,
-                    hasCooldown, cooldownAmount, cooldownTimeInMinutes);
+                    hasCooldown, cooldownAmount, cooldownTimeInMinutes, ifInfiniteDuration, timeToExpire);
         }
 
         public void write(FriendlyByteBuf buf) {
@@ -181,6 +198,8 @@ public class MarketListS2CPacket implements CustomPacketPayload {
             buf.writeBoolean(hasCooldown);
             buf.writeVarInt(cooldownAmount);
             buf.writeVarInt(cooldownTimeInMinutes);
+            buf.writeBoolean(ifInfiniteDuration);
+            buf.writeLong(timeToExpire);
         }
 
         public UUID getMarketItemID() {
@@ -233,6 +252,14 @@ public class MarketListS2CPacket implements CustomPacketPayload {
 
         public int getCooldownTimeInMinutes() {
             return cooldownTimeInMinutes;
+        }
+
+        public boolean isIfInfiniteDuration() {
+            return ifInfiniteDuration;
+        }
+
+        public long getTimeToExpire() {
+            return timeToExpire;
         }
     }
 }

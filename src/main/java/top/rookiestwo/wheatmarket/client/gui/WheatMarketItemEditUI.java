@@ -471,7 +471,17 @@ public class WheatMarketItemEditUI {
             case CHANGE_PRICE -> currentPrice = submittedPrice;
             case TOGGLE_ADMIN -> currentAdmin = !currentAdmin;
             case TOGGLE_INFINITE -> { currentInfinite = !currentInfinite; if (!currentInfinite && currentStock <= 0) currentStock = 1; }
-            case TOGGLE_INFINITE_DURATION -> currentInfiniteDuration = !currentInfiniteDuration;
+            case TOGGLE_INFINITE_DURATION -> {
+                currentInfiniteDuration = !currentInfiniteDuration;
+                if (currentInfiniteDuration) {
+                    currentOrderDays = 0;
+                    currentOrderHours = 0;
+                    currentOrderMinutes = 0;
+                    syncOrderDaysText("0");
+                    syncOrderHoursText("0");
+                    syncOrderMinutesText("0");
+                }
+            }
             case SET_COOLDOWN -> { currentCooldownAmount = submittedCooldownAmount; currentCooldownDays = submittedCooldownDays; currentCooldownHours = submittedCooldownHours; currentCooldownMinutes = submittedCooldownMinutes; }
             default -> {}
         }
@@ -509,9 +519,9 @@ public class WheatMarketItemEditUI {
         cooldownDaysField.setActive(showOpFields);
         cooldownHoursField.setActive(showOpFields);
         cooldownMinutesField.setActive(showOpFields);
-        orderDaysField.setActive(showOpFields);
-        orderHoursField.setActive(showOpFields);
-        orderMinutesField.setActive(showOpFields);
+        orderDaysField.setActive(showOpFields && !currentInfiniteDuration);
+        orderHoursField.setActive(showOpFields && !currentInfiniteDuration);
+        orderMinutesField.setActive(showOpFields && !currentInfiniteDuration);
         WheatMarketUiHelpers.setShown(opPanel, operator);
     }
 

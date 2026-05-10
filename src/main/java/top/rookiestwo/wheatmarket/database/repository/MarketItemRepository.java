@@ -144,8 +144,8 @@ public class MarketItemRepository {
                 rs.getInt("cooldownTimeInMinutes"),
                 rs.getLong("timeToExpire"),
                 rs.getTimestamp("lastTradeTime"),
-                rs.getDouble("frozenBalance"),
-                rs.getBoolean("ifInfiniteDuration")
+                rs.getObject("frozenBalance", Double.class),
+                rs.getObject("ifInfiniteDuration", Boolean.class)
         );
     }
 

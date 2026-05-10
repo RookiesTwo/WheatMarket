@@ -344,7 +344,7 @@ public class ManageItemC2SPacket implements CustomPacketPayload {
                         return java.util.concurrent.CompletableFuture.completedFuture(result);
                     }
                     return WheatMarket.DATABASE.getMarketService().setTimeToExpire(player.getUUID(), isOp, marketItemID, timeToExpire)
-                            .thenApply(r -> result);
+                            .thenApply(r -> r.isSuccess() ? result : r);
                 })
                 .thenAccept(result ->
                     player.server.execute(() -> sendSimpleResult(player, result, "gui.wheatmarket.operation.save_settings_success"))

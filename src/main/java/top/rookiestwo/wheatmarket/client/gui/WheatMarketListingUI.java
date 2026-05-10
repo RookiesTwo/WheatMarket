@@ -589,6 +589,14 @@ public class WheatMarketListingUI {
             return;
         }
         currentInfiniteDuration = !currentInfiniteDuration;
+        if (currentInfiniteDuration) {
+            orderDays = 0;
+            orderHours = 0;
+            orderMinutes = 0;
+            syncOrderDaysText("0");
+            syncOrderHoursText("0");
+            syncOrderMinutesText("0");
+        }
         hideFeedback();
         updateFormState();
     }
@@ -664,9 +672,9 @@ public class WheatMarketListingUI {
         cooldownDaysField.setActive(showOpFields);
         cooldownHoursField.setActive(showOpFields);
         cooldownMinutesField.setActive(showOpFields);
-        orderDaysField.setActive(showOpFields);
-        orderHoursField.setActive(showOpFields);
-        orderMinutesField.setActive(showOpFields);
+        orderDaysField.setActive(showOpFields && !currentInfiniteDuration);
+        orderHoursField.setActive(showOpFields && !currentInfiniteDuration);
+        orderMinutesField.setActive(showOpFields && !currentInfiniteDuration);
     }
 
     private void updateListingTypeText() {
